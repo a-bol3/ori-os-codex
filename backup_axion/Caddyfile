@@ -1,0 +1,16 @@
+{
+    email ${ACME_EMAIL}
+}
+
+${APP_DOMAIN} {
+    reverse_proxy web:3000
+}
+
+api.${APP_DOMAIN} {
+    reverse_proxy api:4000
+}
+
+# Optional: MinIO Console
+# s3-console.${APP_DOMAIN} {
+#     reverse_proxy minio:9001
+# }

@@ -1,0 +1,85 @@
+{
+  "pageId": "demo",
+  "hero": {
+    "title": "Watch Ori-OS in action",
+    "headline": "See how Ori-OS replaces your Frankenstack in under 20 minutes",
+    "subtitle": "Get a guided tour of how agencies and lean B2B teams use Ori-OS to run outbound, CRM, automations, and client workspaces from one Revenue OS.",
+    "primaryCta": {
+      "label": "Book live demo",
+      "href": "/contact"
+    },
+    "secondaryCta": {
+      "label": "Explore features",
+      "href": "/features"
+    }
+  },
+  "demoSections": [
+    {
+      "id": "lead_to_campaigns",
+      "title": "From lead lists to live campaigns",
+      "description": "We'll show you how to:",
+      "points": [
+        "Import or build a lead list and segment by ICP.",
+        "Connect mailboxes and configure deliverability-safe send limits.",
+        "Launch your first campaign from inside a client workspace."
+      ]
+    },
+    {
+      "id": "workspaces_pipelines",
+      "title": "Workspaces, pipelines, and client views",
+      "description": "You'll see:",
+      "points": [
+        "How workspaces structure each client or product line.",
+        "How deals, tasks, and docs live alongside outbound activity.",
+        "How agencies use pipelines and dashboards in QBRs."
+      ]
+    },
+    {
+      "id": "automations",
+      "title": "Automations that run your revenue engine",
+      "description": "We'll walk through:",
+      "points": [
+        "Triggers based on new leads, replies, and stage changes.",
+        "Actions that create tasks, move deals, and send webhooks.",
+        "Templates for common flows like new client onboarding and re-engagement."
+      ]
+    },
+    {
+      "id": "gdpr_deliverability",
+      "title": "GDPR-aware, deliverability-first outbound",
+      "description": "We'll cover:",
+      "points": [
+        "How lawful-basis fields, suppression, and audit logs work in practice.",
+        "How Ori-OS helps you avoid sending surprises and keep domains healthy."
+      ]
+    }
+  ],
+  "whoFor": {
+    "title": "Who this demo is for",
+    "audiences": [
+      "B2B agencies running multiple outbound retainers.",
+      "RevOps consultants standardizing how clients run revenue.",
+      "Lean SaaS and tech teams that want a simpler stack than a full CRM suite."
+    ]
+  },
+  "nextSteps": {
+    "title": "Next steps after the demo",
+    "description": "At the end of the session, we'll:",
+    "points": [
+      "Map your current stack to Ori-OS.",
+      "Suggest a starting workspace and plan (Starter, Growth, or Agency Pro).",
+      "Share a recording so you can review internally."
+    ],
+    "note": "If you're not ready to talk yet, you can explore the Features and Pricing pages and come back to book a demo when you're ready."
+  },
+  "cta": {
+    "primary": {
+      "label": "Book live demo",
+      "href": "/contact"
+    },
+    "secondary": {
+      "label": "Explore features",
+      "href": "/features"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+﻿C:\dev\ORI-OS-chatzai\ORI-OS-chatzai\apps\web\src\app\page.tsx
+C:\dev\ORI-OS-chatzai\ORI-OS-chatzai\apps\web\src\app\(dashboard)\automation\page.tsx
+C:\dev\ORI-OS-chatzai\ORI-OS-chatzai\apps\web\src\app\(dashboard)\compliance\page.tsx
+C:\dev\ORI-OS-chatzai\ORI-OS-chatzai\apps\web\src\app\(dashboard)\crm\page.tsx
+C:\dev\ORI-OS-chatzai\ORI-OS-chatzai\apps\web\src\app\(dashboard)\dashboard\page.tsx
+C:\dev\ORI-OS-chatzai\ORI-OS-chatzai\apps\web\src\app\(dashboard)\engagement\page.tsx
+C:\dev\ORI-OS-chatzai\ORI-OS-chatzai\apps\web\src\app\(dashboard)\help\kb\page.tsx
+C:\dev\ORI-OS-chatzai\ORI-OS-chatzai\apps\web\src\app\(dashboard)\intelligence\page.tsx
+C:\dev\ORI-OS-chatzai\ORI-OS-chatzai\apps\web\src\app\(dashboard)\knowledge\page.tsx
+C:\dev\ORI-OS-chatzai\ORI-OS-chatzai\apps\web\src\app\(dashboard)\notifications\page.tsx
+C:\dev\ORI-OS-chatzai\ORI-OS-chatzai\apps\web\src\app\(dashboard)\seo\page.tsx
+C:\dev\ORI-OS-chatzai\ORI-OS-chatzai\apps\web\src\app\(dashboard)\seo\backlinks\page.tsx
+C:\dev\ORI-OS-chatzai\ORI-OS-chatzai\apps\web\src\app\(dashboard)\settings\page.tsx
+C:\dev\ORI-OS-chatzai\ORI-OS-chatzai\apps\web\src\app\(dashboard)\settings\integrations\page.tsx

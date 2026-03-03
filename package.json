@@ -1,0 +1,46 @@
+{
+  "name": "ori-os",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:up": "docker-compose -f docker-compose.dev.yml up -d --build",
+    "dev:down": "docker-compose -f docker-compose.dev.yml down",
+    "dev:logs": "docker-compose -f docker-compose.dev.yml logs -f",
+    "prod:up": "docker-compose -f docker-compose.prod.yml up -d --build",
+    "prod:down": "docker-compose -f docker-compose.prod.yml down",
+    "prod:logs": "docker-compose -f docker-compose.prod.yml logs -f",
+    "prod:migrate": "docker-compose -f docker-compose.prod.yml exec api npx prisma migrate deploy",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:e2e": "playwright test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "db:generate": "npm run generate --workspace=@ori-os/db",
+    "db:push": "npm run push --workspace=@ori-os/db",
+    "db:migrate": "npm run migrate --workspace=@ori-os/db"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^20.11.0",
+    "concurrently": "^9.2.1",
+    "prettier": "^3.2.4",
+    "prisma": "5.15.0",
+    "tsx": "^4.21.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "npm@10.2.4",
+  "dependencies": {
+    "@prisma/client": "^5.15.0",
+    "cheerio": "^1.2.0"
+  }
+}

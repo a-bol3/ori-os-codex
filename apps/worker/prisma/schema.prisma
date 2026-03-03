@@ -1,0 +1,1230 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "windows", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =================================================================================================
+// 1. Core Multi-Tenant & Auth
+// =================================================================================================
+
+model Organization {
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  complianceProfile String   @default("standard") // standard, eu_strict
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  members        OrganizationMembership[]
+  sessions       Session[]
+  domains        Domain[]
+  mailboxes      Mailbox[]
+  companies      Company[]
+  contacts       Contact[]
+  deals          Deal[]
+  pipelines      Pipeline[]
+  activities     Activity[]
+  tasks          Task[]
+  segments       Segment[]
+  campaigns      Campaign[]
+  emailTemplates EmailTemplate[]
+  workflows      Workflow[]
+  workflowRuns   WorkflowRun[]
+  icpProfiles    IcpProfile[]
+  enrichmentJobs EnrichmentJob[]
+  validationJobs ValidationJob[]
+  events         Event[]
+  dailyMetrics   DailyMetric[]
+  gdprRequests   GdprRequest[]
+  suppressions   SuppressionListEntry[]
+  auditLogs      AuditLog[]
+  integrations   Integration[]
+  connectors     Connector[]
+  subscription   Subscription?
+
+  // SEO Studio relations
+  seoProjects    SEOProject[]
+  seoCompetitors SEOCompetitor[]
+  seoAlerts      SEOAlert[]
+  gscData        GSCQueryData[]
+
+  @@map("organizations")
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  organizationId       String             @unique
+  stripeSubscriptionId String?            @unique
+  stripeCustomerId     String?
+  stripePriceId        String?
+  status               SubscriptionStatus
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subscriptions")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String?
+  name         String?
+  avatarUrl    String?
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  memberships      OrganizationMembership[]
+  sessions         Session[]
+  twoFactor        TwoFactorSetting?
+  activities       Activity[]
+  createdSegments  Segment[]
+  createdCampaigns Campaign[]
+  auditLogs        AuditLog[]
+
+  // SEO relations
+  seoProjects SEOProject[] @relation("SEOProjectCreator")
+
+  @@map("users")
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MANAGER
+  OPERATOR
+  VIEWER
+}
+
+model OrganizationMembership {
+  id             String           @id @default(cuid())
+  organizationId String
+  userId         String
+  role           OrganizationRole
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@map("organization_memberships")
+}
+
+model Session {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String?
+  refreshToken   String?
+  ip             String?
+  userAgent      String?
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id])
+
+  @@map("sessions")
+}
+
+model TwoFactorSetting {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  secret          String
+  enabled         Boolean  @default(false)
+  backupCodesJson Json     @default("[]")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("two_factor_settings")
+}
+
+// =================================================================================================
+// 2. Domains, Mailboxes, Deliverability
+// =================================================================================================
+
+model Domain {
+  id               String   @id @default(cuid())
+  organizationId   String
+  domain           String
+  spfStatus        Boolean  @default(false)
+  dkimStatus       Boolean  @default(false)
+  dmarcStatus      Boolean  @default(false)
+  lastAuditScore   Float?
+  lastAuditSource  String?
+  blacklistsJson   Json     @default("[]")
+  reputationStatus String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  mailboxes    Mailbox[]
+  auditLogs    DeliverabilityAudit[]
+
+  @@unique([organizationId, domain])
+  @@map("domains")
+}
+
+enum MailboxProvider {
+  GMAIL
+  O365
+  SMTP
+  SES
+  OTHER
+}
+
+model Mailbox {
+  id              String          @id @default(cuid())
+  organizationId  String
+  domainId        String?
+  email           String
+  provider        MailboxProvider
+  dailyLimit      Int             @default(50)
+  hourlyLimit     Int             @default(5)
+  warmupStatus    String          @default("inactive") // inactive, warming, active
+  warmupStartedAt DateTime?
+  warmupEndedAt   DateTime?
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  domain       Domain?      @relation(fields: [domainId], references: [id])
+  warmupPlan   WarmupPlan?
+  campaigns    Campaign[]
+  emailEvents  EmailEvent[]
+
+  @@map("mailboxes")
+}
+
+model WarmupPlan {
+  id           String   @id @default(cuid())
+  mailboxId    String   @unique
+  scheduleJson Json // Week by week volume plan
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  mailbox Mailbox     @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  jobs    WarmupJob[]
+
+  @@map("warmup_plans")
+}
+
+model WarmupJob {
+  id           String   @id @default(cuid())
+  warmupPlanId String
+  runAt        DateTime
+  status       String   @default("pending") // pending, completed, failed
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  warmupPlan WarmupPlan @relation(fields: [warmupPlanId], references: [id], onDelete: Cascade)
+
+  @@map("warmup_jobs")
+}
+
+model DeliverabilityAudit {
+  id          String   @id @default(cuid())
+  domainId    String
+  score       Float
+  source      String
+  detailsJson Json
+  createdAt   DateTime @default(now())
+
+  domain Domain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  @@map("deliverability_audits")
+}
+
+// =================================================================================================
+// 3. CRM (Companies, Contacts, Deals)
+// =================================================================================================
+
+model Company {
+  id               String   @id @default(cuid())
+  organizationId   String
+  name             String
+  website          String?
+  domain           String?
+  industry         String?
+  sizeBand         String?
+  country          String?
+  city             String?
+  linkedinUrl      String?
+  customFieldsJson Json     @default("{}")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contacts       Contact[]
+  deals          Deal[]
+  activities     Activity[]
+  tasks          Task[]
+  segments       SegmentMember[] // Polymorphic simulation via separate relation or same table? Prisma doesn't support polymorphic. 
+  // We will model SegmentMember to point optional to Company or Contact.
+  companyScores  CompanyScore[]
+  enrichmentJobs EnrichmentJob[]
+
+  // SEO relations
+  seoProjects    SEOProject[]
+  seoCompetitors SEOCompetitor[]
+
+  @@map("companies")
+}
+
+enum EmailStatus {
+  VALID
+  INVALID
+  CATCH_ALL
+  DISPOSABLE
+  UNKNOWN
+}
+
+model Contact {
+  id               String      @id @default(cuid())
+  organizationId   String
+  companyId        String?
+  firstName        String?
+  lastName         String?
+  email            String
+  phone            String?
+  jobTitle         String?
+  linkedinUrl      String?
+  country          String?
+  gdprRegion       Boolean     @default(false)
+  lawfulBasis      String? // legitimate_interest, consent, contract
+  consentSource    String?
+  consentTimestamp DateTime?
+  optOut           Boolean     @default(false)
+  optOutTimestamp  DateTime?
+  emailStatus      EmailStatus @default(UNKNOWN)
+  customFieldsJson Json        @default("{}")
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  company            Company?            @relation(fields: [companyId], references: [id])
+  deals              Deal[]
+  activities         Activity[]
+  tasks              Task[]
+  campaignRecipients CampaignRecipient[]
+  emailEvents        EmailEvent[]
+  validationResults  ValidationResult[]
+  gdprRequests       GdprRequest[]
+  segments           SegmentMember[]
+
+  @@unique([organizationId, email])
+  @@map("contacts")
+}
+
+model Pipeline {
+  id             String          @id @default(cuid())
+  organizationId String
+  name           String
+  stages         PipelineStage[]
+  deals          Deal[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("pipelines")
+}
+
+model PipelineStage {
+  id         String   @id @default(cuid())
+  pipelineId String
+  name       String
+  order      Int
+  deals      Deal[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  pipeline Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+
+  @@map("pipeline_stages")
+}
+
+model Deal {
+  id             String    @id @default(cuid())
+  organizationId String
+  companyId      String?
+  contactId      String?
+  pipelineId     String
+  stageId        String
+  name           String
+  valueCurrency  String    @default("USD")
+  valueAmount    Float     @default(0)
+  status         String    @default("open") // open, won, lost
+  closeDate      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  company      Company?        @relation(fields: [companyId], references: [id])
+  contact      Contact?        @relation(fields: [contactId], references: [id])
+  pipeline     Pipeline        @relation(fields: [pipelineId], references: [id])
+  stage        PipelineStage   @relation(fields: [stageId], references: [id])
+  activities   Activity[]
+  tasks        Task[]
+  segments     SegmentMember[]
+
+  @@map("deals")
+}
+
+enum ActivityType {
+  EMAIL
+  CALL
+  MEETING
+  NOTE
+  TASK
+}
+
+model Activity {
+  id             String       @id @default(cuid())
+  organizationId String
+  type           ActivityType
+  userId         String?
+  companyId      String?
+  contactId      String?
+  dealId         String?
+  subject        String?
+  body           String?
+  metadataJson   Json         @default("{}")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id])
+  company      Company?     @relation(fields: [companyId], references: [id])
+  contact      Contact?     @relation(fields: [contactId], references: [id])
+  deal         Deal?        @relation(fields: [dealId], references: [id])
+
+  @@map("activities")
+}
+
+model Task {
+  id             String    @id @default(cuid())
+  organizationId String
+  title          String
+  description    String?
+  assignedTo     String? // userId
+  dueDate        DateTime?
+  status         String    @default("pending") // pending, completed
+  companyId      String?
+  contactId      String?
+  dealId         String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  company      Company?     @relation(fields: [companyId], references: [id])
+  contact      Contact?     @relation(fields: [contactId], references: [id])
+  deal         Deal?        @relation(fields: [dealId], references: [id])
+
+  @@map("tasks")
+}
+
+// =================================================================================================
+// 4. Segments
+// =================================================================================================
+
+enum SegmentEntityType {
+  CONTACT
+  COMPANY
+  DEAL
+}
+
+model Segment {
+  id             String            @id @default(cuid())
+  organizationId String
+  name           String
+  entityType     SegmentEntityType
+  filterJson     Json              @default("{}")
+  isDynamic      Boolean           @default(true)
+  createdBy      String? // userId
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  creator      User?           @relation(fields: [createdBy], references: [id])
+  members      SegmentMember[]
+
+  @@map("segments")
+}
+
+model SegmentMember {
+  id        String   @id @default(cuid())
+  segmentId String
+  contactId String?
+  companyId String?
+  dealId    String?
+  joinedAt  DateTime @default(now())
+
+  segment Segment  @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  company Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deal    Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([segmentId])
+  @@map("segment_members")
+}
+
+// =================================================================================================
+// 5. Campaigns & Outreach
+// =================================================================================================
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  RUNNING
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+model Campaign {
+  id             String         @id @default(cuid())
+  organizationId String
+  name           String
+  status         CampaignStatus @default(DRAFT)
+  objective      String? // meetings, replies, nurture
+  mailboxId      String?
+  fromName       String?
+  fromEmail      String?
+  replyTo        String?
+  sendWindowJson Json? // { "days": [1,2,3,4,5], "start": "09:00", "end": "17:00", "tz": "UTC" }
+  createdBy      String? // userId
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization  Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  mailbox       Mailbox?            @relation(fields: [mailboxId], references: [id])
+  creator       User?               @relation(fields: [createdBy], references: [id])
+  sequenceSteps SequenceStep[]
+  recipients    CampaignRecipient[]
+  emailEvents   EmailEvent[]
+
+  @@map("campaigns")
+}
+
+enum StepType {
+  EMAIL
+  WAIT
+  CONDITION
+}
+
+model SequenceStep {
+  id         String   @id @default(cuid())
+  campaignId String
+  order      Int
+  stepType   StepType
+  configJson Json // wait duration, condition rules
+  templateId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  campaign Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  template EmailTemplate? @relation(fields: [templateId], references: [id])
+
+  @@map("sequence_steps")
+}
+
+model EmailTemplate {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  subject        String?
+  bodyHtml       String?
+  bodyText       String?
+  language       String   @default("en")
+  category       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  steps        SequenceStep[]
+
+  @@map("email_templates")
+}
+
+enum RecipientStatus {
+  PENDING
+  SCHEDULED
+  SENT
+  BOUNCED
+  REPLIED
+  OPTED_OUT
+}
+
+model CampaignRecipient {
+  id            String          @id @default(cuid())
+  campaignId    String
+  contactId     String
+  status        RecipientStatus @default(PENDING)
+  lastStepOrder Int             @default(0)
+  lastEventAt   DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact  Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, contactId])
+  @@map("campaign_recipients")
+}
+
+enum EmailEventType {
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  SPAM_COMPLAINT
+  REPLY
+}
+
+model EmailEvent {
+  id                String         @id @default(cuid())
+  campaignId        String?
+  contactId         String?
+  mailboxId         String?
+  providerMessageId String?
+  eventType         EmailEventType
+  rawPayloadJson    Json?
+  createdAt         DateTime       @default(now())
+
+  campaign Campaign? @relation(fields: [campaignId], references: [id])
+  contact  Contact?  @relation(fields: [contactId], references: [id])
+  mailbox  Mailbox?  @relation(fields: [mailboxId], references: [id])
+
+  @@map("email_events")
+}
+
+// =================================================================================================
+// 6. Automation Studio
+// =================================================================================================
+
+model Workflow {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  status         String   @default("draft") // draft, active, paused
+  triggerType    String // schedule, event, manual
+  definitionJson Json // ReactFlow graph or execution model
+  createdBy      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  runs         WorkflowRun[]
+
+  @@map("workflows")
+}
+
+model WorkflowRun {
+  id             String    @id @default(cuid())
+  workflowId     String
+  organizationId String
+  status         String    @default("running") // running, completed, failed
+  startedAt      DateTime  @default(now())
+  finishedAt     DateTime?
+  contextJson    Json?
+
+  workflow     Workflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  steps        WorkflowRunStep[]
+
+  @@map("workflow_runs")
+}
+
+model WorkflowRunStep {
+  id            String    @id @default(cuid())
+  workflowRunId String
+  nodeId        String
+  status        String // pending, running, completed, failed
+  startedAt     DateTime  @default(now())
+  finishedAt    DateTime?
+  outputJson    Json?
+  errorMessage  String?
+
+  workflowRun WorkflowRun @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+
+  @@map("workflow_run_steps")
+}
+
+// =================================================================================================
+// 7. Intelligence & Enrichment
+// =================================================================================================
+
+model IcpProfile {
+  id                    String   @id @default(cuid())
+  organizationId        String
+  name                  String
+  criteriaJson          Json // Industry, size, roles
+  blacklistPersonasJson Json?
+  regionsJson           Json?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("icp_profiles")
+}
+
+enum EnrichmentTargetType {
+  COMPANY
+  CONTACT
+}
+
+model EnrichmentJob {
+  id             String               @id @default(cuid())
+  organizationId String
+  targetType     EnrichmentTargetType
+  targetId       String
+  provider       String // clearbit, pdl, internal, etc
+  status         String               @default("pending") // pending, processing, completed, failed
+  resultJson     Json?
+  errorMessage   String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // Polymorphic-ish relations aren't native, so we might just store targetId 
+  // or use optional relations if strictly needed for FK constraints.
+  // For strictness let's link to Company if targetType=COMPANY
+  company      Company?     @relation(fields: [targetId], references: [id], map: "Enrichment_Company_fkey")
+  // Prisma won't let us map same field to multiple relations easily without unique constraints or separate fields.
+  // To keep it simple in Prisma, we often just use separate fields or no FK for the polymorphic ID.
+  // Let's use no FK for targetId for flexibility or add separate companyId/contactId fields.
+
+  @@map("enrichment_jobs")
+}
+
+model CompanyScore {
+  id            String   @id @default(cuid())
+  companyId     String
+  score         Float
+  breakdownJson Json
+  createdAt     DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("company_scores")
+}
+
+// =================================================================================================
+// 8. Validation & Hygiene
+// =================================================================================================
+
+model ValidationJob {
+  id                String   @id @default(cuid())
+  organizationId    String
+  listName          String?
+  status            String   @default("pending")
+  providerChainJson Json?
+  createdBy         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  results      ValidationResult[]
+
+  @@map("validation_jobs")
+}
+
+model ValidationResult {
+  id              String @id @default(cuid())
+  validationJobId String
+  contactId       String
+  status          String // valid, invalid, catch_all
+  detailsJson     Json?
+
+  validationJob ValidationJob @relation(fields: [validationJobId], references: [id], onDelete: Cascade)
+  contact       Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@map("validation_results")
+}
+
+// =================================================================================================
+// 9. Analytics & Events
+// =================================================================================================
+
+model Event {
+  id             String   @id @default(cuid())
+  organizationId String
+  actorType      String // user, system
+  actorId        String?
+  entityType     String // campaign, deal, etc
+  entityId       String?
+  eventType      String
+  propertiesJson Json?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("events")
+}
+
+model DailyMetric {
+  id             String   @id @default(cuid())
+  organizationId String
+  date           DateTime
+  metricsJson    Json // { sent: 100, replied: 5 }
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, date])
+  @@map("daily_metrics")
+}
+
+// =================================================================================================
+// 10. Compliance & Audit
+// =================================================================================================
+
+model GdprRequest {
+  id             String    @id @default(cuid())
+  organizationId String
+  contactId      String
+  type           String // export, delete
+  status         String // pending, processed
+  createdAt      DateTime  @default(now())
+  processedAt    DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact      Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@map("gdpr_requests")
+}
+
+model SuppressionListEntry {
+  id             String   @id @default(cuid())
+  organizationId String
+  value          String // email or domain
+  reason         String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("suppression_list_entries")
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String?
+  action         String
+  entityType     String?
+  entityId       String?
+  metadataJson   Json?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+// =================================================================================================
+// 11. Connectors
+// =================================================================================================
+
+model Connector {
+  id             String   @id @default(cuid())
+  organizationId String
+  type           String // SENDGRID, SES, RESEND, STRIPE, OPENAI, etc.
+  label          String
+  encryptedData  String // Encrypted JSON string
+  status         String   @default("active") // active, error, disabled
+  lastVerifiedAt DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("connectors")
+}
+
+model Integration {
+  id             String   @id @default(cuid())
+  organizationId String
+  type           String // gmail, slack, salesforce
+  status         String // active, error
+  settingsJson   Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tokens       IntegrationToken[]
+
+  @@map("integrations")
+}
+
+model IntegrationToken {
+  id                    String    @id @default(cuid())
+  integrationId         String
+  encryptedAccessToken  String
+  encryptedRefreshToken String?
+  expiresAt             DateTime?
+  scopes                String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@map("integration_tokens")
+}
+
+// =================================================================================================
+// 9. SEO Studio Module
+// =================================================================================================
+
+model SEOProject {
+  id             String  @id @default(cuid())
+  organizationId String
+  companyId      String?
+  creatorId      String
+  name           String
+  domain         String
+  description    String?
+
+  // Settings
+  crawlFrequency    String    @default("weekly") // daily, weekly, monthly
+  maxPagesToCrawl   Int       @default(100)
+  gscConnected      Boolean   @default(false)
+  gscSiteUrl        String?
+  gscAccessToken    String? // Encrypted
+  gscRefreshToken   String? // Encrypted
+  gscTokenExpiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  company      Company?     @relation(fields: [companyId], references: [id])
+  creator      User         @relation("SEOProjectCreator", fields: [creatorId], references: [id])
+
+  keywords    SEOKeyword[]
+  crawls      SEOCrawl[]
+  rankings    SEORanking[]
+  backlinks   SEOBacklink[]
+  competitors SEOCompetitor[]
+  alerts      SEOAlert[]
+  gscData     GSCQueryData[]
+
+  @@index([organizationId])
+  @@index([domain])
+  @@map("seo_projects")
+}
+
+model SEOKeyword {
+  id             String  @id @default(cuid())
+  projectId      String
+  organizationId String
+  keyword        String
+  targetUrl      String?
+
+  // Metrics
+  searchVolume Int?
+  difficulty   Int?
+  cpc          Float?
+  lastPosition Int?
+
+  // Meta
+  tracked Boolean @default(true)
+  source  String  @default("manual") // manual, gsc, autocomplete, import, search
+  intent  String? // informational, commercial, transactional, navigational
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project  SEOProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  rankings SEORanking[]
+
+  @@unique([projectId, keyword])
+  @@index([organizationId])
+  @@index([keyword])
+  @@map("seo_keywords")
+}
+
+model SEORanking {
+  id           String @id @default(cuid())
+  projectId    String
+  keywordId    String
+  position     Int // 1-100, or 101 for not found
+  prevPosition Int?
+
+  // SERP Features
+  hasSnippet   Boolean @default(false)
+  hasPAA       Boolean @default(false)
+  hasImages    Boolean @default(false)
+  hasVideos    Boolean @default(false)
+  hasLocalPack Boolean @default(false)
+
+  device       String  @default("desktop")
+  location     String?
+  searchEngine String  @default("google")
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  project SEOProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  keyword SEOKeyword @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+  @@index([keywordId, createdAt])
+  @@map("seo_rankings")
+}
+
+model SEOCrawl {
+  id        String @id @default(cuid())
+  projectId String
+  status    String @default("pending") // pending, running, completed, failed
+
+  // Stats
+  pagesFound     Int @default(0)
+  pagesCrawled   Int @default(0)
+  issuesFound    Int @default(0)
+  criticalIssues Int @default(0)
+  warnings       Int @default(0)
+
+  startedAt    DateTime?
+  completedAt  DateTime?
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  project SEOProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  pages   SEOPage[]
+  issues  SEOIssue[]
+
+  @@index([projectId])
+  @@map("seo_crawls")
+}
+
+model SEOPage {
+  id      String @id @default(cuid())
+  crawlId String
+  url     String
+
+  // Technical
+  statusCode Int
+  loadTime   Int // ms
+  pageSize   Int // bytes
+
+  // Content
+  title           String?
+  metaDescription String?
+  h1              String?
+  wordCount       Int     @default(0)
+
+  // Link metrics
+  internalLinks Int @default(0)
+  externalLinks Int @default(0)
+  brokenLinks   Int @default(0)
+
+  // Image metrics
+  imageCount       Int @default(0)
+  imagesWithoutAlt Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  crawl  SEOCrawl   @relation(fields: [crawlId], references: [id], onDelete: Cascade)
+  issues SEOIssue[]
+
+  @@index([crawlId])
+  @@index([url])
+  @@map("seo_pages")
+}
+
+model SEOIssue {
+  id      String  @id @default(cuid())
+  crawlId String
+  pageId  String?
+
+  severity String // critical, warning, info
+  category String // meta, links, images, performance, mobile, schema
+  type     String // e.g., missing_title
+  status   String @default("open") // open, fixed, ignored
+
+  pageUrl        String
+  description    String
+  recommendation String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  crawl SEOCrawl @relation(fields: [crawlId], references: [id], onDelete: Cascade)
+  page  SEOPage? @relation(fields: [pageId], references: [id])
+
+  @@index([crawlId])
+  @@index([category])
+  @@map("seo_issues")
+}
+
+model SEOContentAnalysis {
+  id        String @id @default(cuid())
+  projectId String
+  url       String
+
+  // Score
+  score Int // 0-100
+
+  // Metrics
+  wordCount      Int
+  h2Count        Int
+  imageCount     Int
+  readability    String?
+  keywordDensity Json? // { word: density }
+
+  // Competitor context
+  competitorAvgWordCount Int?
+
+  recommendations Json // [{ type, message }]
+  contentGaps     Json? // [topics]
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId, url])
+  @@map("seo_content_analyses")
+}
+
+model SEOBacklink {
+  id        String @id @default(cuid())
+  projectId String
+
+  sourceUrl    String
+  sourceDomain String
+  targetUrl    String
+
+  anchorText String?
+  linkType   String  @default("dofollow") // dofollow, nofollow
+
+  // Quality
+  domainRating Int?
+  isSpam       Boolean @default(false)
+  isToxic      Boolean @default(false)
+
+  status        String    @default("active") // active, lost
+  lastCheckedAt DateTime  @default(now())
+  lostAt        DateTime?
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  project SEOProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([sourceDomain])
+  @@map("seo_backlinks")
+}
+
+model SEOCompetitor {
+  id        String  @id @default(cuid())
+  projectId String
+  companyId String?
+  domain    String
+
+  estimatedTraffic Int?
+  domainRating     Int?
+  backlinksCount   Int?
+  rankingKeywords  Int?
+
+  lastCrawledAt DateTime?
+  newPagesCount Int       @default(0)
+  metadata      Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project        SEOProject    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  company        Company?      @relation(fields: [companyId], references: [id])
+  Organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+
+  @@unique([projectId, domain])
+  @@map("seo_competitors")
+}
+
+model SEOAlert {
+  id             String @id @default(cuid())
+  organizationId String
+  projectId      String
+
+  type     String // ranking_drop, new_issue, competitor_action, backlink_lost
+  severity String // critical, warning, info
+  message  String
+  metadata Json?
+  isRead   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      SEOProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, isRead])
+  @@index([projectId])
+  @@map("seo_alerts")
+}
+
+model GSCQueryData {
+  id             String @id @default(cuid())
+  projectId      String
+  organizationId String
+
+  query   String
+  page    String
+  date    DateTime
+  device  String
+  country String?
+
+  clicks      Int   @default(0)
+  impressions Int   @default(0)
+  ctr         Float @default(0)
+  position    Float @default(0)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  project      SEOProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, query, page, date, device])
+  @@index([projectId, date])
+  @@map("seo_gsc_data")
+}

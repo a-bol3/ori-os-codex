@@ -1,0 +1,16 @@
+{
+    email ${ACME_EMAIL:-admin@ori-craftlabs.com}
+}
+
+ori-os.ori-craftlabs.com {
+    reverse_proxy web:3000
+}
+
+api.ori-os.ori-craftlabs.com {
+    reverse_proxy api:4000
+}
+
+# Legacy/Root domain if needed
+ori-craftlabs.com {
+    redir https://ori-os.ori-craftlabs.com{uri}
+}

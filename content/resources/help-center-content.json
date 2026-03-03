@@ -1,0 +1,88 @@
+{
+  "hero": {
+    "title": "Help Center",
+    "subtitle": "Guides, FAQs, and troubleshooting for Ori-OS. Search by topic or browse categories to get unstuck quickly.",
+    "searchPlaceholder": "Search help articles…"
+  },
+  "categories": {
+    "title": "Browse by category",
+    "items": [
+      {
+        "id": "getting_started",
+        "title": "Getting started",
+        "description": "Set up your account, connect mailboxes, and launch your first campaign."
+      },
+      {
+        "id": "workspaces_crm",
+        "title": "Workspaces & CRM",
+        "description": "Manage workspaces, pipelines, deals, tasks, and client workspaces."
+      },
+      {
+        "id": "campaigns_outbound",
+        "title": "Campaigns & outbound",
+        "description": "Create sequences, set sending limits, and track replies and meetings."
+      },
+      {
+        "id": "automations",
+        "title": "Automations",
+        "description": "Build workflows that trigger on events, update records, and orchestrate revenue processes."
+      },
+      {
+        "id": "compliance_privacy",
+        "title": "Compliance & privacy",
+        "description": "Manage opt-outs, suppression, lawful-basis fields, and data requests."
+      },
+      {
+        "id": "billing_subscription",
+        "title": "Billing & subscriptions",
+        "description": "Understand plans, invoices, renewals, and how to change your subscription."
+      },
+      {
+        "id": "integrations_api",
+        "title": "Integrations & API",
+        "description": "Connect Ori-OS to email, CRMs, webhooks, and use our API."
+      },
+      {
+        "id": "troubleshooting",
+        "title": "Troubleshooting",
+        "description": "Fix common issues with logins, sending, and performance."
+      }
+    ]
+  },
+  "faqs": {
+    "title": "Common questions",
+    "items": [
+      {
+        "id": "connect_email",
+        "question": "How do I connect my email account to Ori-OS?",
+        "answer": "Go to Settings → Mailboxes, choose your provider (Google Workspace or Microsoft 365), and follow the sign-in flow. Once connected, you can assign mailboxes to workspaces and sequences."
+      },
+      {
+        "id": "first_campaign",
+        "question": "How do I launch my first campaign?",
+        "answer": "Create or import a list in your workspace, open Campaigns, choose a sequence template or build your own, assign a mailbox, set daily send limits, and schedule the campaign. We recommend starting with a small batch to test deliverability and messaging."
+      },
+      {
+        "id": "opt_outs",
+        "question": "What happens when someone unsubscribes or replies 'stop'?",
+        "answer": "Ori-OS adds the contact to your global suppression list for that workspace and stops them from receiving future campaign emails. You can review and manage suppressed contacts in the Compliance section of your workspace."
+      },
+      {
+        "id": "export_data",
+        "question": "Can I export my data from Ori-OS?",
+        "answer": "Yes. Workspace admins can export contacts, campaigns, and pipeline data from the Settings or Data sections. Exports are provided in CSV format so you can move data to other tools or for reporting."
+      },
+      {
+        "id": "change_subscription",
+        "question": "How do I change or cancel my subscription?",
+        "answer": "Go to Billing in your Ori-OS account to change plans, update payment details, or manage renewal settings. If you need help structuring a plan for multiple workspaces, contact our support team."
+      }
+    ]
+  },
+  "contact": {
+    "title": "Still need help?",
+    "subtitle": "Reach out from inside Ori-OS or email us directly.",
+    "inApp": "Use the in-app support widget to contact us from any page.",
+    "email": "support@ori-craftlabs.com"
+  }
+}

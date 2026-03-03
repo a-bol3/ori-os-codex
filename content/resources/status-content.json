@@ -1,0 +1,150 @@
+{
+  "hero": {
+    "title": "Ori-OS status",
+    "subtitle": "Real-time uptime information and incident history for the Ori-OS application and related services."
+  },
+  "badges": {
+    "operational": "All systems operational",
+    "partial": "Partial disruption",
+    "major": "Major outage"
+  },
+  "overview": {
+    "title": "Current status",
+    "subtitle": "We monitor Ori-OS 24/7. Any known issues affecting core functionality will appear here."
+  },
+  "components": {
+    "title": "Monitored components",
+    "subtitle": "These components represent the main parts of the Ori-OS platform.",
+    "items": [
+      {
+        "id": "app",
+        "name": "Ori-OS Web App",
+        "description": "Core web application and dashboards used by end users.",
+        "status": "operational",
+        "uptime": "99.98%"
+      },
+      {
+        "id": "api",
+        "name": "Ori-OS API",
+        "description": "Public and internal APIs used by the Ori-OS app and integrations.",
+        "status": "operational",
+        "uptime": "99.99%"
+      },
+      {
+        "id": "mail_sending",
+        "name": "Mail sending & tracking",
+        "description": "Outbound email sending, reply detection, and tracking features.",
+        "status": "operational",
+        "uptime": "99.95%"
+      },
+      {
+        "id": "automation_engine",
+        "name": "Automation engine",
+        "description": "Background workflows, triggers, and scheduled jobs.",
+        "status": "operational",
+        "uptime": "99.97%"
+      },
+      {
+        "id": "database",
+        "name": "Primary database",
+        "description": "Persistent storage for Ori-OS configuration and customer data.",
+        "status": "operational",
+        "uptime": "99.99%"
+      },
+      {
+        "id": "integrations",
+        "name": "Integrations & webhooks",
+        "description": "Third-party integrations and outbound webhooks configured by customers.",
+        "status": "operational",
+        "uptime": "99.96%"
+      }
+    ]
+  },
+  "history": {
+    "title": "Incident history",
+    "subtitle": "Recent incidents and maintenance windows. Times are shown in your local timezone.",
+    "empty": "No incidents reported in the selected period.",
+    "filters": {
+      "last24h": "Last 24 hours",
+      "last7d": "Last 7 days",
+      "last30d": "Last 30 days"
+    },
+    "labels": {
+      "investigating": "Investigating",
+      "identified": "Identified",
+      "monitoring": "Monitoring",
+      "resolved": "Resolved",
+      "scheduledMaintenance": "Scheduled maintenance"
+    }
+  },
+  "incidents": [
+    {
+      "id": 1,
+      "title": "Degraded mail sending performance",
+      "date": "February 15, 2026",
+      "status": "resolved",
+      "impact": "Some outbound emails were delayed for a subset of workspaces.",
+      "timeline": [
+        {
+          "time": "10:32 UTC",
+          "status": "investigating",
+          "message": "We detected increased latency from our email infrastructure provider and began investigating."
+        },
+        {
+          "time": "11:15 UTC",
+          "status": "identified",
+          "message": "We throttled new campaign launches and worked with the provider to stabilize delivery."
+        },
+        {
+          "time": "14:45 UTC",
+          "status": "resolved",
+          "message": "Delivery performance returned to normal levels and we re-enabled normal campaign scheduling."
+        }
+      ],
+      "nextSteps": "We are improving our alerting and safeguards to pause high-volume sends sooner when latency spikes."
+    },
+    {
+      "id": 2,
+      "title": "Short outage of Ori-OS Web App",
+      "date": "January 28, 2026",
+      "status": "resolved",
+      "impact": "The Ori-OS web app was unavailable for some users for several minutes.",
+      "timeline": [
+        {
+          "time": "08:12 UTC",
+          "status": "investigating",
+          "message": "A misconfiguration during a routine deployment caused a restart loop for a small subset of application instances."
+        },
+        {
+          "time": "08:35 UTC",
+          "status": "identified",
+          "message": "We rolled back the change and restored normal operation."
+        },
+        {
+          "time": "09:10 UTC",
+          "status": "resolved",
+          "message": "We updated our deployment process to include an additional health check before rollout."
+        }
+      ],
+      "nextSteps": "We continue to refine our deployment pipeline to reduce the risk of similar interruptions."
+    }
+  ],
+  "uptime": {
+    "title": "Historical uptime",
+    "subtitle": "High-level uptime for major components over recent months.",
+    "legend": {
+      "operational": "Operational",
+      "degraded": "Degraded performance",
+      "partial": "Partial outage",
+      "outage": "Major outage"
+    }
+  },
+  "footer": {
+    "title": "Stay informed",
+    "subtitle": "Subscribe to updates so you're notified about incidents and maintenance windows.",
+    "subscribeCta": "Subscribe to updates",
+    "rssLabel": "RSS feed",
+    "emailLabel": "Email notifications",
+    "note": "For urgent issues impacting your workspace, contact us directly through the in-app support channel or via email."
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "hero": {
+    "title": "Ori-OS API & webhooks",
+    "subtitle": "Use the Ori-OS API to manage contacts, workspaces, and events, and to keep Ori-OS in sync with the rest of your stack."
+  },
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Overview",
+      "color": "bg-blue-500/20 text-blue-400",
+      "badge": "bg-blue-500/10 text-blue-400 border-blue-500/20",
+      "items": [
+        "Authentication and API keys",
+        "Rate limits and fair use",
+        "Base URLs and versioning"
+      ]
+    },
+    {
+      "id": "core_resources",
+      "title": "Core resources",
+      "color": "bg-vivid-tangerine/20 text-vivid-tangerine",
+      "badge": "bg-vivid-tangerine/10 text-vivid-tangerine border-vivid-tangerine/20",
+      "items": [
+        "Contacts API",
+        "Workspaces API",
+        "Deals & pipelines API",
+        "Campaigns API",
+        "Tasks API"
+      ]
+    },
+    {
+      "id": "webhooks",
+      "title": "Webhooks",
+      "color": "bg-purple-500/20 text-purple-400",
+      "badge": "bg-purple-500/10 text-purple-400 border-purple-500/20",
+      "items": [
+        "Available webhook event types",
+        "Verifying webhook signatures",
+        "Retries and error handling"
+      ]
+    },
+    {
+      "id": "examples",
+      "title": "Examples",
+      "color": "bg-green-500/20 text-green-400",
+      "badge": "bg-green-500/10 text-green-400 border-green-500/20",
+      "items": [
+        "Syncing contacts between Ori-OS and your CRM",
+        "Sending Ori-OS events to your data warehouse",
+        "Embedding Ori-OS data into internal tools"
+      ]
+    },
+    {
+      "id": "best_practices",
+      "title": "Best practices",
+      "color": "bg-amber-500/20 text-amber-400",
+      "badge": "bg-amber-500/10 text-amber-400 border-amber-500/20",
+      "items": [
+        "Handling pagination and large result sets",
+        "Error handling and retries",
+        "Keeping API keys and webhooks secure"
+      ]
+    }
+  ],
+  "quickStartCode": "// Example: Create a contact\nconst response = await fetch('https://api.ori-os.com/v1/contacts', {\n  method: 'POST',\n  headers: {\n    'Authorization': 'Bearer YOUR_API_KEY',\n    'Content-Type': 'application/json',\n  },\n  body: JSON.stringify({\n    email: 'jane@example.com',\n    first_name: 'Jane',\n    last_name: 'Smith',\n    workspace_id: 'ws_abc123',\n  }),\n});"
+}

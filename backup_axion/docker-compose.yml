@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ori-os-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-ori_os}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ori-os-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ori-os-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - ori-os-network
+
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    container_name: ori-os-meilisearch
+    ports:
+      - "7700:7700"
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-masterKey}
+    volumes:
+      - meili_data:/meili_data
+    networks:
+      - ori-os-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: ori-os-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-password}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - ori-os-network
+
+networks:
+  ori-os-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  meili_data:
+  minio_data:

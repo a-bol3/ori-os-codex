@@ -1,0 +1,95 @@
+{
+  "hero": {
+    "title": "Ori-OS security",
+    "subtitle": "How we keep your data safe, maintain uptime, and earn your trust."
+  },
+  "intro": {
+    "title": "Security-first by design",
+    "paragraphs": [
+      "Ori-OS is built for B2B agencies, consultancies, and tech SMEs that handle sensitive contact and pipeline data. Security is not an afterthought; it's embedded in how we design, build, and operate the platform.",
+      "This page outlines our approach to infrastructure security, application security, data protection, and compliance. If you have questions not covered here, reach out to security@ori-craftlabs.com."
+    ]
+  },
+  "infrastructure": {
+    "title": "Infrastructure security",
+    "points": [
+      "Hosted on major cloud providers with ISO 27001 and SOC 2 Type II certifications.",
+      "Data encrypted at rest (AES-256) and in transit (TLS 1.2+).",
+      "Regularly patched and updated infrastructure with automated vulnerability scanning.",
+      "Network segmentation and firewall rules to isolate workloads."
+    ]
+  },
+  "application": {
+    "title": "Application security",
+    "points": [
+      "Role-based access control (RBAC) for organizations, workspaces, and individual records.",
+      "Secure authentication with support for two-factor authentication (2FA).",
+      "Session timeouts and automatic logouts for inactive sessions.",
+      "Input validation and output encoding to prevent injection attacks."
+    ]
+  },
+  "dataProtection": {
+    "title": "Data protection",
+    "points": [
+      "Logical separation of customer data at the workspace level.",
+      "Regular backups with tested restore procedures.",
+      "Data retention controls configurable per workspace.",
+      "GDPR-aligned data export and deletion workflows."
+    ]
+  },
+  "accessControl": {
+    "title": "Access control",
+    "points": [
+      "Principle of least privilege for internal access to customer data.",
+      "Audit logs for sensitive actions within the application.",
+      "Secure invite and onboarding flows for new team members.",
+      "Optional IP allowlisting for enterprise customers."
+    ]
+  },
+  "monitoringIncidents": {
+    "title": "Monitoring and incidents",
+    "points": [
+      "24/7 monitoring of application health and availability.",
+      "Automated alerting for anomalies and potential security events.",
+      "Defined incident response process with escalation paths.",
+      "Post-incident reviews and improvements published when appropriate."
+    ]
+  },
+  "developmentPractices": {
+    "title": "Development practices",
+    "points": [
+      "Secure development lifecycle with code reviews and automated testing.",
+      "Regular security training for engineering team members.",
+      "Third-party penetration tests conducted periodically.",
+      "Dependency scanning and timely patching of known vulnerabilities."
+    ]
+  },
+  "compliance": {
+    "title": "Compliance",
+    "paragraphs": [
+      "Ori-OS is designed to support GDPR compliance for our customers. We provide lawful-basis field support, data subject request workflows, and audit logs to help you meet your obligations."
+    ],
+    "points": [
+      "Data Processing Agreement (DPA) available for all customers.",
+      "Clear sub-processor list maintained and updated.",
+      "Support for data portability and erasure requests.",
+      "Transparent documentation of data handling practices."
+    ]
+  },
+  "responsibleDisclosure": {
+    "title": "Responsible disclosure",
+    "paragraphs": [
+      "If you discover a security vulnerability in Ori-OS, we appreciate your help in disclosing it to us in a responsible manner. Please email security@ori-craftlabs.com with details, and we will investigate promptly."
+    ],
+    "points": [
+      "We aim to respond to security reports within 48 hours.",
+      "We will keep you informed of our progress toward a fix.",
+      "We welcome feedback from security researchers and customers alike."
+    ]
+  },
+  "contact": {
+    "title": "Questions?",
+    "paragraph": "For security-related inquiries, reach out to our security team.",
+    "email": "security@ori-craftlabs.com"
+  }
+}

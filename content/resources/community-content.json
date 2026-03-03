@@ -1,0 +1,50 @@
+{
+  "hero": {
+    "title": "Join the Ori-OS community",
+    "subtitle": "Operators, agencies, and RevOps pros sharing playbooks, workflows, and real-world experiences with Ori-OS."
+  },
+  "whyJoin": {
+    "title": "Why join?",
+    "points": [
+      "Learn how other agencies, consultancies, and tech teams run their revenue engine from one OS.",
+      "Get early looks at new features and share feedback directly with the product team.",
+      "Swap templates, playbooks, and best practices with peers who care about lean, compliant RevOps."
+    ]
+  },
+  "channels": {
+    "officeHours": {
+      "title": "Live office hours",
+      "description": "Regular sessions where we walk through real use cases, build workflows together, and answer questions live. Typically held every 2–4 weeks, times announced in advance.",
+      "frequency": "Every 2-4 weeks",
+      "cta": "Sign up for the next office hours"
+    },
+    "slack": {
+      "title": "Slack / Discord workspace",
+      "description": "A private space for customers and partners to discuss setups, ask quick questions, and share wins.",
+      "guidelines": [
+        "Be respectful, stay on-topic, and avoid sharing sensitive data.",
+        "No spam or aggressive self-promotion."
+      ],
+      "cta": "Request an invite"
+    },
+    "webinars": {
+      "title": "Deep-dive webinars",
+      "description": "Occasional deep dives into topics like deliverability, GDPR-aware outbound, and agency operating models.",
+      "frequency": "Monthly",
+      "cta": "View upcoming sessions"
+    }
+  },
+  "contribute": {
+    "title": "Ways to contribute",
+    "points": [
+      "Share templates and workflows that worked for you.",
+      "Participate in design partner sessions and beta tests.",
+      "Offer feedback on docs and help articles so we can improve them."
+    ]
+  },
+  "cta": {
+    "title": "Ready to join?",
+    "subtitle": "Tell us a bit about your team and how you use Ori-OS, and we'll send you the right invitations.",
+    "button": "Request community access"
+  }
+}

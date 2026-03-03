@@ -1,0 +1,76 @@
+{
+  "hero": {
+    "title": "Ori-OS changelog",
+    "subtitle": "New features, improvements, and fixes shipped to your Revenue OS."
+  },
+  "filters": {
+    "all": "All updates",
+    "features": "New features",
+    "improvements": "Improvements",
+    "fixes": "Fixes"
+  },
+  "entryLabels": {
+    "new": "New",
+    "improved": "Improved",
+    "fixed": "Fixed"
+  },
+  "releases": [
+    {
+      "id": "v0.9.3",
+      "version": "v0.9.3",
+      "title": "Multi-workspace dashboards",
+      "date": "2026-02-10",
+      "changes": [
+        {
+          "type": "new",
+          "text": "Added cross-workspace dashboards so agencies can view performance across selected client workspaces."
+        },
+        {
+          "type": "improved",
+          "text": "Improved suppression list management and visibility for workspace admins."
+        },
+        {
+          "type": "fixed",
+          "text": "Fixed a rare issue where reply statuses were not updating in real time for some mailboxes."
+        }
+      ]
+    },
+    {
+      "id": "v0.9.2",
+      "version": "v0.9.2",
+      "title": "Lawful-basis fields",
+      "date": "2026-01-25",
+      "changes": [
+        {
+          "type": "new",
+          "text": "Introduced lawful-basis fields at list and contact level to support GDPR-aware outbound."
+        },
+        {
+          "type": "new",
+          "text": "Exports can now include lawful-basis labels and notes."
+        },
+        {
+          "type": "improved",
+          "text": "Clarified consent and compliance settings in workspace configuration."
+        }
+      ]
+    },
+    {
+      "id": "v0.9.1",
+      "version": "v0.9.1",
+      "title": "Automation templates",
+      "date": "2026-01-10",
+      "changes": [
+        {
+          "type": "new",
+          "text": "Added pre-built automation templates for first-touch campaigns, re-engagement, and simple handovers."
+        },
+        {
+          "type": "improved",
+          "text": "Improved workflow run logs to make debugging easier."
+        }
+      ]
+    }
+  ],
+  "footerNote": "Looking for something specific? Check our documentation or contact support for help."
+}

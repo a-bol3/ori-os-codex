@@ -1,0 +1,82 @@
+{
+  "hero": {
+    "title": "Ori-OS roadmap",
+    "subtitle": "A high-level view of what we're working on now, next, and later. We prioritize work that improves activation, retention, and compliance."
+  },
+  "columns": {
+    "now": {
+      "title": "Now",
+      "subtitle": "Currently in progress",
+      "iconColor": "text-green-400",
+      "iconBg": "bg-green-500/20"
+    },
+    "next": {
+      "title": "Next",
+      "subtitle": "Coming soon",
+      "iconColor": "text-yellow-400",
+      "iconBg": "bg-yellow-500/20"
+    },
+    "later": {
+      "title": "Later",
+      "subtitle": "On the horizon",
+      "iconColor": "text-purple-400",
+      "iconBg": "bg-purple-500/20"
+    }
+  },
+  "items": {
+    "now": [
+      {
+        "id": "now_1",
+        "name": "Improved onboarding flows",
+        "description": "Guided setup for agencies and consultancies, including templates for first campaigns and pipelines."
+      },
+      {
+        "id": "now_2",
+        "name": "Deeper workspace reporting",
+        "description": "Richer per-workspace dashboards and cross-workspace views for agencies."
+      },
+      {
+        "id": "now_3",
+        "name": "More automation templates",
+        "description": "Ready-to-use workflows for common use cases like new client onboarding, re-engagement, and handovers."
+      }
+    ],
+    "next": [
+      {
+        "id": "next_1",
+        "name": "Native CRM connectors",
+        "description": "Official integrations with popular CRMs (such as HubSpot or Pipedrive) to keep key fields in sync."
+      },
+      {
+        "id": "next_2",
+        "name": "Expanded task & project views",
+        "description": "More robust task boards and views so agencies can treat Ori-OS as an operating system for client work."
+      },
+      {
+        "id": "next_3",
+        "name": "Enhanced consent and preference controls",
+        "description": "Deeper support for managing consent and communication preferences alongside lawful-basis fields."
+      }
+    ],
+    "later": [
+      {
+        "id": "later_1",
+        "name": "Template marketplace",
+        "description": "A curated set of workflows, campaigns, and workspace templates shared by Ori-OS and partners."
+      },
+      {
+        "id": "later_2",
+        "name": "Partner and implementer portal",
+        "description": "Dedicated tools for RevOps freelancers and agencies who implement Ori-OS for clients."
+      },
+      {
+        "id": "later_3",
+        "name": "Vertical-specific playbooks",
+        "description": "Opinionated setups for specific verticals like SaaS, consulting, or industrial B2B."
+      }
+    ]
+  },
+  "footer": {
+    "note": "This roadmap is not a guarantee or contract. Priorities can change based on customer feedback, security, and market conditions."
+  }
+}

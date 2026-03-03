@@ -1,0 +1,125 @@
+{
+  "hero": {
+    "title": "Ori-OS documentation",
+    "subtitle": "Step-by-step guides for setting up workspaces, running campaigns, and keeping your data safe."
+  },
+  "sections": [
+    {
+      "id": "quick_start",
+      "title": "Quick start",
+      "description": "Get Ori-OS up and running in under an hour",
+      "color": "bg-green-500/20 text-green-400",
+      "badge": "bg-green-500/10 text-green-400 border-green-500/20",
+      "items": [
+        "Create your Ori-OS account",
+        "Connect your email accounts",
+        "Create your first workspace",
+        "Launch your first campaign"
+      ]
+    },
+    {
+      "id": "workspaces_crm",
+      "title": "Workspaces & CRM",
+      "description": "Learn how to structure workspaces, pipelines, and deals",
+      "color": "bg-blue-500/20 text-blue-400",
+      "badge": "bg-blue-500/10 text-blue-400 border-blue-500/20",
+      "items": [
+        "Workspace structure and roles",
+        "Creating and managing pipelines",
+        "Working with deals, tasks, and timelines",
+        "Using docs for playbooks and client notes"
+      ]
+    },
+    {
+      "id": "contacts_lists",
+      "title": "Contacts & lists",
+      "description": "Import, segment, and maintain high-quality contact lists",
+      "color": "bg-purple-500/20 text-purple-400",
+      "badge": "bg-purple-500/10 text-purple-400 border-purple-500/20",
+      "items": [
+        "Importing contacts from CSV and other tools",
+        "Filtering and segmenting contacts",
+        "Basic enrichment and tagging",
+        "Maintaining list hygiene and quality"
+      ]
+    },
+    {
+      "id": "campaigns_outbound",
+      "title": "Campaigns & outbound",
+      "description": "Design deliverability-aware sequences",
+      "color": "bg-vivid-tangerine/20 text-vivid-tangerine",
+      "badge": "bg-vivid-tangerine/10 text-vivid-tangerine border-vivid-tangerine/20",
+      "items": [
+        "Creating and editing sequences",
+        "Configuring send limits and schedules",
+        "Reply tracking and classification",
+        "Tracking meetings and outcomes"
+      ]
+    },
+    {
+      "id": "automations",
+      "title": "Automations",
+      "description": "Use the automation engine to orchestrate workflows",
+      "color": "bg-amber-500/20 text-amber-400",
+      "badge": "bg-amber-500/10 text-amber-400 border-amber-500/20",
+      "items": [
+        "Available triggers and when to use them",
+        "Available actions (emails, tasks, updates, webhooks)",
+        "Using and editing automation templates",
+        "Monitoring and debugging workflows"
+      ]
+    },
+    {
+      "id": "compliance_privacy",
+      "title": "Compliance & privacy",
+      "description": "Configure GDPR-aware outbound",
+      "color": "bg-red-500/20 text-red-400",
+      "badge": "bg-red-500/10 text-red-400 border-red-500/20",
+      "items": [
+        "Working with lawful-basis fields",
+        "Opt-outs, suppression lists, and unsubscribe handling",
+        "Exports, deletions, and data subject requests",
+        "Using audit logs for reviews"
+      ]
+    },
+    {
+      "id": "billing_subscription",
+      "title": "Billing & subscriptions",
+      "description": "Manage your plan, invoices, and billing details",
+      "color": "bg-cyan-500/20 text-cyan-400",
+      "badge": "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+      "items": [
+        "Understanding Ori-OS plans and limits",
+        "Changing or upgrading your plan",
+        "Viewing invoices and payment history",
+        "Cancelling or pausing your subscription"
+      ]
+    },
+    {
+      "id": "integrations_api",
+      "title": "Integrations & API",
+      "description": "Connect Ori-OS to email providers, CRMs, and your own systems",
+      "color": "bg-pink-500/20 text-pink-400",
+      "badge": "bg-pink-500/10 text-pink-400 border-pink-500/20",
+      "items": [
+        "Connecting Google Workspace and Microsoft 365",
+        "Syncing data with CRMs (current options and roadmap)",
+        "Configuring outbound webhooks",
+        "Using the Ori-OS API"
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Troubleshooting",
+      "description": "Diagnose and fix common issues",
+      "color": "bg-slate-500/20 text-slate-400",
+      "badge": "bg-slate-500/10 text-slate-400 border-slate-500/20",
+      "items": [
+        "Login and authentication issues",
+        "Emails not sending or delayed",
+        "Data not updating or syncing as expected",
+        "Performance and loading issues"
+      ]
+    }
+  ]
+}

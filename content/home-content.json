@@ -1,0 +1,128 @@
+{
+  "pageId": "home",
+  "hero": {
+    "title": "Run your entire go-to-market from one Revenue OS",
+    "subtitle": "Ori-OS helps lean B2B teams find the right accounts, enrich them safely, launch outbound, and track revenue — all in one compliant, deliverability-aware workspace.",
+    "badge": {
+      "text": "Now with AI-Powered Lead Intelligence",
+      "icon": "sparkles"
+    },
+    "primaryCta": {
+      "label": "Start free trial",
+      "href": "/pricing",
+      "variant": "primary"
+    },
+    "secondaryCta": {
+      "label": "Watch demo",
+      "href": "/demo",
+      "variant": "ghost"
+    },
+    "bullets": [
+      "Built for agencies, consultancies, and lean B2B SaaS teams.",
+      "EU-hosted and GDPR-aware by design.",
+      "Replace 5–7 tools with one opinionated OS."
+    ],
+    "trustBadges": [
+      "No credit card required",
+      "14-day free trial",
+      "Cancel anytime"
+    ]
+  },
+  "trustLogos": {
+    "title": "Trusted by leading companies",
+    "logos": [
+      { "id": "techcorp", "label": "TechCorp" },
+      { "id": "growthlabs", "label": "GrowthLabs" },
+      { "id": "scaleup", "label": "ScaleUp Inc" },
+      { "id": "nexus", "label": "Nexus" },
+      { "id": "dataflow", "label": "DataFlow" },
+      { "id": "cloudsync", "label": "CloudSync" }
+    ]
+  },
+  "workflow": {
+    "title": "A complete workflow for your go-to-market engine",
+    "subtitle": "From finding the right accounts to iterating on results, Ori-OS keeps every step in one Revenue OS instead of scattered across tools.",
+    "steps": [
+      {
+        "id": "find",
+        "title": "Find",
+        "description": "Centralize leads from your existing sources and segment by ICP inside Ori-OS."
+      },
+      {
+        "id": "enrich",
+        "title": "Enrich",
+        "description": "Add key business data to contacts and companies so your outreach and routing stay relevant."
+      },
+      {
+        "id": "analyze",
+        "title": "Analyze",
+        "description": "See what's working at a glance with workspace dashboards for campaigns, pipeline, and meetings."
+      },
+      {
+        "id": "strategize",
+        "title": "Strategize",
+        "description": "Turn insights into playbooks, docs, and workflows that your whole team can follow."
+      },
+      {
+        "id": "engage",
+        "title": "Engage",
+        "description": "Run deliverability-safe outbound sequences across multiple mailboxes and clients."
+      },
+      {
+        "id": "measure",
+        "title": "Measure",
+        "description": "Track replies, meetings, and revenue impact for every workspace and campaign."
+      },
+      {
+        "id": "iterate",
+        "title": "Iterate",
+        "description": "Refine lists, copy, and workflows based on real outcomes — then roll updates out across clients."
+      }
+    ],
+    "featureCard": {
+      "id": "lead_intelligence",
+      "title": "Lead Intelligence",
+      "subtitle": "Enrich contacts with 50+ data points automatically",
+      "metricLabel": "Data points",
+      "metricValue": "50+",
+      "cta": {
+        "label": "Learn more",
+        "href": "/features#lead-intelligence"
+      }
+    }
+  },
+  "testimonials": {
+    "title": "Loved by Revenue Teams",
+    "subtitle": "See what our customers have to say about Ori-OS.",
+    "cards": [
+      {
+        "id": "sarah-chen",
+        "quote": "Ori-OS replaced our entire stack of Apollo, HubSpot, and Woodpecker. It's incredible how much time we save now.",
+        "name": "Sarah Chen",
+        "role": "VP Sales",
+        "company": "TechCorp"
+      },
+      {
+        "id": "michael-torres",
+        "quote": "The automation studio alone is worth it. We automated 80% of our outreach process and increased our response rate by 3x.",
+        "name": "Michael Torres",
+        "role": "Founder",
+        "company": "GrowthLabs"
+      },
+      {
+        "id": "emily-watson",
+        "quote": "Finally, a platform that understands B2B lead generation end-to-end. The intelligence engine is a game changer.",
+        "name": "Emily Watson",
+        "role": "CMO",
+        "company": "ScaleUp Inc"
+      },
+      {
+        "id": "david-kim",
+        "quote": "We went from 5 different tools to just Ori-OS. The cost savings were significant, but the productivity gains were even bigger.",
+        "name": "David Kim",
+        "role": "Head of Growth",
+        "company": "Nexus"
+      }
+    ]
+  }
+}

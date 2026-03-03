@@ -1,0 +1,15 @@
+{
+    "name": "@ori-os/core",
+    "version": "0.1.0",
+    "description": "Shared Logic and Types for Ori-OS",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "lint": "eslint \"src/**/*.ts\" --fix"
+    },
+    "devDependencies": {
+        "typescript": "^5.7.3",
+        "@types/node": "^22.10.7"
+    }
+}

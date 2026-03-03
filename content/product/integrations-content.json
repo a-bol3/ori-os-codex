@@ -1,0 +1,93 @@
+{
+  "hero": {
+    "title": "Ori-OS integrations",
+    "subtitle": "Connect your revenue stack. Ori-OS integrates with the tools you already use for email, CRM, and data."
+  },
+  "categories": [
+    {
+      "id": "email_providers",
+      "name": "Email providers",
+      "description": "Connect your mailboxes for sending and tracking"
+    },
+    {
+      "id": "crms",
+      "name": "CRMs",
+      "description": "Sync contacts and deals with your existing CRM"
+    },
+    {
+      "id": "data_tools",
+      "name": "Data tools",
+      "description": "Export and sync data to your warehouse or BI tools"
+    },
+    {
+      "id": "communication",
+      "name": "Communication",
+      "description": "Connect Slack, Teams, or other communication tools"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "google_workspace",
+      "name": "Google Workspace",
+      "description": "Connect Gmail accounts for outbound campaigns and reply tracking.",
+      "category": "email_providers",
+      "status": "available"
+    },
+    {
+      "id": "microsoft_365",
+      "name": "Microsoft 365",
+      "description": "Connect Outlook accounts for outbound campaigns and reply tracking.",
+      "category": "email_providers",
+      "status": "available"
+    },
+    {
+      "id": "hubspot",
+      "name": "HubSpot",
+      "description": "Sync contacts, companies, and deals between Ori-OS and HubSpot.",
+      "category": "crms",
+      "status": "coming_soon"
+    },
+    {
+      "id": "pipedrive",
+      "name": "Pipedrive",
+      "description": "Keep your deals and contacts in sync with Pipedrive pipelines.",
+      "category": "crms",
+      "status": "coming_soon"
+    },
+    {
+      "id": "salesforce",
+      "name": "Salesforce",
+      "description": "Bi-directional sync with Salesforce for enterprise teams.",
+      "category": "crms",
+      "status": "beta"
+    },
+    {
+      "id": "slack",
+      "name": "Slack",
+      "description": "Get notifications and alerts in your Slack channels.",
+      "category": "communication",
+      "status": "available"
+    },
+    {
+      "id": "zapier",
+      "name": "Zapier",
+      "description": "Connect Ori-OS to 5,000+ apps via Zapier workflows.",
+      "category": "data_tools",
+      "status": "available"
+    },
+    {
+      "id": "webhooks",
+      "name": "Webhooks",
+      "description": "Send real-time events to any HTTP endpoint.",
+      "category": "data_tools",
+      "status": "available"
+    },
+    {
+      "id": "api",
+      "name": "REST API",
+      "description": "Full programmatic access to all Ori-OS resources.",
+      "category": "data_tools",
+      "status": "available"
+    }
+  ]
+}

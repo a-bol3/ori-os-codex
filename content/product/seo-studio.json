@@ -1,0 +1,353 @@
+{
+  "pageId": "seo-studio",
+  "carousels": [
+    {
+      "id": "seo-projects",
+      "title": "SEO projects in Ori‑OS",
+      "subtitle": "A few example setups that show how SEO Studio works in real life.",
+      "cards": [
+        {
+          "id": "project-saas",
+          "label": "B2B SaaS",
+          "title": "Turning organic signups into warm outbound",
+          "description": "SEO Studio tracks product-led content that drives trials, while workflows route high-intent visitors into tailored outbound sequences.",
+          "tag": "SEO Project",
+          "href": "demo",
+          "cta": "View case study"
+        },
+        {
+          "id": "project-agency",
+          "label": "RevOps agency",
+          "title": "Managing SEO for multiple clients in one OS",
+          "description": "Each client gets its own SEO project, dashboard, and alerts, all mapped to their CRM records and campaigns.",
+          "tag": "Agency",
+          "href": "demo",
+          "cta": "See project"
+        },
+        {
+          "id": "project-ecommerce",
+          "label": "E‑commerce",
+          "title": "Technical audits that protect revenue pages",
+          "description": "Automated crawls catch issues on product pages before they impact rankings or conversions.",
+          "tag": "E‑commerce",
+          "href": "demo",
+          "cta": "View case study"
+        },
+        {
+          "id": "project-startup",
+          "label": "Early‑stage startup",
+          "title": "Content hub strategy in 30 days",
+          "description": "Keyword clustering and content analysis helped this startup build a topic authority roadmap aligned with their ICP.",
+          "tag": "Startup",
+          "href": "demo",
+          "cta": "See project"
+        },
+        {
+          "id": "project-enterprise",
+          "label": "Enterprise",
+          "title": "Global SEO governance at scale",
+          "description": "Multiple domains, regional teams, and strict RBAC all managed from one SEO Studio instance.",
+          "tag": "Enterprise",
+          "href": "demo",
+          "cta": "View case study"
+        }
+      ]
+    },
+    {
+      "id": "seo-case-studies",
+      "title": "How teams grow with SEO Studio",
+      "subtitle": "Real results from teams that unified their inbound and outbound in Ori‑OS.",
+      "cards": [
+        {
+          "id": "case-organic-growth",
+          "label": "Case Study",
+          "title": "3x organic pipeline in 6 months",
+          "description": "A B2B SaaS team used keyword data to guide content, then routed organic leads into existing outbound sequences.",
+          "tag": "Growth",
+          "href": "demo",
+          "cta": "Read full story"
+        },
+        {
+          "id": "case-agency-efficiency",
+          "label": "Case Study",
+          "title": "40% less time on client reporting",
+          "description": "An agency consolidated SEO dashboards into Ori‑OS, cutting manual exports and sync meetings.",
+          "tag": "Efficiency",
+          "href": "demo",
+          "cta": "Read full story"
+        },
+        {
+          "id": "case-technical-seo",
+          "label": "Case Study",
+          "title": "From 2,000+ issues to under 50",
+          "description": "Prioritized technical audits and workflow alerts helped a team clean up their site without dedicated SEO staff.",
+          "tag": "Technical SEO",
+          "href": "demo",
+          "cta": "Read full story"
+        },
+        {
+          "id": "case-content-roi",
+          "label": "Case Study",
+          "title": "Proving content ROI to leadership",
+          "description": "Unified analytics connected blog traffic to pipeline and revenue, justifying a 2x content budget increase.",
+          "tag": "Analytics",
+          "href": "demo",
+          "cta": "Read full story"
+        }
+      ]
+    }
+  ],
+  "hero": {
+    "title": "SEO Studio",
+    "titleHighlight": "Inbound growth inside your Revenue OS",
+    "subtitle": "SEO Studio adds inbound marketing and technical SEO to Ori-OS, so keyword data, organic traffic, and content performance live in the same OS as your CRM, campaigns, workflows, and analytics.",
+    "badge": "New Module",
+    "primaryCta": {
+      "label": "Start with SEO Studio",
+      "href": "pricing",
+      "variant": "primary"
+    },
+    "secondaryCta": {
+      "label": "Explore full platform",
+      "href": "features",
+      "variant": "ghost"
+    }
+  },
+  "sections": [
+    {
+      "id": "why-seo-studio",
+      "title": "Why add SEO to your Revenue OS?",
+      "subtitle": "Most teams treat SEO as a separate universe. SEO Studio connects inbound signals to the same OS that runs your outbound and pipeline.",
+      "layout": "single",
+      "bullets": [
+        "See inbound and outbound performance in one dashboard – organic clicks, rankings, email replies, meetings, and revenue.",
+        "Use SEO data directly in campaigns and workflows instead of copy-pasting from a separate tool.",
+        "Keep all growth work under the same security, RBAC, and audit logging as the rest of Ori-OS."
+      ]
+    },
+    {
+      "id": "projects-gsc",
+      "title": "One project for each domain you care about",
+      "layout": "columns",
+      "columns": [
+        {
+          "title": "SEO projects linked to real accounts",
+          "icon": "Building2",
+          "body": "Create SEO projects for your own domain or for key clients, and link them to existing companies in your CRM so context never gets lost.",
+          "points": [
+            "Track multiple domains or subdomains per organization.",
+            "Store crawl settings and Google Search Console connection details in one place.",
+            "Aggregate keywords, crawls, rankings, backlinks, competitors, and alerts per project."
+          ]
+        },
+        {
+          "title": "Google Search Console built-in",
+          "icon": "Search",
+          "body": "Connect Google Search Console via OAuth and let Ori-OS sync queries, pages, clicks, impressions, CTR, and positions on a daily schedule.",
+          "points": [
+            "Import keywords from real search data instead of guesswork.",
+            "Get traffic anomaly alerts when clicks drop beyond a chosen threshold.",
+            "Keep GSC tokens encrypted and access-controlled through existing security utilities."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "keywords",
+      "title": "Keyword research, tracking, and clustering",
+      "layout": "columns",
+      "columns": [
+        {
+          "title": "Discover and track the right topics",
+          "icon": "Target",
+          "body": "Move from ad-hoc keyword lists to a structured keyword strategy that the whole team can see.",
+          "points": [
+            "Discover keywords via Google Autocomplete, CSV import, or GSC sync.",
+            "Track daily positions and SERP features for target keywords.",
+            "Assign intent, difficulty, and target URLs so it's clear which page should rank for what."
+          ]
+        },
+        {
+          "title": "AI-powered clustering",
+          "icon": "Sparkles",
+          "body": "Group related keywords into topics so you plan content and campaigns around themes instead of single phrases.",
+          "points": [
+            "Use clustering to design content hubs and pillar pages.",
+            "Report on performance at the topic level, not just per keyword.",
+            "Share clusters with campaign and content teams as a common roadmap."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "technical-audits",
+      "title": "Technical SEO audits without leaving Ori-OS",
+      "layout": "columns",
+      "columns": [
+        {
+          "title": "Site crawls tuned for B2B",
+          "icon": "Globe",
+          "body": "Run site audits that respect robots.txt and focus on issues that actually affect performance and trust.",
+          "points": [
+            "Detect missing or duplicate titles and meta descriptions.",
+            "Find broken internal and external links, slow pages, and mobile issues.",
+            "Highlight weak heading structure, thin content, or missing schema where detectable."
+          ]
+        },
+        {
+          "title": "Prioritized, actionable issue lists",
+          "icon": "ListChecks",
+          "body": "See a clear breakdown of critical, warning, and informational issues instead of a wall of red icons.",
+          "points": [
+            "Filter by severity and issue type to decide what to fix first.",
+            "Create tasks from issues and assign them to the right owner.",
+            "Track progress as issues are acknowledged, fixed, or ignored over time."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "content-competitors",
+      "title": "Content analysis vs the real competition",
+      "layout": "columns",
+      "columns": [
+        {
+          "title": "Compare your pages to the top 10",
+          "icon": "BarChart3",
+          "body": "Analyze key URLs against the current search results for your target keyword.",
+          "points": [
+            "See how your word count, headings, images, and readability compare.",
+            "Identify likely content gaps and missing subtopics.",
+            "Use a simple 0-100 content score to summarize overall quality."
+          ]
+        },
+        {
+          "title": "Turn analysis into concrete recommendations",
+          "icon": "Lightbulb",
+          "body": "Get AI-powered recommendations you can hand to writers, SEOs, or clients.",
+          "points": [
+            "Generate prioritized to-do lists and content gap insights for each page.",
+            "Export or share analyses as part of your delivery to clients.",
+            "Link analyses to deals and campaigns so improvements are tied to revenue."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "backlinks-competitors",
+      "title": "Backlinks and competitor tracking",
+      "layout": "columns",
+      "columns": [
+        {
+          "title": "Keep an eye on your link profile",
+          "icon": "Link",
+          "body": "Monitor new and lost backlinks along with basic quality indicators.",
+          "points": [
+            "Track when important links are gained or lost.",
+            "Flag potentially toxic domains for review.",
+            "See which content assets attract the most links over time."
+          ]
+        },
+        {
+          "title": "Watch what competitors publish",
+          "icon": "Eye",
+          "body": "Follow competitor domains to detect new content and shifts in their strategy.",
+          "points": [
+            "See publishing patterns and content frequency.",
+            "Pull new competitor pages into your analysis workflows.",
+            "Trigger alerts or tasks when rivals publish on topics you care about."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "integrations",
+      "title": "SEO data powering campaigns, CRM, and workflows",
+      "layout": "columns",
+      "columns": [
+        {
+          "title": "Campaigns that match how people search",
+          "icon": "Mail",
+          "body": "Bring top-performing keywords straight into your email templates without leaving Ori-OS.",
+          "points": [
+            "See high-CTR keywords from GSC next to your campaign editor.",
+            "Insert keywords into subject lines or body copy with one click.",
+            "Use keyword notes as hints for messaging and positioning."
+          ]
+        },
+        {
+          "title": "Workflows that react to SEO events",
+          "icon": "Workflow",
+          "body": "Use SEO triggers and actions in Automation Studio so workflows respond automatically to ranking or technical changes.",
+          "points": [
+            "Create tasks and Slack alerts when a tracked keyword drops or a critical issue appears.",
+            "Kick off content briefs when competitors publish on key topics.",
+            "Block risky campaigns that drive traffic to broken or severely affected pages."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "analytics",
+      "title": "Unified analytics for inbound and outbound",
+      "layout": "columns",
+      "columns": [
+        {
+          "title": "One dashboard for all growth activity",
+          "icon": "TrendingUp",
+          "body": "Blend SEO metrics with your existing outbound and CRM data.",
+          "points": [
+            "Track emails, replies, meetings, and pipeline value alongside organic clicks and impressions.",
+            "Monitor average position and number of keywords in top positions.",
+            "See total leads from outbound and organic in one place."
+          ]
+        },
+        {
+          "title": "Content that actually drives revenue",
+          "icon": "DollarSign",
+          "body": "Tie content performance to deals and closed-won revenue instead of just traffic.",
+          "points": [
+            "Identify which blog posts and pages create the most pipeline.",
+            "Align sales, marketing, and RevOps around the same view of performance.",
+            "Justify SEO investments with revenue-linked KPIs, not vanity metrics."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Security, RBAC, and compliance you already trust",
+      "layout": "single",
+      "icon": "Shield",
+      "body": "SEO Studio reuses Ori-OS security foundations instead of introducing a separate shadow system.",
+      "points": [
+        "Encrypt GSC tokens and any sensitive credentials with the same utilities used elsewhere in Ori-OS.",
+        "Respect existing organization roles for SEO access (Owner, Admin, Manager, Operator, Viewer).",
+        "Log key SEO actions in audit trails and include SEO-related data in GDPR exports where relevant."
+      ]
+    },
+    {
+      "id": "getting-started",
+      "title": "Getting started with SEO Studio",
+      "layout": "steps",
+      "steps": [
+        {
+          "title": "Create your first SEO project",
+          "description": "Choose the domain you want to track, link it to an existing company if needed, and configure basics."
+        },
+        {
+          "title": "Add keywords and run a crawl",
+          "description": "Import keywords from GSC or CSV, then start a site audit to establish your technical baseline."
+        },
+        {
+          "title": "Plug SEO into your workflows",
+          "description": "Enable SEO widgets on dashboards, deals, and campaigns, then add one or two SEO-aware workflows."
+        }
+      ],
+      "cta": {
+        "label": "Talk to us about SEO Studio",
+        "href": "contact"
+      }
+    }
+  ]
+}

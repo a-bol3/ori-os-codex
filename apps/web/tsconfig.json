@@ -1,0 +1,41 @@
+{
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+        "lib": [
+            "dom",
+            "dom.iterable",
+            "esnext"
+        ],
+        "jsx": "preserve",
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "noEmit": true,
+        "allowJs": true,
+        "plugins": [
+            {
+                "name": "next"
+            }
+        ],
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "./src/*"
+            ],
+            "@ori-os/ui": [
+                "../../packages/ui/src"
+            ],
+            "@ori-os/ui/*": [
+                "../../packages/ui/src/*"
+            ]
+        }
+    },
+    "include": [
+        "next-env.d.ts",
+        "**/*.ts",
+        "**/*.tsx",
+        ".next/types/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}
