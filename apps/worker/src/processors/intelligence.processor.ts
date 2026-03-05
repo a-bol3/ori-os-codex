@@ -1,6 +1,6 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@ori-os/db/nestjs';
 import { HunterProvider } from '../providers/hunter.provider';
 import { ApolloProvider } from '../providers/apollo.provider';
 import { WebsiteScraperProvider } from '../providers/website-scraper.provider';

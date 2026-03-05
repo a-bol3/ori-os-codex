@@ -1,6 +1,6 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import { PrismaService } from '../prisma/prisma.service'; // Use local prisma service
+import { PrismaService } from '@ori-os/db/nestjs'; // Use local prisma service
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import robotsParser from 'robots-parser';

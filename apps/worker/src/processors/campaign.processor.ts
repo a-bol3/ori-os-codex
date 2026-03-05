@@ -16,7 +16,6 @@ export class CampaignProcessor extends WorkerHost {
     ) {
         super();
     }
-    Joe
 
     async process(job: Job<any, any, string>): Promise<any> {
         const { campaignId, recipientId, stepOrder } = job.data;

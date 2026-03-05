@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmailProcessor } from './email.processor';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@ori-os/db/nestjs';
 import { Resend } from 'resend';
 
 jest.mock('resend');

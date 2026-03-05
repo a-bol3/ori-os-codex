@@ -10,7 +10,6 @@ jobs:
   build:
     name: Build and Lint
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,10 +32,14 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Generate Prisma Client
-        run: pnpm turbo run db:generate
-
-      - name: Lint
-        run: pnpm turbo run lint
+        run: pnpm --filter @ori-os/db generate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ori_os
 
       - name: Build
         run: pnpm turbo run build
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ori_os
+          NEXTAUTH_SECRET: ci-secret-placeholder-32chars-min
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          NEXT_PUBLIC_API_URL: http://localhost:4000

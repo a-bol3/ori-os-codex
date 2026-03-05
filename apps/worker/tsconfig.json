@@ -1,1 +1,25 @@
-{"compilerOptions":{"module":"commonjs","target":"es2019","moduleResolution":"node","outDir":"./dist","rootDir":"./src","declaration":true,"emitDecoratorMetadata":true,"experimentalDecorators":true,"esModuleInterop":true,"allowSyntheticDefaultImports":true,"skipLibCheck":true,"strict":false,"sourceMap":true,"baseUrl":"./src"},"include":["src/**/*.ts"],"exclude":["node_modules","dist"]}
+{
+  "compilerOptions": {
+    "module": "Node16",
+    "target": "es2019",
+    "moduleResolution": "Node16",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@ori-os/db": ["../../packages/db/dist/index.js"],
+      "@ori-os/db/nestjs": ["../../packages/db/dist/nestjs.js"],
+      "@ori-os/core": ["../../packages/core/dist/index.js"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

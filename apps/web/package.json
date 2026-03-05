@@ -13,8 +13,8 @@
     },
     "dependencies": {
         "@auth/prisma-adapter": "^2.11.1",
-        "@ori-os/db": "*",
-        "@ori-os/ui": "*",
+        "@ori-os/db": "workspace:*",
+        "@ori-os/ui": "workspace:*",
         "@sentry/nextjs": "^10.38.0",
         "@tanstack/react-query": "^5.17.19",
         "date-fns": "^4.1.0",
