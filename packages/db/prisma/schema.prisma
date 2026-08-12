@@ -285,7 +285,7 @@ model Company {
   deals          Deal[]
   activities     Activity[]
   tasks          Task[]
-  segments       SegmentMember[] // Polymorphic simulation via separate relation or same table? Prisma doesn't support polymorphic. 
+  segments       SegmentMember[] // Polymorphic simulation via separate relation or same table? Prisma doesn't support polymorphic.
   // We will model SegmentMember to point optional to Company or Contact.
   companyScores  CompanyScore[]
   enrichmentJobs EnrichmentJob[]
@@ -589,6 +589,8 @@ model CampaignRecipient {
   status        RecipientStatus @default(PENDING)
   lastStepOrder Int             @default(0)
   lastEventAt   DateTime?
+  nextStepOrder Int?
+  nextStepAt    DateTime?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
@@ -716,7 +718,7 @@ model EnrichmentJob {
   updatedAt      DateTime             @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  // Polymorphic-ish relations aren't native, so we might just store targetId 
+  // Polymorphic-ish relations aren't native, so we might just store targetId
   // or use optional relations if strictly needed for FK constraints.
   // For strictness let's link to Company if targetType=COMPANY
   company      Company?     @relation(fields: [targetId], references: [id], map: "Enrichment_Company_fkey")

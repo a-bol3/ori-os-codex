@@ -1,7 +1,6 @@
 
 'use client';
 
-import React, { useState } from 'react';
 import {
     Button,
     Card,
@@ -25,42 +24,97 @@ import { Plus, Mail, Play, Pause, BarChart3, Users, MoreVertical, Edit, Copy, Tr
 import Link from 'next/link';
 import { useEngagement } from '@/hooks/use-engagement';
 import { useToast } from '@ori-os/ui';
+import { apiFetch, getErrorMessage } from '@/lib/api-client';
+
+type CampaignAction = 'launch' | 'pause' | 'resume';
+type CampaignStatus = 'DRAFT' | 'SCHEDULED' | 'RUNNING' | 'PAUSED' | 'COMPLETED' | 'ARCHIVED';
 
 export default function EngagementDashboard() {
     const { campaigns, isLoading, refresh } = useEngagement();
     const { toast } = useToast();
 
     const activeCampaigns = campaigns.filter(c => c.status === 'RUNNING');
+    const draftCampaigns = campaigns.filter(c => c.status === 'DRAFT');
     const totalRecipients = campaigns.reduce((sum, c) => sum + (c.recipients || 0), 0);
     const totalReplies = campaigns.reduce((sum, c) => sum + (c.replies || 0), 0);
 
-    const toggleStatus = async (id: string, currentStatus: string) => {
-        const newStatus = currentStatus === 'RUNNING' ? 'PAUSED' : 'RUNNING';
+    const getPrimaryAction = (status: CampaignStatus): CampaignAction | null => {
+        if (status === 'RUNNING') return 'pause';
+        if (status === 'PAUSED') return 'resume';
+        if (status === 'DRAFT' || status === 'SCHEDULED') return 'launch';
+        return null;
+    };
+
+    const getStatusBadgeVariant = (status: CampaignStatus) => {
+        if (status === 'RUNNING') return 'default';
+        if (status === 'PAUSED') return 'secondary';
+        if (status === 'DRAFT') return 'outline';
+        return 'secondary';
+    };
+
+    const getCampaignReadinessLabel = (campaign: { recipients: number; status: CampaignStatus }) => {
+        if (campaign.recipients === 0) return 'Needs audience';
+        if (campaign.status === 'DRAFT') return 'Ready to review';
+        if (campaign.status === 'SCHEDULED') return 'Scheduled to launch';
+        if (campaign.status === 'PAUSED') return 'Paused manually';
+        if (campaign.status === 'RUNNING') return 'Delivering now';
+        return 'Completed';
+    };
+
+    const toggleStatus = async (id: string, currentStatus: CampaignStatus) => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/engagement/campaigns/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus }),
+            const action = getPrimaryAction(currentStatus);
+
+            if (!action) {
+                return;
+            }
+
+            if (action === 'launch') {
+                await apiFetch(`/engagement/campaigns/${id}/launch`, {
+                    method: 'POST',
+                });
+            } else {
+                await apiFetch(`/engagement/campaigns/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: action === 'pause' ? 'PAUSED' : 'RUNNING',
+                    }),
+                });
+            }
+
+            toast({
+                title:
+                    action === 'launch'
+                        ? 'Campaign launched'
+                        : action === 'resume'
+                            ? 'Campaign resumed'
+                            : 'Campaign paused',
             });
-            if (!res.ok) throw new Error('Failed to update status');
-            toast({ title: `Campaign ${newStatus === 'RUNNING' ? 'resumed' : 'paused'}` });
             refresh();
-        } catch {
-            toast({ title: 'Status updated (Simulated)', description: `Campaign is now ${newStatus}.` });
-            refresh();
+        } catch (error) {
+            toast({
+                title: 'Could not update campaign',
+                description: getErrorMessage(error, 'Could not update the campaign status.'),
+                variant: 'destructive',
+            });
         }
     };
 
     const deleteCampaign = async (id: string) => {
         if (!confirm('Delete this campaign?')) return;
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/engagement/campaigns/${id}`, { method: 'DELETE' });
-            if (!res.ok) throw new Error('Failed to delete');
+            await apiFetch(`/engagement/campaign?id=${encodeURIComponent(id)}`, {
+                method: 'DELETE',
+            });
             toast({ title: 'Campaign deleted' });
             refresh();
-        } catch {
-            toast({ title: 'Deleted (Simulated)' });
-            refresh();
+        } catch (error) {
+            toast({
+                title: 'Could not delete campaign',
+                description: getErrorMessage(error, 'Could not delete the campaign.'),
+                variant: 'destructive',
+            });
         }
     };
 
@@ -142,9 +196,14 @@ export default function EngagementDashboard() {
                                     <CardHeader className="pb-4">
                                         <div className="flex justify-between items-start">
                                             <div className="space-y-1">
-                                                <CardTitle className="text-lg flex items-center">
-                                                    <Mail className="mr-2 h-4 w-4 text-primary" />
-                                                    {campaign.name}
+                                                <CardTitle className="text-lg">
+                                                    <Link
+                                                        href={`/dashboard/engagement/campaigns/${campaign.id}`}
+                                                        className="flex items-center transition-colors hover:text-primary"
+                                                    >
+                                                        <Mail className="mr-2 h-4 w-4 text-primary" />
+                                                        {campaign.name}
+                                                    </Link>
                                                 </CardTitle>
                                                 <CardDescription>
                                                     {campaign.createdAt ? new Date(campaign.createdAt).toLocaleDateString() : 'Draft'}
@@ -166,8 +225,10 @@ export default function EngagementDashboard() {
                                                                 <Eye className="mr-2 h-4 w-4" /> View Details
                                                             </Link>
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem>
-                                                            <Edit className="mr-2 h-4 w-4" /> Edit Campaign
+                                                        <DropdownMenuItem asChild>
+                                                            <Link href={`/dashboard/engagement/campaigns/${campaign.id}/edit`} className="flex items-center">
+                                                                <Edit className="mr-2 h-4 w-4" /> Edit Campaign
+                                                            </Link>
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem>
                                                             <Copy className="mr-2 h-4 w-4" /> Duplicate
@@ -200,18 +261,38 @@ export default function EngagementDashboard() {
                                                 <p className="text-sm font-semibold">{campaign.openRate}</p>
                                             </div>
                                         </div>
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            <Badge variant="outline">{getCampaignReadinessLabel(campaign)}</Badge>
+                                            {campaign.objective ? (
+                                                <span className="text-xs text-muted-foreground">
+                                                    Objective: {campaign.objective}
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground">
+                                                    Add an objective to make reporting clearer later.
+                                                </span>
+                                            )}
+                                        </div>
                                     </CardContent>
                                     <CardFooter className="bg-muted/30 pt-3 border-t flex justify-between">
                                         <div className="flex space-x-2">
-                                            <Button variant="ghost" size="sm" className="h-8 text-xs font-medium">
-                                                <BarChart3 className="mr-2 h-3 w-3" /> Analytics
+                                            <Button variant="ghost" size="sm" className="h-8 text-xs font-medium" asChild>
+                                                <Link href={`/dashboard/engagement/campaigns/${campaign.id}?tab=analytics`}>
+                                                    <BarChart3 className="mr-2 h-3 w-3" /> Analytics
+                                                </Link>
                                             </Button>
-                                            <Button variant="ghost" size="sm" className="h-8 text-xs font-medium">
-                                                <Users className="mr-2 h-3 w-3" /> People
+                                            <Button variant="ghost" size="sm" className="h-8 text-xs font-medium" asChild>
+                                                <Link href={`/dashboard/engagement/campaigns/${campaign.id}?tab=people`}>
+                                                    <Users className="mr-2 h-3 w-3" /> People
+                                                </Link>
                                             </Button>
                                         </div>
                                         <div className="flex space-x-2">
-                                            {campaign.status === 'PAUSED' ? (
+                                            {getPrimaryAction(campaign.status) === 'launch' ? (
+                                                <Link href={`/dashboard/engagement/campaigns/${campaign.id}/schedule`}>
+                                                    <Button size="sm" className="h-8 text-xs">Edit & Schedule</Button>
+                                                </Link>
+                                            ) : campaign.status === 'PAUSED' ? (
                                                 <Button size="sm" className="h-8 text-xs" onClick={() => toggleStatus(campaign.id, campaign.status)}>
                                                     <Play className="mr-2 h-3 w-3" /> Resume
                                                 </Button>
@@ -219,10 +300,11 @@ export default function EngagementDashboard() {
                                                 <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => toggleStatus(campaign.id, campaign.status)}>
                                                     <Pause className="mr-2 h-3 w-3" /> Pause
                                                 </Button>
-                                            ) : (
-                                                <Link href={`/dashboard/engagement/campaigns/${campaign.id}/schedule`}>
-                                                    <Button size="sm" className="h-8 text-xs">Edit & Schedule</Button>
-                                                </Link>
+                                            ) : null}
+                                            {(campaign.status === 'DRAFT' || campaign.status === 'SCHEDULED') && (
+                                                <Button size="sm" className="h-8 text-xs" onClick={() => toggleStatus(campaign.id, campaign.status)}>
+                                                    <Play className="mr-2 h-3 w-3" /> Launch
+                                                </Button>
                                             )}
                                         </div>
                                     </CardFooter>
@@ -234,14 +316,20 @@ export default function EngagementDashboard() {
                 <TabsContent value="active" className="space-y-4">
                     <div className="grid gap-4">
                         {activeCampaigns.length === 0 ? (
-                            <Card><CardContent className="py-10 text-center text-muted-foreground">No active campaigns.</CardContent></Card>
+                            <Card>
+                                <CardContent className="py-10 text-center text-muted-foreground">
+                                    <p className="text-base font-medium text-foreground">No active campaigns right now</p>
+                                    <p className="mt-2 text-sm">Launch a draft or resume a paused sequence when you are ready to send.</p>
+                                </CardContent>
+                            </Card>
                         ) : activeCampaigns.map((campaign) => (
                             <Card key={campaign.id}>
                                 <CardHeader>
                                     <div className="flex justify-between items-center">
                                         <CardTitle className="text-base">{campaign.name}</CardTitle>
-                                        <Badge>RUNNING</Badge>
+                                        <Badge variant={getStatusBadgeVariant(campaign.status)}>{campaign.status}</Badge>
                                     </div>
+                                    <CardDescription>{getCampaignReadinessLabel(campaign)}</CardDescription>
                                 </CardHeader>
                             </Card>
                         ))}
@@ -249,15 +337,21 @@ export default function EngagementDashboard() {
                 </TabsContent>
                 <TabsContent value="drafts" className="space-y-4">
                     <div className="grid gap-4">
-                        {campaigns.filter(c => c.status === 'DRAFT').length === 0 ? (
-                            <Card><CardContent className="py-10 text-center text-muted-foreground">No draft campaigns.</CardContent></Card>
-                        ) : campaigns.filter(c => c.status === 'DRAFT').map((campaign) => (
+                        {draftCampaigns.length === 0 ? (
+                            <Card>
+                                <CardContent className="py-10 text-center text-muted-foreground">
+                                    <p className="text-base font-medium text-foreground">No draft campaigns</p>
+                                    <p className="mt-2 text-sm">When we create new outreach flows, unfinished work will stay here until it is ready to launch.</p>
+                                </CardContent>
+                            </Card>
+                        ) : draftCampaigns.map((campaign) => (
                             <Card key={campaign.id}>
                                 <CardHeader>
                                     <div className="flex justify-between items-center">
                                         <CardTitle className="text-base">{campaign.name}</CardTitle>
-                                        <Badge variant="secondary">DRAFT</Badge>
+                                        <Badge variant={getStatusBadgeVariant(campaign.status)}>{campaign.status}</Badge>
                                     </div>
+                                    <CardDescription>{getCampaignReadinessLabel(campaign)}</CardDescription>
                                 </CardHeader>
                             </Card>
                         ))}

@@ -1,63 +1,86 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { fetchWorkspaceJson, getErrorMessage } from "@/lib/api-client"
 
 export interface Contact {
     id: string
     firstName: string
     lastName: string
-    name?: string // Virtual property for UI
+    name?: string
     email: string
     phone?: string
     jobTitle?: string
-    company?: string // Virtual property for UI
+    companyId?: string
+    company?: string
     location?: string
     status: "Active" | "Inactive"
 }
 
-const MOCK_CONTACTS: Contact[] = [
-    { id: 'm1', firstName: 'Sarah', lastName: 'Chen', name: 'Sarah Chen', email: 'sarah@techflow.io', jobTitle: 'VP of Engineering', company: 'TechFlow', location: 'San Francisco, US', status: 'Active' },
-    { id: 'm2', firstName: 'Marcus', lastName: 'Rivera', name: 'Marcus Rivera', email: 'm.rivera@acmecorp.com', jobTitle: 'CTO', company: 'Acme Corp', location: 'Austin, US', status: 'Active' },
-    { id: 'm3', firstName: 'Elena', lastName: 'Volkov', name: 'Elena Volkov', email: 'elena@datavault.eu', jobTitle: 'Head of Data', company: 'DataVault', location: 'Berlin, DE', status: 'Active' },
-    { id: 'm4', firstName: 'James', lastName: 'Okonkwo', name: 'James Okonkwo', email: 'james@cloudsync.io', jobTitle: 'CEO', company: 'CloudSync', location: 'London, UK', status: 'Active' },
-    { id: 'm5', firstName: 'Priya', lastName: 'Sharma', name: 'Priya Sharma', email: 'priya@nexusai.com', jobTitle: 'Product Director', company: 'NexusAI', location: 'Bengaluru, IN', status: 'Inactive' },
-]
+interface ContactApiItem {
+    id: string
+    firstName?: string | null
+    lastName?: string | null
+    email: string
+    phone?: string | null
+    jobTitle?: string | null
+    country?: string | null
+    optOut?: boolean | null
+    company?: {
+        id?: string | null
+        name?: string | null
+    } | null
+    organization?: {
+        name?: string | null
+    } | null
+}
+
+interface ContactListResponse {
+    items: ContactApiItem[]
+    total: number
+    limit: number
+    offset: number
+    hasMore: boolean
+}
 
 export function useContacts() {
     const [contacts, setContacts] = useState<Contact[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    const fetchContacts = async () => {
+    const fetchContacts = useCallback(async () => {
         setIsLoading(true)
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/crm/contacts`)
-            if (!response.ok) throw new Error("Failed to fetch contacts")
-            const data = await response.json()
+            const payload = await fetchWorkspaceJson<ContactApiItem[] | ContactListResponse>("/api/workspace/crm/contacts")
+            const data = Array.isArray(payload) ? payload : payload.items
 
-            const normalizedData = data.map((c: any) => ({
-                ...c,
-                name: `${c.firstName || ''} ${c.lastName || ''}`.trim() || c.email,
-                company: c.company?.name || c.organization?.name || '—',
-                location: c.country || '—',
-                status: c.optOut ? 'Inactive' : 'Active',
+            const normalizedData: Contact[] = data.map((contact) => ({
+                id: contact.id,
+                firstName: contact.firstName ?? '',
+                lastName: contact.lastName ?? '',
+                name: `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || contact.email,
+                email: contact.email,
+                phone: contact.phone ?? undefined,
+                jobTitle: contact.jobTitle ?? undefined,
+                companyId: contact.company?.id ?? undefined,
+                company: contact.company?.name || contact.organization?.name || '-',
+                location: contact.country || '-',
+                status: contact.optOut ? 'Inactive' : 'Active',
             }))
 
             setContacts(normalizedData)
             setError(null)
         } catch (err) {
-            console.warn('[Contacts] API unavailable, using demo data')
-            setContacts(MOCK_CONTACTS)
-            setError(null)
+            setContacts([])
+            setError(getErrorMessage(err, "Failed to fetch contacts"))
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [])
 
     useEffect(() => {
         fetchContacts()
-    }, [])
+    }, [fetchContacts])
 
     return { contacts, isLoading, error, refresh: fetchContacts }
 }
-

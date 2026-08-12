@@ -2,13 +2,12 @@ import {
   Injectable,
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
-} from '@nestjs/common';
+  ForbiddenException, Inject } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 
 @Injectable()
 export class SubscriptionGuard implements CanActivate {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();

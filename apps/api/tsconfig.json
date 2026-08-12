@@ -14,6 +14,9 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
+      "@ori-os/core": [
+        "../../packages/core/src/index.ts"
+      ],
       "@ori-os/db": [
         "../../packages/db/src/index.ts"
       ],

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {  Injectable, Logger, Inject } from '@nestjs/common';
 import { ConnectorsService } from '../connectors.service';
 import {
   EmailProvider,
@@ -11,7 +11,7 @@ import { EmailProviderFactory } from '../factories/email-provider.factory';
 export class EmailFallbackStrategy {
   private readonly logger = new Logger(EmailFallbackStrategy.name);
 
-  constructor(private readonly connectorsService: ConnectorsService) {}
+  constructor(@Inject(ConnectorsService) private readonly connectorsService: ConnectorsService) {}
 
   async sendWithFallback(
     organizationId: string,
@@ -22,7 +22,7 @@ export class EmailFallbackStrategy {
 
     // Filter for email types (this could be improved by adding a category to the Connector model)
     const emailConnectors = connectors.filter((c) =>
-      ['RESEND', 'SENDGRID', 'SES', 'MAILGUN'].includes(c.type.toUpperCase()),
+      ['RESEND', 'SENDGRID'].includes(c.type.toUpperCase()),
     );
 
     if (emailConnectors.length === 0) {
@@ -44,7 +44,7 @@ export class EmailFallbackStrategy {
         );
 
         // Get decrypted config
-        const fullConnector = await this.connectorsService.findOne(
+        const fullConnector = await this.connectorsService.getForProvider(
           connector.id,
           organizationId,
         );

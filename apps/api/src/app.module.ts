@@ -1,4 +1,5 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
 import { AuthModule } from './auth/auth.module';
@@ -9,7 +10,7 @@ import { AIModule } from './ai/ai.module';
 import { DeliverabilityModule } from './deliverability/deliverability.module';
 import { BillingModule } from './billing/billing.module';
 import { UsageLimitMiddleware } from './billing/usage-limit.middleware';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { CommonModule } from './common/common.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -19,6 +20,8 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { IntelligenceModule } from './intelligence/intelligence.module';
 import { AutomationModule } from './automation/automation.module';
 import { DealsController } from './deals.controller';
+import { CrmPipelinesController } from './crm-pipelines.controller';
+import { CrmTasksController } from './crm-tasks.controller';
 import { NotificationsModule } from './notifications.module';
 import { AiService } from './ai.service';
 import { EmailService } from './email.service';
@@ -28,12 +31,24 @@ import { EngagementService } from './engagement.service';
 import { CampaignLaunchService } from './engagement/campaign-launch.service';
 import { TemplatesController } from './templates.controller';
 import { ActivitiesController } from './activities.controller';
-import { TestBenchController } from './test-bench.controller';
+import {
+  isTestBenchEnabled,
+  TestBenchController,
+} from './test-bench.controller';
 import { UnsubscribeController } from './unsubscribe.controller';
 import { SeoModule } from './seo/seo.module';
 import { BacklinksController } from './backlinks.controller';
 import { NotificationsController } from './notifications.controller';
 import { DashboardController } from './dashboard.controller';
+import { AuditLogService } from './common/audit-log.service';
+import { ComplianceModule } from './compliance/compliance.module';
+import { TrackingController } from './tracking.controller';
+
+// Do not mount test-bench routes in production (or when the opt-in flag is
+// absent). The controller also checks this at runtime as defense in depth.
+const testBenchControllers = isTestBenchEnabled()
+  ? [TestBenchController]
+  : [];
 
 @Module({
   imports: [
@@ -60,6 +75,7 @@ import { DashboardController } from './dashboard.controller';
       },
     ]),
     CommonModule,
+    ComplianceModule,
     ConnectorsModule,
     MediaModule,
     AIModule,
@@ -77,22 +93,29 @@ import { DashboardController } from './dashboard.controller';
     ContactsController,
     CompaniesController,
     DealsController,
+    CrmPipelinesController,
+    CrmTasksController,
     CampaignsController,
     InboxController,
     TemplatesController,
     ActivitiesController,
-    TestBenchController,
+    ...testBenchControllers,
     UnsubscribeController,
     BacklinksController,
     NotificationsController,
     DashboardController,
+    TrackingController,
   ],
   providers: [
+    // ThrottlerModule only configures the policy; this global guard enforces
+    // it for every API route unless a route explicitly opts out.
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     AppService,
     AiService,
     EmailService,
     EngagementService,
     CampaignLaunchService,
+    AuditLogService,
     UsageLimitMiddleware,
   ],
 })

@@ -28,7 +28,7 @@ async function bootstrap() {
 
         // 3. Find one and decrypt
         console.log('3. Finding one and verifying decryption...');
-        const found = await connectorsService.findOne(connector.id, orgId);
+        const found = await connectorsService.getForProvider(connector.id, orgId);
         if (found.config.apiKey === 'SG.test-key-123') {
             console.log('✅ Decryption successful: API key matches');
         } else {

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Button, Input, Label, Checkbox, Separator, useToast } from '@ori-os/ui';
 import { Mail, Lock, Eye, EyeOff, User, Building2, ArrowRight } from 'lucide-react';
 import { registerAction } from '@/lib/actions/auth';
@@ -11,6 +13,7 @@ export default function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -26,7 +29,30 @@ export default function RegisterPage() {
                 variant: "destructive",
             });
             setIsLoading(false);
+            return;
         }
+
+        const email = String(formData.get('email') ?? '').trim().toLowerCase();
+        const password = String(formData.get('password') ?? '');
+
+        const loginResult = await signIn('credentials', {
+            email,
+            password,
+            redirect: false,
+        });
+
+        if (loginResult?.error) {
+            toast({
+                title: "Account created",
+                description: "Your account is ready. Please sign in.",
+            });
+            router.push('/login');
+            router.refresh();
+            return;
+        }
+
+        router.push('/dashboard');
+        router.refresh();
     };
 
     return (
@@ -99,6 +125,7 @@ export default function RegisterPage() {
                         <Label htmlFor="firstName">First name</Label>
                         <Input
                             id="firstName"
+                            name="firstName"
                             type="text"
                             placeholder="John"
                             icon={<User className="h-4 w-4" />}
@@ -109,6 +136,7 @@ export default function RegisterPage() {
                         <Label htmlFor="lastName">Last name</Label>
                         <Input
                             id="lastName"
+                            name="lastName"
                             type="text"
                             placeholder="Doe"
                             required
@@ -120,6 +148,7 @@ export default function RegisterPage() {
                     <Label htmlFor="company">Company name</Label>
                     <Input
                         id="company"
+                        name="company"
                         type="text"
                         placeholder="Acme Inc"
                         icon={<Building2 className="h-4 w-4" />}
@@ -130,6 +159,7 @@ export default function RegisterPage() {
                     <Label htmlFor="email">Work email</Label>
                     <Input
                         id="email"
+                        name="email"
                         type="email"
                         placeholder="john@company.com"
                         icon={<Mail className="h-4 w-4" />}
@@ -142,6 +172,7 @@ export default function RegisterPage() {
                     <div className="relative">
                         <Input
                             id="password"
+                            name="password"
                             type={showPassword ? 'text' : 'password'}
                             placeholder="Create a strong password"
                             icon={<Lock className="h-4 w-4" />}
@@ -165,7 +196,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="flex items-start gap-2">
-                    <Checkbox id="terms" className="mt-0.5" />
+                    <Checkbox id="terms" name="terms" className="mt-0.5" required />
                     <Label htmlFor="terms" className="text-sm font-normal leading-snug">
                         I agree to the{' '}
                         <Link href="/terms" className="text-tangerine hover:underline">

@@ -2,12 +2,14 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { PrismaModule } from '@ori-os/db/nestjs';
 import { EmailProcessor } from './processors/email.processor';
+import { CampaignProcessor } from './processors/campaign.processor';
 import { SeoProcessor } from './processors/seo.processor';
 import { IntelligenceProcessor } from './processors/intelligence.processor';
 import { WorkflowProcessor } from './processors/workflow.processor';
 import { HunterProvider } from './providers/hunter.provider';
 import { ApolloProvider } from './providers/apollo.provider';
 import { WebsiteScraperProvider } from './providers/website-scraper.provider';
+import { CampaignRecoveryService } from './services/campaign-recovery.service';
 
 const redisConnection = {
     host: process.env.REDIS_HOST ?? 'localhost',
@@ -19,6 +21,7 @@ const redisConnection = {
         PrismaModule,
         BullModule.forRoot({ connection: redisConnection }),
         BullModule.registerQueue(
+            { name: 'campaign-queue', connection: redisConnection },
             { name: 'email-send', connection: redisConnection },
             { name: 'workflow-run', connection: redisConnection },
             { name: 'seo-crawl', connection: redisConnection },
@@ -27,9 +30,11 @@ const redisConnection = {
     ],
     providers: [
         EmailProcessor,
+        CampaignProcessor,
         SeoProcessor,
         IntelligenceProcessor,
         WorkflowProcessor,
+        CampaignRecoveryService,
         HunterProvider,
         ApolloProvider,
         WebsiteScraperProvider,

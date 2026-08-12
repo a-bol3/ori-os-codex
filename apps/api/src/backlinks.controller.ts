@@ -6,21 +6,42 @@ import {
   Param,
   Delete,
   UseGuards,
-  Request,
-} from '@nestjs/common';
+  Request, Inject } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import {
+  AuthenticatedRequest,
+  requireOrganizationId,
+} from './common/request-context';
+
+type LegacyBacklinkModel = {
+  findMany: (args: unknown) => Promise<unknown[]>;
+  create: (args: unknown) => Promise<unknown>;
+  findFirst: (args: unknown) => Promise<{ id: string } | null>;
+  delete: (args: unknown) => Promise<unknown>;
+};
+
+type LegacyBacklinkBody = {
+  sourceUrl: string;
+  targetUrl: string;
+  anchorText?: string;
+};
 
 @Controller('seo/backlinks')
 @UseGuards(JwtAuthGuard)
 export class BacklinksController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+
+  private get backlinkModel(): LegacyBacklinkModel {
+    return (this.prisma as unknown as { backlink: LegacyBacklinkModel })
+      .backlink;
+  }
 
   @Get()
-  async findAll(@Request() req) {
-    const orgId = req.user.organizationId || 'default-org-id';
+  async findAll(@Request() req: AuthenticatedRequest) {
+    const orgId = requireOrganizationId(req);
     try {
-      return await (this.prisma as any).backlink.findMany({
+      return await this.backlinkModel.findMany({
         where: { organizationId: orgId },
         orderBy: { firstSeen: 'desc' },
         take: 100,
@@ -32,11 +53,14 @@ export class BacklinksController {
   }
 
   @Post()
-  async create(@Request() req, @Body() data: any) {
-    const orgId = req.user.organizationId || 'default-org-id';
+  async create(
+    @Request() req: AuthenticatedRequest,
+    @Body() data: LegacyBacklinkBody,
+  ) {
+    const orgId = requireOrganizationId(req);
     const { sourceUrl, targetUrl, anchorText } = data;
     try {
-      return await (this.prisma as any).backlink.create({
+      return await this.backlinkModel.create({
         data: {
           organizationId: orgId,
           sourceUrl,
@@ -59,14 +83,14 @@ export class BacklinksController {
   }
 
   @Delete(':id')
-  async remove(@Request() req, @Param('id') id: string) {
-    const orgId = req.user.organizationId || 'default-org-id';
+  async remove(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+    const orgId = requireOrganizationId(req);
     try {
-      const existing = await (this.prisma as any).backlink.findFirst({
+      const existing = await this.backlinkModel.findFirst({
         where: { id, organizationId: orgId },
       });
       if (!existing) return { error: 'Not found' };
-      return await (this.prisma as any).backlink.delete({ where: { id } });
+      return await this.backlinkModel.delete({ where: { id } });
     } catch {
       return { success: true };
     }

@@ -1,13 +1,34 @@
-Dockerfile
-.dockerignore
+# Dependencies
 node_modules
-npm-debug.log
-README.md
-.next
+**/node_modules
+
+# Build outputs
+**/.next
+**/dist
+**/build
+**/.turbo
+**/.cache
+
+# Logs
+**/*.log
+
+# Env / secrets (never copy into image)
+.env
+.env.*
+!.env.example
+!.env.prod.example
+
+# VCS
 .git
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-test
-*.log
-local-*
+.gitignore
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Backups (must never go to image)
+backup_axion
+ori-os
+ori-os-chatzai
+
+# npm is the canonical package manager for production images.

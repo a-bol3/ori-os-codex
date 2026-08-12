@@ -1,13 +1,14 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {  Injectable, NotFoundException, Logger, Inject } from '@nestjs/common';
 import { ConnectorsService } from '../connectors/connectors.service';
 import { AIProviderFactory } from '../connectors/factories/ai-provider.factory';
 import { GenerateOptions } from '../connectors/interfaces/provider.interface';
+import { prepareExternalAiInput } from '@ori-os/core';
 
 @Injectable()
 export class AIService {
   private readonly logger = new Logger(AIService.name);
 
-  constructor(private readonly connectorsService: ConnectorsService) {}
+  constructor(@Inject(ConnectorsService) private readonly connectorsService: ConnectorsService) {}
 
   async generateText(
     organizationId: string,
@@ -21,7 +22,11 @@ export class AIService {
     const provider = AIProviderFactory.create(connector.type, connector.config);
 
     this.logger.log(`Generating text via ${connector.type}`);
-    return await provider.generateText(prompt, options);
+    const safePrompt = prepareExternalAiInput(prompt);
+    if (safePrompt !== prompt) {
+      this.logger.warn('PII was redacted before sending text to an external AI provider');
+    }
+    return await provider.generateText(safePrompt, options);
   }
 
   async analyzeSentiment(
@@ -40,12 +45,16 @@ export class AIService {
       );
     }
 
-    return await provider.analyzeSentiment(text);
+    const safeText = prepareExternalAiInput(text);
+    if (safeText !== text) {
+      this.logger.warn('PII was redacted before sending sentiment text to an external AI provider');
+    }
+    return await provider.analyzeSentiment(safeText);
   }
 
   private async getConnector(organizationId: string, connectorId?: string) {
     if (connectorId) {
-      return await this.connectorsService.findOne(connectorId, organizationId);
+      return await this.connectorsService.getForProvider(connectorId, organizationId);
     }
 
     // Default to first AI connector if not specified
@@ -61,6 +70,6 @@ export class AIService {
     }
 
     // Need full connector with decrypted config
-    return await this.connectorsService.findOne(aiConnector.id, organizationId);
+    return await this.connectorsService.getForProvider(aiConnector.id, organizationId);
   }
 }

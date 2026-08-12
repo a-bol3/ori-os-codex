@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import {  Injectable, Inject } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '@ori-os/db/nestjs';
@@ -6,7 +6,7 @@ import { PrismaService } from '@ori-os/db/nestjs';
 @Injectable()
 export class WorkflowTriggerService {
     constructor(
-        private prisma: PrismaService,
+        @Inject(PrismaService) private prisma: PrismaService,
         @InjectQueue('workflow-run') private workflowQueue: Queue,
     ) { }
 

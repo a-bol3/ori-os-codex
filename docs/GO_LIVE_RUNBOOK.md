@@ -1,5 +1,7 @@
 # Go-Live Runbook
 
+> **Estado: histórico / no canónico para el VPS actual.** Este documento conserva una checklist de lanzamiento, pero no autoriza Caddy ni `./scripts/deploy-prod.sh`. Para el flujo vigente usa [RELEASE_PROCESS.md](./RELEASE_PROCESS.md) y [HOSTINGER_ORIOS_DEPLOY.md](./HOSTINGER_ORIOS_DEPLOY.md).
+
 This document provides a step-by-step checklist for the production launch of Ori-OS.
 
 ## T-Minus 24 Hours
@@ -34,6 +36,6 @@ git push origin v1.0.0
 - [ ] **Internal Announcement**: Notify the team that Ori-OS is live!
 
 ---
-**Launch Lead**: __________________  
-**Start Time**: __________________  
+**Launch Lead**: __________________
+**Start Time**: __________________
 **End Time**: __________________

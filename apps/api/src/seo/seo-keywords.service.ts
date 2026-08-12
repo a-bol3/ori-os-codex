@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {  Injectable, Logger, Inject } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 import { GoogleAutocompleteProvider } from './providers/google-autocomplete.provider';
 import { AiService } from '../ai.service';
@@ -8,9 +8,9 @@ export class SeoKeywordsService {
   private readonly logger = new Logger(SeoKeywordsService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly autocomplete: GoogleAutocompleteProvider,
-    private readonly ai: AiService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(GoogleAutocompleteProvider) private readonly autocomplete: GoogleAutocompleteProvider,
+    @Inject(AiService) private readonly ai: AiService,
   ) {}
 
   async findAll(projectId: string, organizationId: string) {
@@ -127,7 +127,7 @@ export class SeoKeywordsService {
             Act as an SEO expert. Group the following keywords into semantic clusters.
             For each cluster, provide a descriptive name, a primary intent (Informational, Navigational, Transactional, Commercial), and the list of keywords.
             Keywords: ${keywords.join(', ')}
-            
+
             Return a JSON array of clusters:
             [
               {

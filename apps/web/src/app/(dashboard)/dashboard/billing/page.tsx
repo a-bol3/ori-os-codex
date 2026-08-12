@@ -5,9 +5,22 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Check, CreditCard, Zap, ArrowRight, ShieldCheck, TrendingUp } from 'lucide-react';
 
+interface BillingStatus {
+    isPro?: boolean;
+    currentPeriodEnd?: string;
+}
+
+interface BillingUsage {
+    isPro?: boolean;
+    emailsUsed: number;
+    emailLimit: number;
+    emailsRemaining: number;
+    periodEnd: string;
+}
+
 export default function BillingPage() {
-    const [status, setStatus] = useState<any>(null);
-    const [usage, setUsage] = useState<any>(null);
+    const [status, setStatus] = useState<BillingStatus | null>(null);
+    const [usage, setUsage] = useState<BillingUsage | null>(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
@@ -32,12 +45,12 @@ export default function BillingPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ returnUrl: window.location.href }),
             });
-            const data = await res.json();
+            const data: { url?: string } = await res.json();
             if (data.url) {
                 window.location.href = data.url;
             }
-        } catch (err) {
-            console.error('Checkout error:', err);
+        } catch (error) {
+            console.error('Checkout error:', error);
         } finally {
             setSubmitting(false);
         }
@@ -52,6 +65,9 @@ export default function BillingPage() {
     }
 
     const isPro = status?.isPro;
+    const nextBillingDate = status?.currentPeriodEnd
+        ? new Date(status.currentPeriodEnd).toLocaleDateString()
+        : null;
 
     return (
         <div className="max-w-6xl mx-auto py-10 px-6">
@@ -74,7 +90,9 @@ export default function BillingPage() {
                         </div>
                         <div>
                             <h3 className="text-xl font-semibold">Active Subscription: <span className="text-primary">PRO Plan</span></h3>
-                            <p className="text-sm text-muted-foreground">Your next billing date is {new Date(status.currentPeriodEnd).toLocaleDateString()}</p>
+                            <p className="text-sm text-muted-foreground">
+                                Your next billing date is {nextBillingDate ?? 'not available yet'}
+                            </p>
                         </div>
                     </div>
                 </div>

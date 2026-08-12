@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -18,20 +18,45 @@ import {
     useToast,
 } from '@ori-os/ui';
 import { useCompanies } from '@/hooks/use-companies';
+import { useContacts } from '@/hooks/use-contacts';
+import { usePipelines } from '@/hooks/use-pipelines';
+import { apiFetch, getErrorMessage } from '@/lib/api-client';
 
 interface DealModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
     deal?: any; // If provided, we are editing
+    defaultCompanyId?: string;
 }
 
-export function DealModal({ isOpen, onClose, onSuccess, deal }: DealModalProps) {
+export function DealModal({ isOpen, onClose, onSuccess, deal, defaultCompanyId }: DealModalProps) {
     const { companies } = useCompanies();
+    const { contacts } = useContacts();
+    const { stages } = usePipelines();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [companyId, setCompanyId] = useState('');
+    const [contactId, setContactId] = useState('none');
+    const [stageName, setStageName] = useState('Lead');
+    const [dealName, setDealName] = useState('');
+    const [dealValue, setDealValue] = useState('');
+    const [closeDate, setCloseDate] = useState('');
 
     const isEdit = !!deal;
+
+    useEffect(() => {
+        setCompanyId(deal?.companyId || defaultCompanyId || '');
+        setContactId(deal?.contactId || 'none');
+        setStageName(deal?.stage || 'Lead');
+        setDealName(deal?.name || '');
+        setDealValue(String(deal?.value || ''));
+        setCloseDate(deal?.closeDate ? new Date(deal.closeDate).toISOString().split('T')[0] : '');
+    }, [deal, isOpen, defaultCompanyId]);
+
+    const availableContacts = companyId
+        ? contacts.filter((contact) => contact.companyId === companyId)
+        : contacts;
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -40,38 +65,38 @@ export function DealModal({ isOpen, onClose, onSuccess, deal }: DealModalProps) 
         const formData = new FormData(e.currentTarget);
         const data = {
             name: formData.get('name') as string,
-            value: parseFloat(formData.get('value') as string) || 0,
-            stage: formData.get('stage') as string,
-            probability: parseInt(formData.get('probability') as string) || 50,
-            expectedCloseDate: formData.get('expectedCloseDate') as string,
-            organizationId: companies.find(c => c.name === formData.get('company'))?.id || deal?.organizationId,
+            valueAmount: parseFloat(formData.get('value') as string) || 0,
+            stageName,
+            closeDate: formData.get('expectedCloseDate') as string,
+            companyId: companyId || deal?.companyId || undefined,
+            contactId: contactId !== 'none' ? contactId : undefined,
         };
 
         try {
-            const url = isEdit
-                ? `${process.env.NEXT_PUBLIC_API_URL}/crm/deals/${deal.id}`
-                : `${process.env.NEXT_PUBLIC_API_URL}/crm/deals`;
+            const url = isEdit ? `/crm/deals/${deal.id}` : '/crm/deals';
 
             const method = isEdit ? 'PUT' : 'POST';
 
-            const response = await fetch(url, {
+            await apiFetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
-
-            if (!response.ok) throw new Error(`Failed to ${isEdit ? 'update' : 'create'} deal`);
 
             toast({
                 title: `Deal ${isEdit ? 'Updated' : 'Created'}`,
                 description: `${data.name} has been ${isEdit ? 'updated' : 'added to the pipeline'}.`,
             });
             onSuccess();
+            onClose();
         } catch (error) {
             console.error(`Error ${isEdit ? 'updating' : 'creating'} deal:`, error);
             toast({
                 title: 'Error',
-                description: `Could not ${isEdit ? 'update' : 'create'} deal.`,
+                description: getErrorMessage(
+                    error,
+                    `Could not ${isEdit ? 'update' : 'create'} deal.`,
+                ),
                 variant: 'destructive',
             });
         } finally {
@@ -86,20 +111,47 @@ export function DealModal({ isOpen, onClose, onSuccess, deal }: DealModalProps) 
                     <DialogTitle>{isEdit ? 'Edit Deal' : 'Create New Deal'}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
+                    <div className="rounded-none border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
+                        Create a pipeline opportunity that reflects a real commercial motion: account, value, stage, owner contact, and expected close.
+                    </div>
+                    {!isEdit && (
+                        <div className="flex justify-end">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    setDealName('Folga Expansion Rollout');
+                                    setDealValue('18000');
+                                    setStageName('Qualified');
+                                    setCloseDate('2026-08-14');
+                                }}
+                            >
+                                Use FOLGA deal example
+                            </Button>
+                        </div>
+                    )}
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="name" className="text-right">Name</Label>
-                        <Input id="name" name="name" defaultValue={deal?.name || ''} placeholder="Enterprise License" className="col-span-3" required />
+                        <Input
+                            id="name"
+                            name="name"
+                            value={dealName}
+                            onChange={(e) => setDealName(e.target.value)}
+                            placeholder="Folga Expansion Rollout"
+                            className="col-span-3"
+                            required
+                        />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="company" className="text-right">Company</Label>
                         <div className="col-span-3">
-                            <Select name="company" defaultValue={deal?.organization?.name || deal?.company}>
+                            <Select value={companyId} onValueChange={setCompanyId}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select company" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {companies.map(c => (
-                                        <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -107,32 +159,61 @@ export function DealModal({ isOpen, onClose, onSuccess, deal }: DealModalProps) 
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="value" className="text-right">Value ($)</Label>
-                        <Input id="value" name="value" type="number" defaultValue={deal?.value || ''} placeholder="50000" className="col-span-3" required />
+                        <Input
+                            id="value"
+                            name="value"
+                            type="number"
+                            value={dealValue}
+                            onChange={(e) => setDealValue(e.target.value)}
+                            placeholder="18000"
+                            className="col-span-3"
+                            required
+                        />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="stage" className="text-right">Stage</Label>
+                        <Label htmlFor="contact" className="text-right">Contact</Label>
                         <div className="col-span-3">
-                            <Select name="stage" defaultValue={deal?.stage || 'Lead'}>
+                            <Select value={contactId} onValueChange={setContactId}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select stage" />
+                                    <SelectValue placeholder="Select contact (optional)" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Lead">Lead</SelectItem>
-                                    <SelectItem value="Qualified">Qualified</SelectItem>
-                                    <SelectItem value="Proposal">Proposal</SelectItem>
-                                    <SelectItem value="Negotiation">Negotiation</SelectItem>
-                                    <SelectItem value="Closed Won">Closed Won</SelectItem>
+                                    <SelectItem value="none">No primary contact</SelectItem>
+                                    {availableContacts.map((contact) => (
+                                        <SelectItem key={contact.id} value={contact.id}>
+                                            {contact.name || contact.email}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="probability" className="text-right">Prob. (%)</Label>
-                        <Input id="probability" name="probability" type="number" defaultValue={deal?.probability || "50"} min="0" max="100" className="col-span-3" />
+                        <Label htmlFor="stage" className="text-right">Stage</Label>
+                        <div className="col-span-3">
+                            <Select value={stageName} onValueChange={setStageName}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select stage" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {stages.map(stage => (
+                                        <SelectItem key={stage.id} value={stage.name}>{stage.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="expectedCloseDate" className="text-right">Close Date</Label>
-                        <Input id="expectedCloseDate" name="expectedCloseDate" type="date" defaultValue={deal?.expectedCloseDate ? new Date(deal.expectedCloseDate).toISOString().split('T')[0] : ''} className="col-span-3" required />
+                        <Input
+                            id="expectedCloseDate"
+                            name="expectedCloseDate"
+                            type="date"
+                            value={closeDate}
+                            onChange={(e) => setCloseDate(e.target.value)}
+                            className="col-span-3"
+                            required
+                        />
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>

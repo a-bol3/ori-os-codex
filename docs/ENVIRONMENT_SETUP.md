@@ -11,8 +11,8 @@
 - `S3_SECRET_KEY`: Secret credentials
 
 ## Web Application (@ori-os/web)
-- `NEXT_PUBLIC_APP_URL`: e.g. https://ori-os.ori-craftlabs.com
-- `NEXT_PUBLIC_API_URL`: e.g. https://api.ori-os.ori-craftlabs.com
+- `NEXT_PUBLIC_APP_URL`: e.g. https://orios.ori-craftlabs.com
+- `NEXT_PUBLIC_API_URL`: e.g. https://api.orios.ori-craftlabs.com
 - `NEXTAUTH_URL`: Same as APP_URL
 - `NEXTAUTH_SECRET`: Used for session encryption
 - `ORI_AUTH_BYPASS`: MUST be 0

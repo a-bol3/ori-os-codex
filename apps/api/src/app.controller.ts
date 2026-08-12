@@ -1,9 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
+import {  Controller, Get, Inject } from '@nestjs/common';
 import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(@Inject(AppService) private readonly appService: AppService) {}
 
   @Get()
   getHello(): string {
@@ -12,11 +12,11 @@ export class AppController {
 
   @Get('health')
   getHealth() {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-    };
+    return this.appService.getHealth();
+  }
+
+  @Get('ready')
+  async getReadiness() {
+    return this.appService.getReadiness();
   }
 }

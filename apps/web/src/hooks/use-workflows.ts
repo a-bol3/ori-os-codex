@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getApiBaseUrl } from '@/lib/api-base';
 
 export type WorkflowStatus = 'active' | 'paused' | 'draft';
 
@@ -13,11 +14,20 @@ export interface Workflow {
     executions?: number;
 }
 
+interface WorkflowApiItem {
+    id?: string;
+    name?: string;
+    description?: string;
+    status?: string;
+    lastRun?: string | null;
+    executions?: number | null;
+}
+
 export function useWorkflows() {
     const [workflows, setWorkflows] = useState<Workflow[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const normalize = (w: any): Workflow => {
+    const normalize = (w: WorkflowApiItem): Workflow => {
         const raw = String(w?.status ?? 'draft').toLowerCase();
         const status: WorkflowStatus =
             raw === 'active' ? 'active' : raw === 'paused' ? 'paused' : 'draft';
@@ -35,13 +45,13 @@ export function useWorkflows() {
     const fetchWorkflows = async () => {
         setIsLoading(true);
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/automations/workflows`, {
+            const res = await fetch(`${getApiBaseUrl()}/automations/workflows`, {
                 cache: 'no-store',
             });
 
             if (!res.ok) throw new Error(`Failed to fetch workflows (${res.status})`);
 
-            const data = await res.json();
+            const data: WorkflowApiItem[] = await res.json();
             const list = Array.isArray(data) ? data.map(normalize) : [];
 
             if (list.length > 0) {

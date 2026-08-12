@@ -64,7 +64,7 @@ export default function DocsPage() {
                                     </div>
                                     <div className="space-y-4 font-mono text-sm">
                                         <div className="text-tangerine">$ npm install @ori-os/sdk</div>
-                                        <div className="text-white/60">// Initialize client</div>
+                                        <div className="text-white/60">{'// Initialize client'}</div>
                                         <div className="text-white">
                                             const client = new OriClient(API_KEY);<br />
                                             await client.leads.enrich('acme.com');

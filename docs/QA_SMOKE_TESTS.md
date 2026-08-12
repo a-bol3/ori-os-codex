@@ -16,6 +16,6 @@ curl -I http://localhost:3000
 ## Production Verification (Planned)
 ```bash
 # Hostinger VPS Check
-curl -v https://api.ori-os.ori-craftlabs.com/health
-curl -I https://ori-os.ori-craftlabs.com
+curl -v https://api.orios.ori-craftlabs.com/health
+curl -I https://orios.ori-craftlabs.com
 ```

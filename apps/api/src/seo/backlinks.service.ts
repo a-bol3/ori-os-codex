@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {  Injectable, NotFoundException, Logger, Inject } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 import { AlertsService } from './alerts.service';
 import axios from 'axios';
@@ -9,8 +9,8 @@ export class BacklinksService {
   private readonly logger = new Logger(BacklinksService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly alertsService: AlertsService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(AlertsService) private readonly alertsService: AlertsService,
   ) {}
 
   async createBacklink(

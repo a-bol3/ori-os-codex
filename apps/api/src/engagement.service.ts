@@ -1,22 +1,66 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 import { CreateCampaignDto, UpdateCampaignDto, CampaignStatus } from './dto/campaign.dto';
 import { EmailService } from './email.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 
+type CampaignSummary = {
+  id: string;
+  status: CampaignStatus;
+};
+
+type CampaignWithCounts = CampaignSummary & {
+  [key: string]: unknown;
+};
+
+type CampaignRecipientRecord = {
+  id: string;
+  lastStepOrder?: number;
+  nextStepOrder?: number | null;
+  nextStepAt?: Date | null;
+  status?: string;
+};
+
+type EngagementModels = {
+  campaign: {
+    create: (args: unknown) => Promise<CampaignSummary>;
+    findMany: (args: unknown) => Promise<CampaignWithCounts[]>;
+    findFirst: (args: unknown) => Promise<(CampaignSummary & { recipients?: unknown[] }) | null>;
+    update: (args: unknown) => Promise<CampaignSummary>;
+    delete: (args: unknown) => Promise<unknown>;
+  };
+  emailEvent: {
+    count: (args: unknown) => Promise<number>;
+  };
+  campaignRecipient: {
+    createMany: (args: unknown) => Promise<unknown>;
+    deleteMany: (args: unknown) => Promise<{ count: number }>;
+    findMany: (args: unknown) => Promise<CampaignRecipientRecord[]>;
+    update: (args: unknown) => Promise<unknown>;
+  };
+};
+
 @Injectable()
 export class EngagementService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly email: EmailService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(EmailService) private readonly email: EmailService,
     @InjectQueue('campaign-queue') private readonly campaignQueue: Queue,
   ) { }
+
+  private get models(): EngagementModels {
+    return this.prisma as unknown as EngagementModels;
+  }
+
+  private buildStepJobId(campaignId: string, recipientId: string, stepOrder: number) {
+    return `campaign-${campaignId}-recipient-${recipientId}-step-${stepOrder}`;
+  }
 
   async createCampaign(orgId: string, userId: string, dto: CreateCampaignDto) {
     const { sequenceSteps, ...campaignData } = dto;
 
-    const campaign = await (this.prisma as any).campaign.create({
+    const campaign = await this.models.campaign.create({
       data: {
         ...campaignData,
         organizationId: orgId,
@@ -40,7 +84,7 @@ export class EngagementService {
   }
 
   async findAll(orgId: string) {
-    const campaigns = await (this.prisma as any).campaign.findMany({
+    const campaigns = await this.models.campaign.findMany({
       where: { organizationId: orgId },
       include: {
         sequenceSteps: { orderBy: { order: 'asc' } },
@@ -52,12 +96,12 @@ export class EngagementService {
     // In a real app, we'd use a more efficient way to get these counts (e.g. raw SQL or a metrics table)
     // For MVP, we'll fetch them per campaign or in a batch
     return Promise.all(
-      campaigns.map(async (c: any) => {
+      campaigns.map(async (c) => {
         const [sent, replies] = await Promise.all([
-          (this.prisma as any).emailEvent.count({
+          this.models.emailEvent.count({
             where: { campaignId: c.id, eventType: 'SENT' },
           }),
-          (this.prisma as any).emailEvent.count({
+          this.models.emailEvent.count({
             where: { campaignId: c.id, eventType: 'REPLY' },
           }),
         ]);
@@ -71,16 +115,36 @@ export class EngagementService {
   }
 
   async findOne(orgId: string, id: string) {
-    const campaign = await (this.prisma as any).campaign.findFirst({
+    const campaign = await this.models.campaign.findFirst({
       where: { id, organizationId: orgId },
       include: {
         sequenceSteps: { orderBy: { order: 'asc' } },
         recipients: { include: { contact: true } },
+        mailbox: { include: { domain: true } },
       },
     });
 
     if (!campaign) throw new NotFoundException('Campaign not found');
-    return campaign;
+
+    const [sent, opened, replies] = await Promise.all([
+      this.models.emailEvent.count({
+        where: { campaignId: campaign.id, eventType: 'SENT' },
+      }),
+      this.models.emailEvent.count({
+        where: { campaignId: campaign.id, eventType: 'OPENED' },
+      }),
+      this.models.emailEvent.count({
+        where: { campaignId: campaign.id, eventType: 'REPLY' },
+      }),
+    ]);
+
+    return {
+      ...campaign,
+      sent,
+      opened,
+      replies,
+      recipientsCount: Array.isArray(campaign.recipients) ? campaign.recipients.length : 0,
+    };
   }
 
   async updateCampaign(orgId: string, id: string, dto: UpdateCampaignDto) {
@@ -88,7 +152,7 @@ export class EngagementService {
 
     const oldCampaign = await this.findOne(orgId, id);
 
-    const updatedCampaign = await (this.prisma as any).campaign.update({
+    const updatedCampaign = await this.models.campaign.update({
       where: { id },
       data: {
         ...campaignData,
@@ -115,14 +179,31 @@ export class EngagementService {
   }
 
   async deleteCampaign(orgId: string, id: string) {
-    return (this.prisma as any).campaign.delete({
-      where: { id, organizationId: orgId },
+    await this.findOne(orgId, id);
+    return this.models.campaign.delete({
+      where: { id },
     });
   }
 
   async addRecipients(orgId: string, campaignId: string, contactIds: string[]) {
-    const result = await (this.prisma as any).campaignRecipient.createMany({
-      data: contactIds.map((contactId) => ({
+    await this.findOne(orgId, campaignId);
+
+    const contacts = await this.prisma.contact.findMany({
+      where: {
+        id: { in: contactIds },
+        organizationId: orgId,
+      },
+      select: { id: true },
+    });
+
+    const validContactIds = contacts.map((contact) => contact.id);
+
+    if (validContactIds.length === 0) {
+      throw new NotFoundException('No valid contacts found for this organization');
+    }
+
+    const result = await this.models.campaignRecipient.createMany({
+      data: validContactIds.map((contactId) => ({
         campaignId,
         contactId,
         status: 'PENDING',
@@ -130,9 +211,7 @@ export class EngagementService {
       skipDuplicates: true,
     });
 
-    const campaign = await (this.prisma as any).campaign.findUnique({
-      where: { id: campaignId },
-    });
+    const campaign = await this.findOne(orgId, campaignId);
 
     if (campaign && campaign.status === CampaignStatus.RUNNING) {
       await this.startCampaignExecution(campaignId);
@@ -141,12 +220,55 @@ export class EngagementService {
     return result;
   }
 
+  async removeRecipient(orgId: string, campaignId: string, contactId: string) {
+    await this.findOne(orgId, campaignId);
+
+    const contact = await this.prisma.contact.findFirst({
+      where: {
+        id: contactId,
+        organizationId: orgId,
+      },
+      select: { id: true },
+    });
+
+    if (!contact) {
+      throw new NotFoundException('Contact not found for this organization');
+    }
+
+    const deleted = await this.models.campaignRecipient.deleteMany({
+      where: {
+        campaignId,
+        contactId,
+      },
+    });
+
+    if (deleted.count === 0) {
+      throw new NotFoundException('Recipient not found');
+    }
+
+    return { success: true };
+  }
+
   // --- Execution Engine ---
 
   async startCampaignExecution(campaignId: string) {
     console.log(`[CAMPAIGN] Starting execution for campaign ${campaignId}`);
 
-    const recipients = await (this.prisma as any).campaignRecipient.findMany({
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { id: campaignId },
+      select: {
+        sequenceSteps: {
+          orderBy: { order: 'asc' },
+          select: { order: true },
+        },
+      },
+    });
+
+    const availableOrders = new Set(
+      (campaign?.sequenceSteps ?? []).map((step) => step.order),
+    );
+
+    const recipients = await this.models.campaignRecipient.findMany({
       where: {
         campaignId,
         status: 'PENDING',
@@ -158,16 +280,89 @@ export class EngagementService {
     );
 
     for (const recipient of recipients) {
-      await (this.prisma as any).campaignRecipient.update({
+      await this.models.campaignRecipient.update({
         where: { id: recipient.id },
-        data: { status: 'SCHEDULED' },
+        data: {
+          status: 'SCHEDULED',
+          nextStepOrder: 1,
+          nextStepAt: new Date(),
+        },
       });
 
-      await this.campaignQueue.add('process-step', {
-        campaignId,
-        recipientId: recipient.id,
-        stepOrder: 1, // Start with the first step
+      await this.campaignQueue.add(
+        'process-step',
+        {
+          campaignId,
+          recipientId: recipient.id,
+          stepOrder: 1, // Start with the first step
+        },
+        {
+          jobId: this.buildStepJobId(campaignId, recipient.id, 1),
+        },
+      );
+    }
+
+    const stuckRecipients =
+      await this.prisma.campaignRecipient.findMany({
+        where: {
+          campaignId,
+          status: 'SCHEDULED',
+          OR: [{ nextStepOrder: null }, { nextStepAt: null }],
+        },
+        select: {
+          id: true,
+          lastStepOrder: true,
+          nextStepOrder: true,
+          nextStepAt: true,
+        },
       });
+
+    if (stuckRecipients.length > 0) {
+      console.log(
+        `[CAMPAIGN] Found ${stuckRecipients.length} scheduled recipients without next-step metadata`,
+      );
+    }
+
+    for (const recipient of stuckRecipients) {
+      const recoveredStepOrder =
+        recipient.lastStepOrder && recipient.lastStepOrder > 0
+          ? recipient.lastStepOrder + 1
+          : 1;
+
+      if (!availableOrders.has(recoveredStepOrder)) {
+        await this.models.campaignRecipient.update({
+          where: { id: recipient.id },
+          data: {
+            nextStepOrder: null,
+            nextStepAt: null,
+          },
+        });
+        continue;
+      }
+
+      await this.models.campaignRecipient.update({
+        where: { id: recipient.id },
+        data: {
+          nextStepOrder: recoveredStepOrder,
+          nextStepAt: new Date(),
+        },
+      });
+
+      await this.campaignQueue.add(
+        'process-step',
+        {
+          campaignId,
+          recipientId: recipient.id,
+          stepOrder: recoveredStepOrder,
+        },
+        {
+          jobId: this.buildStepJobId(
+            campaignId,
+            recipient.id,
+            recoveredStepOrder,
+          ),
+        },
+      );
     }
   }
 
@@ -176,7 +371,7 @@ export class EngagementService {
    * Useful if some jobs were lost or the system was down.
    */
   async processRunningCampaigns() {
-    const campaigns = await (this.prisma as any).campaign.findMany({
+    const campaigns = await this.models.campaign.findMany({
       where: { status: 'RUNNING' },
     });
 

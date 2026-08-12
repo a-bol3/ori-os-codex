@@ -1,5 +1,7 @@
 # Staging Deployment Guide
 
+> **Estado: propuesta histórica, no procedimiento ejecutable.** El repositorio no mantiene todavía una topología staging aislada y reproducible equivalente a producción. No uses este documento para activar Caddy ni inventar dominios; la separación de entornos y sus criterios están definidos en [RELEASE_PROCESS.md](./RELEASE_PROCESS.md).
+
 This guide outlines the process for deploying Ori-OS to the staging environment.
 
 ## Prerequisites

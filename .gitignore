@@ -62,3 +62,14 @@ prompt
 
 # Skills directory
 /skills/
+
+# Local deployment bundles and operator scratch files
+*.tar.gz
+*.sql
+temp_*
+build.err
+*.dump
+*.bak
+backup_axion/
+log-message-orios.txt
+tall git-filter-repo

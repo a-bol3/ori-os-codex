@@ -1,62 +1,92 @@
-import { Injectable } from '@nestjs/common';
+import {  Injectable, Inject } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private prisma: PrismaService) {}
+
+  private periodChange(current: number, previous: number) {
+    if (previous === 0) {
+      return { change: '—', trend: 'unknown' as const };
+    }
+    const delta = ((current - previous) / Math.abs(previous)) * 100;
+    return {
+      change: `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}%`,
+      trend: delta > 0 ? ('up' as const) : delta < 0 ? ('down' as const) : ('flat' as const),
+    };
+  }
 
   async getOverview(orgId: string) {
-    // Real logic: aggregate from DB
-    const totalRevenue = await (this.prisma as any).deal.aggregate({
-      where: { organizationId: orgId, status: 'won' },
-      _sum: { valueAmount: true },
-    });
+    const now = new Date();
+    const currentStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const previousStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+    const currentWindow = { gte: currentStart, lt: now };
+    const previousWindow = { gte: previousStart, lt: currentStart };
 
-    const totalLeads = await (this.prisma as any).contact.count({
-      where: { organizationId: orgId },
-    });
+    const [currentRevenue, previousRevenue, currentLeads, previousLeads,
+      currentWonDeals, previousWonDeals, currentContacts, currentWonCount,
+      previousContacts, previousWonCount] = await Promise.all([
+      this.prisma.deal.aggregate({
+        where: { organizationId: orgId, status: 'won', createdAt: currentWindow },
+        _sum: { valueAmount: true },
+      }),
+      this.prisma.deal.aggregate({
+        where: { organizationId: orgId, status: 'won', createdAt: previousWindow },
+        _sum: { valueAmount: true },
+      }),
+      this.prisma.contact.count({ where: { organizationId: orgId, createdAt: currentWindow } }),
+      this.prisma.contact.count({ where: { organizationId: orgId, createdAt: previousWindow } }),
+      this.prisma.deal.count({ where: { organizationId: orgId, status: 'won', createdAt: currentWindow } }),
+      this.prisma.deal.count({ where: { organizationId: orgId, status: 'won', createdAt: previousWindow } }),
+      this.prisma.contact.count({ where: { organizationId: orgId, createdAt: currentWindow } }),
+      this.prisma.deal.count({ where: { organizationId: orgId, status: 'won', createdAt: currentWindow } }),
+      this.prisma.contact.count({ where: { organizationId: orgId, createdAt: previousWindow } }),
+      this.prisma.deal.count({ where: { organizationId: orgId, status: 'won', createdAt: previousWindow } }),
+    ]);
 
-    const wonDealsCount = await (this.prisma as any).deal.count({
-      where: { organizationId: orgId, status: 'won' },
-    });
+    const revenueTotal = Number(currentRevenue._sum.valueAmount ?? 0);
+    const previousRevenueTotal = Number(previousRevenue._sum.valueAmount ?? 0);
+    const avgDealSize = revenueTotal / (currentWonDeals || 1);
+    const previousAvgDealSize = previousRevenueTotal / (previousWonDeals || 1);
+    const conversionRate = (currentWonCount / (currentContacts || 1)) * 100;
+    const previousConversionRate = (previousWonCount / (previousContacts || 1)) * 100;
 
-    const avgDealSize = totalRevenue._sum.valueAmount / (wonDealsCount || 1);
-    const conversionRate = (wonDealsCount / (totalLeads || 1)) * 100;
-
-    // For "change" and "trend", we would normally compare with previous period.
-    // For MVP, we'll return stable mock percentages based on real counts.
     return {
       revenue: {
-        total: `$${(totalRevenue._sum.valueAmount || 0).toLocaleString()}`,
-        change: '+12%',
-        trend: 'up',
+        total: `$${revenueTotal.toLocaleString()}`,
+        ...this.periodChange(revenueTotal, previousRevenueTotal),
       },
       leads: {
-        total: totalLeads.toLocaleString(),
-        change: '+5%',
-        trend: 'up',
+        total: currentLeads.toLocaleString(),
+        ...this.periodChange(currentLeads, previousLeads),
       },
       conversion: {
         total: `${conversionRate.toFixed(1)}%`,
-        change: '+0.5%',
-        trend: 'up',
+        ...this.periodChange(conversionRate, previousConversionRate),
       },
       dealSize: {
         total: `$${Math.round(avgDealSize).toLocaleString()}`,
-        change: '+2%',
-        trend: 'up',
+        ...this.periodChange(avgDealSize, previousAvgDealSize),
       },
-      sources: [
-        { source: 'Direct', value: 40, color: 'bg-blue-500' },
-        { source: 'Referral', value: 30, color: 'bg-green-500' },
-        { source: 'Email', value: 30, color: 'bg-tangerine' },
+      // Contact source is not yet a first-class field. Never invent attribution.
+      sources: [],
+      dataQuality: {
+        attribution: 'not_configured',
+        window: 'rolling_30_days',
+        timezone: 'UTC',
+      },
+      metricDefinitions: [
+        { key: 'revenue', definition: 'Won deal value created in the selected window' },
+        { key: 'leads', definition: 'Contacts created in the selected window' },
+        { key: 'conversion', definition: 'Won deals divided by contacts created in the selected window' },
+        { key: 'dealSize', definition: 'Average value of won deals created in the selected window' },
       ],
     };
   }
 
   async getRevenueTrend(orgId: string) {
     // Group won deals by month
-    const deals = await (this.prisma as any).deal.findMany({
+    const deals = await this.prisma.deal.findMany({
       where: { organizationId: orgId, status: 'won' },
       select: { valueAmount: true, createdAt: true },
     });
@@ -87,14 +117,27 @@ export class AnalyticsService {
   }
 
   async getFunnel(orgId: string) {
-    const stages = await (this.prisma as any).pipelineStage.findMany({
-      include: { _count: { select: { deals: true } } },
+    const stages = await this.prisma.pipelineStage.findMany({
+      where: {
+        pipeline: {
+          organizationId: orgId,
+        },
+      },
+      select: {
+        name: true,
+        deals: {
+          select: {
+            id: true,
+            valueAmount: true,
+          },
+        },
+      },
     });
 
     return stages.map((s) => ({
       stage: s.name,
-      count: s._count.deals,
-      value: 0, // Could aggregate value here too
+      count: s.deals.length,
+      value: s.deals.reduce((sum, deal) => sum + Number(deal.valueAmount ?? 0), 0),
     }));
   }
 }

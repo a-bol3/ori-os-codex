@@ -1,33 +1,52 @@
-import { Controller, Get, Query, UseGuards, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+  Res,
+  Request, Inject } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GSCService } from './gsc.service';
 import { Response } from 'express';
+import {
+  AuthenticatedRequest,
+  requireOrganizationId,
+} from '../common/request-context';
 
 @Controller('seo/gsc')
-@UseGuards(JwtAuthGuard)
 export class GSCController {
-  constructor(private readonly gscService: GSCService) {}
+  constructor(@Inject(GSCService) private readonly gscService: GSCService) {}
 
   @Get('auth-url')
-  async getAuthUrl(@Query('projectId') projectId: string) {
-    return this.gscService.getAuthUrl(projectId);
+  @UseGuards(JwtAuthGuard)
+  async getAuthUrl(
+    @Query('projectId') projectId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.gscService.getAuthUrl(projectId, requireOrganizationId(req));
   }
 
   @Get('callback')
   async handleCallback(
     @Query('code') code: string,
-    @Query('state') projectId: string,
+    @Query('state') state: string,
     @Res() res: Response,
   ) {
-    const result = await this.gscService.handleCallback(code, projectId);
-    // Redirect back to the project page in frontend
+    const result = await this.gscService.handleCallback(code, state);
     return res.redirect(
       `/dashboard/seo/projects/${result.projectId}?gsc_connected=success`,
     );
   }
 
   @Get('sync-data')
-  async syncData(@Query('projectId') projectId: string) {
-    return this.gscService.syncProjectData(projectId);
+  @UseGuards(JwtAuthGuard)
+  async syncData(
+    @Query('projectId') projectId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.gscService.syncProjectData(
+      projectId,
+      requireOrganizationId(req),
+    );
   }
 }

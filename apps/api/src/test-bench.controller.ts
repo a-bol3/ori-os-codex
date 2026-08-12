@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/require-await */
 import {
   Controller,
   Post,
@@ -5,7 +6,8 @@ import {
   Logger,
   Get,
   NotFoundException,
-} from '@nestjs/common';
+  ForbiddenException,
+  UseGuards, Inject } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { EmailService } from './email.service';
 import { NotificationsService } from './notifications.service';
@@ -14,29 +16,47 @@ import { PrismaService } from '@ori-os/db/nestjs';
 import { AlertsService } from './seo/alerts.service';
 import { CompetitorsService } from './seo/competitors.service';
 import { GSCService } from './seo/gsc.service';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
+
+export function isTestBenchEnabled(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return env.NODE_ENV === 'development' && env.ENABLE_TEST_BENCH === 'true';
+}
 
 @Controller('test-bench')
+@UseGuards(JwtAuthGuard)
 export class TestBenchController {
   private readonly logger = new Logger(TestBenchController.name);
 
   constructor(
-    private readonly ai: AiService,
-    private readonly email: EmailService,
-    private readonly notifications: NotificationsService,
-    private readonly intelligence: IntelligenceService,
-    private readonly prisma: PrismaService,
-    private readonly alerts: AlertsService,
-    private readonly competitors: CompetitorsService,
-    private readonly gsc: GSCService,
+    @Inject(AiService) private readonly ai: AiService,
+    @Inject(EmailService) private readonly email: EmailService,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
+    @Inject(IntelligenceService) private readonly intelligence: IntelligenceService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(AlertsService) private readonly alerts: AlertsService,
+    @Inject(CompetitorsService) private readonly competitors: CompetitorsService,
+    @Inject(GSCService) private readonly gsc: GSCService,
   ) {}
+
+  private assertDevelopmentOnly() {
+    if (!isTestBenchEnabled()) {
+      throw new ForbiddenException(
+        'Test bench is disabled. Enable it explicitly in development only.',
+      );
+    }
+  }
 
   @Post('run-all')
   async runAllTests() {
+    this.assertDevelopmentOnly();
     // ... existing tests ...
   }
 
   @Post('trigger-seo-alert')
   async triggerSeoAlert(@Body() body: { projectId: string; type: string }) {
+    this.assertDevelopmentOnly();
     this.logger.log(
       `🧪 Triggering SEO Alert test for project ${body.projectId}`,
     );
@@ -104,6 +124,7 @@ export class TestBenchController {
     @Body() body: { projectId: string; url: string },
   ) {
     this.logger.log(`🧪 Triggering Competitor Check for ${body.url}`);
+    this.assertDevelopmentOnly();
     const orgId = 'mock-org-id';
 
     try {
@@ -135,6 +156,7 @@ export class TestBenchController {
 
   @Post('seed')
   async seedDatabase() {
+    this.assertDevelopmentOnly();
     this.logger.log('🌱 Starting manual database seed via API...');
 
     try {
@@ -345,6 +367,7 @@ export class TestBenchController {
 
   @Get('debug-db')
   async debugDb() {
+    this.assertDevelopmentOnly();
     return {
       databaseUrl: process.env.DATABASE_URL,
       nodeEnv: process.env.NODE_ENV,
@@ -354,6 +377,7 @@ export class TestBenchController {
 
   @Get('status')
   async getStatus() {
+    this.assertDevelopmentOnly();
     return {
       status: 'Operational',
       simulationMode: true,
@@ -367,6 +391,7 @@ export class TestBenchController {
 
   @Post('trigger-gsc-sync')
   async triggerGscSync(@Body() body: { projectId: string }) {
+    this.assertDevelopmentOnly();
     const project = await (this.prisma as any).sEOProject.findUnique({
       where: { id: body.projectId },
     });

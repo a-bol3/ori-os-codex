@@ -28,21 +28,38 @@ import {
     Sparkles,
 } from 'lucide-react';
 import { useContacts } from '@/hooks/use-contacts';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ContactModal } from '../../../../../components/crm/create-contact-modal';
 import { exportToCSV } from '@/lib/export';
 import { useToast } from '@ori-os/ui';
 import { ContactDetailsModal } from '../../../../../components/crm/contact-details-modal';
+import type { Contact } from '@/hooks/use-contacts';
+import { apiFetch } from '@/lib/api-client';
+import { parseCsvFile } from '@/lib/csv-import';
 
 export default function ContactsPage() {
     const { contacts, isLoading, error, refresh } = useContacts();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-    const [selectedContact, setSelectedContact] = useState<any>(null);
+    const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Inactive'>('All');
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const importInputRef = useRef<HTMLInputElement | null>(null);
     const { toast } = useToast();
+    const requestedContactId = searchParams.get('contactId');
+    const requestedCompanyId = searchParams.get('companyId');
+
+    useEffect(() => {
+        if (!requestedContactId || contacts.length === 0) return;
+        const matched = contacts.find((item) => item.id === requestedContactId);
+        if (!matched) return;
+        setSelectedContact(matched);
+        setIsDetailsModalOpen(true);
+    }, [requestedContactId, contacts]);
 
     const filteredContacts = useMemo(() => {
         return contacts.filter(contact => {
@@ -53,10 +70,11 @@ export default function ContactsPage() {
                 contact.jobTitle?.toLowerCase().includes(searchQuery.toLowerCase());
 
             const matchesStatus = statusFilter === 'All' || contact.status === statusFilter;
+            const matchesCompany = !requestedCompanyId || contact.companyId === requestedCompanyId;
 
-            return matchesSearch && matchesStatus;
+            return matchesSearch && matchesStatus && matchesCompany;
         });
-    }, [contacts, searchQuery, statusFilter]);
+    }, [contacts, requestedCompanyId, searchQuery, statusFilter]);
 
     const toggleAll = () => {
         if (selectedIds.size === filteredContacts.length) {
@@ -84,14 +102,59 @@ export default function ContactsPage() {
         });
     };
 
+    const handleImportClick = () => {
+        importInputRef.current?.click();
+    };
+
+    const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const rows = await parseCsvFile(file);
+            const payload = rows
+                .map((row) => ({
+                    email: row.email || row['email address'],
+                    firstName: row.firstname || row['first name'],
+                    lastName: row.lastname || row['last name'],
+                    phone: row.phone,
+                    jobTitle: row.jobtitle || row['job title'],
+                    country: row.country,
+                    companyName: row.company || row.companyname || row['company name'],
+                }))
+                .filter((row) => row.email);
+
+            const response = await apiFetch('/crm/contacts/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rows: payload }),
+            });
+
+            const summary = await response.json() as { created: number; updated: number; errors: Array<{ row: number; reason: string }> };
+
+            toast({
+                title: 'Contacts imported',
+                description: `Created ${summary.created}, updated ${summary.updated}, errors ${summary.errors.length}.`,
+            });
+            refresh();
+        } catch (error) {
+            toast({
+                title: 'Import failed',
+                description: error instanceof Error ? error.message : 'Could not import contacts.',
+                variant: 'destructive',
+            });
+        } finally {
+            event.target.value = '';
+        }
+    };
+
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this contact?')) return;
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/crm/contacts/${id}`, {
+            await apiFetch(`/crm/contacts/${id}`, {
                 method: 'DELETE',
             });
-            if (!response.ok) throw new Error('Failed to delete contact');
 
             toast({
                 title: 'Contact deleted',
@@ -99,25 +162,48 @@ export default function ContactsPage() {
             });
             refresh();
         } catch (error) {
-            console.error('Delete failed:', error);
-            // Mock delete for demo
             toast({
-                title: 'Contact deleted (Simulated)',
-                description: 'The contact has been removed from the view.',
+                title: 'Delete failed',
+                description: error instanceof Error ? error.message : 'Could not delete contact.',
+                variant: 'destructive',
             });
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.size === 0) return;
+        if (!confirm(`Delete ${selectedIds.size} selected contacts?`)) return;
+
+        try {
+            const response = await apiFetch('/crm/contacts/bulk-delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: Array.from(selectedIds) }),
+            });
+
+            const result = await response.json() as { deleted: number };
+            toast({
+                title: 'Contacts deleted',
+                description: `${result.deleted} selected contacts were removed.`,
+            });
+            setSelectedIds(new Set());
             refresh();
+        } catch (error) {
+            toast({
+                title: 'Bulk delete failed',
+                description: error instanceof Error ? error.message : 'Could not delete selected contacts.',
+                variant: 'destructive',
+            });
         }
     };
 
     const handleEnrich = async (id: string, name: string) => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/intelligence/enrich`, {
+            await apiFetch('/intelligence/enrich', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contactId: id, type: 'enrich-contact' }),
             });
-
-            if (!response.ok) throw new Error('Enrichment failed');
 
             toast({
                 title: 'Enrichment Started',
@@ -125,8 +211,9 @@ export default function ContactsPage() {
             });
         } catch (error) {
             toast({
-                title: 'Enrichment Simulated',
-                description: `Job created for ${name} (Simulation mode).`,
+                title: 'Enrichment failed',
+                description: error instanceof Error ? error.message : `Could not enrich ${name}.`,
+                variant: 'destructive',
             });
         }
     };
@@ -137,6 +224,10 @@ export default function ContactsPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-tangerine" />
             </div>
         );
+    }
+
+    if (error) {
+        return <DataLoadError message={error} onRetry={refresh} />;
     }
 
     return (
@@ -152,6 +243,16 @@ export default function ContactsPage() {
                     <Plus className="mr-2 h-4 w-4" />
                     Add Contact
                 </Button>
+                <Button variant="outline" onClick={handleImportClick}>
+                    Import CSV
+                </Button>
+                <input
+                    ref={importInputRef}
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="hidden"
+                    onChange={handleImportFile}
+                />
             </div>
 
             <ContactModal
@@ -166,6 +267,7 @@ export default function ContactsPage() {
                     setSelectedContact(null);
                 }}
                 contact={selectedContact}
+                defaultCompanyId={requestedCompanyId || undefined}
             />
 
             <ContactDetailsModal
@@ -173,6 +275,9 @@ export default function ContactsPage() {
                 onClose={() => {
                     setIsDetailsModalOpen(false);
                     setSelectedContact(null);
+                    if (requestedContactId) {
+                        router.replace('/dashboard/crm/contacts');
+                    }
                 }}
                 contact={selectedContact}
             />
@@ -206,6 +311,19 @@ export default function ContactsPage() {
                                 <Download className="mr-2 h-4 w-4" />
                                 Export
                             </Button>
+                            {selectedIds.size > 0 && (
+                                <Button variant="outline" onClick={handleBulkDelete}>
+                                    Delete Selected ({selectedIds.size})
+                                </Button>
+                            )}
+                            {requestedCompanyId && (
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => router.replace('/dashboard/crm/contacts')}
+                                >
+                                    Clear Company Filter
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </CardContent>
@@ -242,7 +360,15 @@ export default function ContactsPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredContacts.map((contact, index) => (
+                                {filteredContacts.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="p-10 text-center text-sm text-muted-foreground">
+                                            {contacts.length === 0
+                                                ? 'No contacts yet. Create your first contact or import a CSV to start building your CRM.'
+                                                : 'No contacts match the current search or filters.'}
+                                        </td>
+                                    </tr>
+                                ) : filteredContacts.map((contact, index) => (
                                     <motion.tr
                                         key={contact.id}
                                         initial={{ opacity: 0, y: 10 }}
@@ -264,9 +390,16 @@ export default function ContactsPage() {
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <div className="font-medium text-foreground">
+                                                    <button
+                                                        type="button"
+                                                        className="font-medium text-foreground transition-colors hover:text-tangerine"
+                                                        onClick={() => {
+                                                            setSelectedContact(contact);
+                                                            setIsDetailsModalOpen(true);
+                                                        }}
+                                                    >
                                                         {contact.name}
-                                                    </div>
+                                                    </button>
                                                     <div className="text-sm text-muted-foreground">
                                                         {contact.jobTitle}
                                                     </div>
@@ -282,7 +415,17 @@ export default function ContactsPage() {
                                         <td className="p-4 hidden md:table-cell">
                                             <div className="flex items-center gap-2 group/item">
                                                 <Building2 className="h-4 w-4 text-tangerine/60 group-hover/item:text-tangerine transition-colors" />
-                                                <span className="text-foreground">{contact.company}</span>
+                                                {contact.companyId ? (
+                                                    <button
+                                                        type="button"
+                                                        className="text-foreground transition-colors hover:text-tangerine"
+                                                        onClick={() => router.push(`/dashboard/crm/companies?companyId=${contact.companyId}`)}
+                                                    >
+                                                        {contact.company}
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-foreground">{contact.company}</span>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="p-4 hidden lg:table-cell">
@@ -327,10 +470,18 @@ export default function ContactsPage() {
                                                         setIsCreateModalOpen(true);
                                                     }}>Edit Contact</DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => {
-                                                        toast({ title: 'Added to Sequence', description: `${contact.name} added to outreach.` });
+                                                        toast({
+                                                            title: 'Sequence action not available yet',
+                                                            description: 'Engagement-to-CRM linking will be wired in the next block. No sequence was started.',
+                                                            variant: 'destructive',
+                                                        });
                                                     }}>Add to Sequence</DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => {
-                                                        toast({ title: 'Email Editor Opened', description: `Drafting email to ${contact.email}.` });
+                                                        toast({
+                                                            title: 'Email sending not available here yet',
+                                                            description: `The CRM contact view does not yet open a real composer for ${contact.email}.`,
+                                                            variant: 'destructive',
+                                                        });
                                                     }}>Send Email</DropdownMenuItem>
                                                     <DropdownMenuItem
                                                         className="text-destructive"
@@ -348,6 +499,15 @@ export default function ContactsPage() {
                     </div>
                 </CardContent>
             </Card>
+        </div>
+    );
+}
+
+function DataLoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
+    return (
+        <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 border border-destructive/30 bg-destructive/5 p-8 text-center">
+            <p className="text-sm text-destructive">Unable to load contacts: {message}</p>
+            <Button variant="outline" onClick={onRetry}>Retry</Button>
         </div>
     );
 }

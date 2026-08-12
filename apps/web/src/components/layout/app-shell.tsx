@@ -10,7 +10,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="flex min-h-screen overflow-x-hidden bg-background">
             {/* Mobile sidebar overlay */}
             {mobileSidebarOpen && (
                 <div
@@ -30,7 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {/* Main content area */}
             <div
                 className={cn(
-                    'transition-all duration-300',
+                    'flex min-h-0 min-w-0 flex-1 flex-col transition-all duration-300',
                     sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
                 )}
             >
@@ -38,7 +38,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     onMobileMenuClick={() => setMobileSidebarOpen(true)}
                     sidebarCollapsed={sidebarCollapsed}
                 />
-                <main className="p-4 lg:p-6">{children}</main>
+                <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-visible p-4 lg:p-6">{children}</main>
             </div>
         </div>
     );

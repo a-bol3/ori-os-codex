@@ -3,55 +3,74 @@ import {
   Get,
   Post,
   Body,
-  Param,
   UseGuards,
-  Request,
-} from '@nestjs/common';
+  Request, Inject, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import {
+  AuthenticatedRequest,
+  requireOrganizationId,
+} from './common/request-context';
+
+type NotificationModel = {
+  findMany: (args: unknown) => Promise<unknown[]>;
+  create: (args: unknown) => Promise<unknown>;
+  updateMany: (args: unknown) => Promise<unknown>;
+};
 
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationsController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+
+  private get notificationModel(): NotificationModel {
+    return (this.prisma as unknown as { notification: NotificationModel })
+      .notification;
+  }
 
   @Get()
-  async findAll(@Request() req) {
-    const orgId = req.user.organizationId || 'default-org-id';
+  async findAll(@Request() req: AuthenticatedRequest) {
+    const orgId = requireOrganizationId(req);
     try {
-      return await (this.prisma as any).notification.findMany({
+      return await this.notificationModel.findMany({
         where: { organizationId: orgId },
         orderBy: { createdAt: 'desc' },
         take: 50,
       });
     } catch {
       // Notification model may not exist yet — return empty
-      return [];
+      throw new ServiceUnavailableException(
+        'Notifications storage is unavailable; no notification data was returned.',
+      );
     }
   }
 
   @Post()
-  async create(@Request() req, @Body() data: any) {
-    const orgId = req.user.organizationId || 'default-org-id';
+  async create(@Request() req: AuthenticatedRequest, @Body() data: Record<string, unknown>) {
+    const orgId = requireOrganizationId(req);
     try {
-      return await (this.prisma as any).notification.create({
+      return await this.notificationModel.create({
         data: { ...data, organizationId: orgId },
       });
     } catch {
-      return { id: 'simulated', ...data };
+      throw new ServiceUnavailableException(
+        'Notifications storage is unavailable; notification was not created.',
+      );
     }
   }
 
   @Post('mark-all-read')
-  async markAllRead(@Request() req) {
-    const orgId = req.user.organizationId || 'default-org-id';
+  async markAllRead(@Request() req: AuthenticatedRequest) {
+    const orgId = requireOrganizationId(req);
     try {
-      await (this.prisma as any).notification.updateMany({
+      await this.notificationModel.updateMany({
         where: { organizationId: orgId, read: false },
         data: { read: true },
       });
     } catch {
-      // ignore
+      throw new ServiceUnavailableException(
+        'Notifications storage is unavailable; notifications were not updated.',
+      );
     }
     return { success: true };
   }

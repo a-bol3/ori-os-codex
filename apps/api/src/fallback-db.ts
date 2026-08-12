@@ -16,6 +16,12 @@ export class PrismaClientMock {
   executionLog: any;
 
   constructor() {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'PRISMA_CLIENT_UNAVAILABLE: generated Prisma client is required in production',
+      );
+    }
+
     const createStore = () => {
       const store: any[] = [];
       return {

@@ -1,39 +1,52 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import type { AuthenticatedUser } from '../common/request-context';
+import { isAuthBypassEnabled, isAuthBypassRequested } from './auth-bypass';
+
+function readDevelopmentIdentity(): AuthenticatedUser {
+  const userId = process.env.ORI_DEV_USER_ID;
+  const organizationId = process.env.ORI_DEV_ORGANIZATION_ID;
+
+  if (!userId || !organizationId) {
+    throw new UnauthorizedException(
+      'Development auth bypass requires ORI_DEV_USER_ID and ORI_DEV_ORGANIZATION_ID',
+    );
+  }
+
+  return {
+    userId,
+    organizationId,
+    email: process.env.ORI_DEV_USER_EMAIL,
+  };
+}
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  handleRequest(err: any, user: any) {
+  handleRequest<TUser = AuthenticatedUser>(err: unknown, user: TUser | false): TUser {
+    // Never infer development from an absent NODE_ENV. Auth bypass must be
+    // explicitly opted into by the runtime environment.
     const isDev = process.env.NODE_ENV === 'development';
-    const bypassEnabled =
-      isDev &&
-      (process.env.ORI_AUTH_BYPASS === '1' ||
-        process.env.ORI_AUTH_BYPASS === 'true');
+    const bypassRequested = isAuthBypassRequested();
 
-    if (
-      !isDev &&
-      (process.env.ORI_AUTH_BYPASS === '1' ||
-        process.env.ORI_AUTH_BYPASS === 'true')
-    ) {
+    if (!isDev && bypassRequested) {
       throw new UnauthorizedException(
-        'ORI_AUTH_BYPASS must never be enabled in production',
+        'ORI_AUTH_BYPASS must never be enabled outside development',
       );
     }
 
-    if (bypassEnabled) {
-      console.warn('⚠️ ORI_AUTH_BYPASS ACTIVE (development only)');
-      return (
-        user || {
-          userId: 'mock-user-id',
-          email: 'admin@oricraftlabs.com',
-          organizationId: 'mock-org-id',
-        }
-      );
+    if (isAuthBypassEnabled()) {
+      console.warn('ORI_AUTH_BYPASS ACTIVE (development only)');
+      return user || (readDevelopmentIdentity() as TUser);
     }
 
-    if (err || !user) {
-      throw err || new UnauthorizedException('Unauthorized');
+    if (err instanceof Error) {
+      throw err;
     }
+
+    if (!user) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
     return user;
   }
 }

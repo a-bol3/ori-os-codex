@@ -3,31 +3,41 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Button, Input, Label, Checkbox, Separator, useToast } from '@ori-os/ui';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
-import { loginAction } from '@/lib/actions/auth';
 
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsLoading(true);
 
         const formData = new FormData(e.currentTarget);
-        const result = await loginAction(formData);
+        const email = String(formData.get('email') ?? '').trim().toLowerCase();
+        const password = String(formData.get('password') ?? '');
 
-        if (result) {
+        const result = await signIn('credentials', {
+            email,
+            password,
+            redirect: false,
+        });
+
+        if (result?.error) {
             toast({
                 title: "Error",
-                description: result,
+                description: "Invalid credentials.",
                 variant: "destructive",
             });
             setIsLoading(false);
         } else {
-            // Success - NextAuth will redirect based on middleware/auth config
+            router.push('/dashboard');
+            router.refresh();
         }
     };
 
@@ -185,7 +195,7 @@ export default function LoginPage() {
             </form>
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <Link href="/register" className="text-tangerine hover:underline font-medium">
                     Sign up for free
                 </Link>

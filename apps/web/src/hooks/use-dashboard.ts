@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { fetchWorkspaceJson, getErrorMessage } from "@/lib/api-client";
 
 export interface DashboardActivity {
     id: string
@@ -19,7 +20,7 @@ export interface DashboardStats {
 export interface DashboardDealStats {
     total: number
     value: number
-    byStage: any[]
+    byStage: Array<Record<string, unknown>>
 }
 
 export interface DashboardCampaignStats {
@@ -48,49 +49,28 @@ export interface DashboardData {
     recentActivity: DashboardActivity[]
 }
 
-const DEMO_DATA: DashboardData = {
-    contacts: { total: 2847, thisMonth: 142, growth: 12 },
-    companies: { total: 341, thisMonth: 28 },
-    deals: { total: 156, value: 1240000, byStage: [] },
-    campaigns: { total: 12, active: 3, sent: 18942, opened: 4231, lastSendDate: new Date(Date.now() - 7200000).toISOString() },
-    workflows: { total: 24, active: 7, runs: 1560, lastRunDate: new Date(Date.now() - 14400000).toISOString() },
-    seo: { projects: 4 },
-    compliance: { gdprRequests: 2 },
-    recentActivity: [
-        { id: '1', title: 'New contact added', description: 'Sarah Chen from TechFlow', time: new Date().toISOString(), type: 'contact' },
-        { id: '2', title: 'Deal moved to Negotiation', description: 'Acme Corp Enterprise License', time: new Date(Date.now() - 900000).toISOString(), type: 'deal' },
-        { id: '3', title: 'Email campaign launched', description: 'Q1 SaaS Outreach — 142 recipients', time: new Date(Date.now() - 3600000).toISOString(), type: 'campaign' },
-    ],
-}
-
 export function useDashboard() {
     const [data, setData] = useState<DashboardData | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    const fetchDashboard = async () => {
+    const fetchDashboard = useCallback(async () => {
         setIsLoading(true)
         try {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-            const response = await fetch(`${baseUrl}/dashboard`)
-            if (!response.ok) throw new Error("Failed to fetch dashboard data")
-            const result = await response.json()
+            const result = await fetchWorkspaceJson<DashboardData>("/api/workspace/dashboard")
             setData(result)
             setError(null)
         } catch (err) {
-            console.warn('[Dashboard] API unavailable, using demo data', err)
-            setData(DEMO_DATA)
-            // We set error to null because we have a demo fallback, 
-            // but we could also keep it if we want to show a warning.
-            setError(null)
+            setData(null)
+            setError(getErrorMessage(err, "Failed to fetch dashboard data"))
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [])
 
     useEffect(() => {
         fetchDashboard()
-    }, [])
+    }, [fetchDashboard])
 
     return { data, isLoading, error, refresh: fetchDashboard }
 }

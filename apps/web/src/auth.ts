@@ -1,11 +1,27 @@
-import NextAuth, { type DefaultSession } from "next-auth"
+import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
+import { hasUsableSession } from "./lib/session-guards";
+
+type ApiLoginResult = {
+    access_token: string;
+    organizationId: string;
+    user: { id: string; name?: string | null; email: string };
+};
+
+const authSecret =
+    process.env.AUTH_SECRET ||
+    process.env.NEXTAUTH_SECRET ||
+    (process.env.NODE_ENV === "development" ? "generate-a-random-secret" : undefined);
+
+if (!authSecret) {
+    throw new Error("AUTH_SECRET or NEXTAUTH_SECRET is required outside development");
+}
 
 const nextAuth = NextAuth({
-    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "generate-a-random-secret",
+    secret: authSecret,
     trustHost: true,
     session: { strategy: "jwt" },
-    debug: true,
+    debug: process.env.NODE_ENV === "development",
     providers: [
         Credentials({
             credentials: {
@@ -13,26 +29,47 @@ const nextAuth = NextAuth({
                 password: { label: "Password", type: "password" },
             },
             async authorize(credentials) {
-                const isAuthBypass = process.env.ORI_AUTH_BYPASS === "1" || process.env.AUTH_BYPASS === "true";
-                console.log("[Auth] Authorize called:", { email: credentials?.email, isAuthBypass });
+                const email = credentials?.email?.toString().trim().toLowerCase();
+                const password = credentials?.password?.toString() ?? "";
 
-                // For demo/dev: allow any password for admin@ori-os.com
-                if (isAuthBypass && credentials?.email === "admin@ori-os.com") {
-                    return {
-                        id: "dev-admin",
-                        name: "Admin User",
-                        email: "admin@ori-os.com",
-                    };
+                if (!email || !password) {
+                    return null;
                 }
 
-                // In a real app, you would check the database here
-                // For now, if bypass is on, allow any login to proceed as a dev user
-                if (isAuthBypass && credentials?.email) {
+                const apiBaseUrl =
+                    process.env.API_URL ||
+                    process.env.NEXT_PUBLIC_API_URL ||
+                    "http://localhost:4000";
+
+                try {
+                    const response = await fetch(`${apiBaseUrl}/auth/login`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ email, password }),
+                    });
+
+                    if (!response.ok) {
+                        return null;
+                    }
+
+                    const result = await response.json() as ApiLoginResult;
+                    const user = result?.user;
+
+                    if (!user?.email || !result.access_token || !result.organizationId) {
+                        return null;
+                    }
+
                     return {
-                        id: "dev-user",
-                        name: "Developer",
-                        email: credentials.email as string,
+                        id: user.id ?? user.email,
+                        name: user.name ?? "Ori-OS User",
+                        email: user.email,
+                        accessToken: result.access_token,
+                        organizationId: result.organizationId,
                     };
+                } catch (error) {
+                    console.error("[Auth] API login failed", error);
                 }
 
                 return null;
@@ -44,23 +81,21 @@ const nextAuth = NextAuth({
     },
     callbacks: {
         authorized({ auth, request: { nextUrl } }) {
-            const isLoggedIn = !!auth?.user;
-            const isAuthBypass = process.env.ORI_AUTH_BYPASS === "1" || process.env.AUTH_BYPASS === "true";
-
             const isAuthPage = nextUrl.pathname.startsWith("/login") ||
                 nextUrl.pathname.startsWith("/register");
             const isDashboard = nextUrl.pathname.startsWith("/dashboard");
+            const hasSession = hasUsableSession(auth);
 
-            // If on auth page and logged in (or bypass), redirect to dashboard
+            // Only redirect away from auth pages once a session exists.
             if (isAuthPage) {
-                if (isLoggedIn || isAuthBypass) {
+                if (hasSession) {
                     return Response.redirect(new URL("/dashboard", nextUrl));
                 }
                 return true;
             }
 
             if (isDashboard) {
-                if (isLoggedIn || isAuthBypass) return true;
+                if (hasSession) return true;
                 return false;
             }
 
@@ -68,17 +103,31 @@ const nextAuth = NextAuth({
         },
         async session({ session, token }) {
             if (token && session.user) {
+                const enrichedSession = session as typeof session & {
+                    accessToken?: string;
+                    organizationId?: string;
+                };
+
                 session.user.id = token.sub as string;
-                session.user.name = token.name;
+                session.user.name = typeof token.name === "string" ? token.name : undefined;
                 session.user.email = token.email as string;
+                enrichedSession.accessToken = typeof token.accessToken === "string" ? token.accessToken : undefined;
+                enrichedSession.organizationId = typeof token.organizationId === "string" ? token.organizationId : undefined;
             }
             return session;
         },
         async jwt({ token, user }) {
             if (user) {
+                const enrichedUser = user as typeof user & {
+                    accessToken?: string;
+                    organizationId?: string;
+                };
+
                 token.id = user.id;
                 token.name = user.name;
                 token.email = user.email;
+                token.accessToken = enrichedUser.accessToken;
+                token.organizationId = enrichedUser.organizationId;
             }
             return token;
         }
@@ -87,6 +136,6 @@ const nextAuth = NextAuth({
 
 
 export const handlers = nextAuth.handlers;
-export const auth = nextAuth.auth as any;
+export const auth: typeof nextAuth.auth = nextAuth.auth;
 export const signIn = nextAuth.signIn;
 export const signOut = nextAuth.signOut;

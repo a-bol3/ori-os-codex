@@ -1,6 +1,8 @@
 # Production Setup Guide
 
-This document outlines the necessary environment variables and the database migration strategy for deploying Ori-OS to production using Docker and Caddy.
+> **Estado: histórico / no canónico para el VPS actual.** El despliegue soportado utiliza Docker Compose con nginx del host; Caddy y cualquier flujo basado en `deploy-prod.sh` quedan fuera de la ruta vigente. Consulta [RELEASE_PROCESS.md](./RELEASE_PROCESS.md) y [HOSTINGER_ORIOS_DEPLOY.md](./HOSTINGER_ORIOS_DEPLOY.md).
+
+This document outlines environment variables and database migration considerations for deploying Ori-OS with Docker on the canonical Hostinger topology.
 
 ## Required Environment Variables
 

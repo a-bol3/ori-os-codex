@@ -45,6 +45,7 @@ export function SEOStudioView() {
         latestCrawl,
         issues,
         issuesSummary,
+        error,
         isLoading,
         startCrawl,
         addKeyword,
@@ -77,6 +78,21 @@ export function SEOStudioView() {
             toast.error('Failed to add keyword.');
         }
     };
+
+    if (error && !isLoading && projects.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center p-12 text-center space-y-4">
+                <AlertCircle className="h-12 w-12 text-destructive" />
+                <h2 className="text-xl font-bold">SEO Studio unavailable</h2>
+                <p className="text-muted-foreground max-w-lg">
+                    {error}
+                </p>
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                    Retry
+                </Button>
+            </div>
+        );
+    }
 
     if (projects.length === 0 && !isLoading) {
         return (
@@ -116,6 +132,18 @@ export function SEOStudioView() {
                     </Button>
                 </div>
             </div>
+
+            {error && (
+                <Card className="border-destructive/20 bg-destructive/5">
+                    <CardContent className="flex items-start gap-3 p-4">
+                        <AlertCircle className="mt-0.5 h-5 w-5 text-destructive" />
+                        <div>
+                            <p className="text-sm font-medium text-foreground">Some SEO data could not be loaded</p>
+                            <p className="text-sm text-muted-foreground">{error}</p>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Project Selector */}
             <Card>

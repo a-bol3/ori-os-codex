@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { Button, Input, Label, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Badge } from '@ori-os/ui';
 import { Plus, Target, Trash2, Edit2, Loader2 } from 'lucide-react';
 import { useIcpProfiles } from '@/hooks/use-icp-profiles';
+import { apiFetch } from '@/lib/api-client';
 import { useToast } from '@ori-os/ui';
 
 export function IcpProfileManager() {
@@ -18,9 +19,8 @@ export function IcpProfileManager() {
         if (!newName.trim()) return;
         setIsSubmitting(true);
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/intelligence/icp`, {
+            const res = await apiFetch('/intelligence/icp', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name: newName,
                     criteriaJson: { industry: 'Any', employees: 'Any' },
@@ -44,7 +44,7 @@ export function IcpProfileManager() {
     const removeProfile = async (id: string, name: string) => {
         if (!confirm(`Are you sure you want to delete the ICP Profile "${name}"?`)) return;
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/intelligence/icp/${id}`, {
+            const res = await apiFetch(`/intelligence/icp/${id}`, {
                 method: 'DELETE'
             });
             if (!res.ok) throw new Error('Failed to delete');

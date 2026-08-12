@@ -8,71 +8,100 @@ import {
   Param,
   Query,
   Request,
-  UseGuards,
-} from '@nestjs/common';
+  UseGuards, Inject } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AlertsService } from './alerts.service';
 import { CreateAlertDto, UpdateAlertDto, GetAlertsDto } from './dto/alert.dto';
+import {
+  AuthenticatedRequest,
+  requireOrganizationId,
+} from '../common/request-context';
 
 @Controller('seo/projects/:projectId/alerts')
 @UseGuards(JwtAuthGuard)
 export class AlertsController {
-  constructor(private readonly alertsService: AlertsService) {}
+  constructor(@Inject(AlertsService) private readonly alertsService: AlertsService) {}
 
   @Post()
   async createAlert(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('projectId') projectId: string,
     @Body() dto: CreateAlertDto,
   ) {
-    const orgId = req.user?.organizationId || 'default-org-id';
-    return this.alertsService.createAlert(projectId, orgId, dto);
+    return this.alertsService.createAlert(
+      projectId,
+      requireOrganizationId(req),
+      dto,
+    );
   }
 
   @Get()
   async getAlerts(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('projectId') projectId: string,
     @Query() query: GetAlertsDto,
   ) {
-    const orgId = req.user?.organizationId || 'default-org-id';
-    return this.alertsService.getAlerts(projectId, orgId, query);
+    return this.alertsService.getAlerts(
+      projectId,
+      requireOrganizationId(req),
+      query,
+    );
   }
 
   @Get('summary')
   async getAlertsSummary(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('projectId') projectId: string,
   ) {
-    const orgId = req.user?.organizationId || 'default-org-id';
-    return this.alertsService.getAlertsSummary(projectId, orgId);
+    return this.alertsService.getAlertsSummary(
+      projectId,
+      requireOrganizationId(req),
+    );
   }
 
   @Get(':alertId')
-  async getAlert(@Request() req, @Param('alertId') alertId: string) {
-    const orgId = req.user?.organizationId || 'default-org-id';
-    return this.alertsService.getAlertById(alertId, orgId);
+  async getAlert(
+    @Request() req: AuthenticatedRequest,
+    @Param('alertId') alertId: string,
+  ) {
+    return this.alertsService.getAlertById(
+      alertId,
+      requireOrganizationId(req),
+    );
   }
 
   @Put(':alertId')
   async updateAlert(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('alertId') alertId: string,
     @Body() dto: UpdateAlertDto,
   ) {
-    const orgId = req.user?.organizationId || 'default-org-id';
-    return this.alertsService.updateAlert(alertId, orgId, dto);
+    return this.alertsService.updateAlert(
+      alertId,
+      requireOrganizationId(req),
+      dto,
+    );
   }
 
   @Delete(':alertId')
-  async deleteAlert(@Request() req, @Param('alertId') alertId: string) {
-    const orgId = req.user?.organizationId || 'default-org-id';
-    return this.alertsService.deleteAlert(alertId, orgId);
+  async deleteAlert(
+    @Request() req: AuthenticatedRequest,
+    @Param('alertId') alertId: string,
+  ) {
+    return this.alertsService.deleteAlert(
+      alertId,
+      requireOrganizationId(req),
+    );
   }
 
   @Post('mark-all-read')
-  async markAllAsRead(@Request() req, @Param('projectId') projectId: string) {
-    const orgId = req.user?.organizationId || 'default-org-id';
-    return this.alertsService.markAllAsRead(projectId, orgId);
+  async markAllAsRead(
+    @Request() req: AuthenticatedRequest,
+    @Param('projectId') projectId: string,
+  ) {
+    return this.alertsService.markAllAsRead(
+      projectId,
+      requireOrganizationId(req),
+    );
   }
 }

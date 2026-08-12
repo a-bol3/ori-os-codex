@@ -1,27 +1,28 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import {  Controller, Get, UseGuards, Request, Inject } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import {
+  AuthenticatedRequest,
+  requireOrganizationId,
+} from '../common/request-context';
 
 @Controller('analytics')
 @UseGuards(JwtAuthGuard)
 export class AnalyticsController {
-  constructor(private readonly analyticsService: AnalyticsService) {}
+  constructor(@Inject(AnalyticsService) private readonly analyticsService: AnalyticsService) {}
 
   @Get('overview')
-  async getOverview(@Request() req) {
-    const orgId = req.user.organizationId || 'mock-org-id';
-    return this.analyticsService.getOverview(orgId);
+  async getOverview(@Request() req: AuthenticatedRequest) {
+    return this.analyticsService.getOverview(requireOrganizationId(req));
   }
 
   @Get('revenue-trend')
-  async getRevenueTrend(@Request() req) {
-    const orgId = req.user.organizationId || 'mock-org-id';
-    return this.analyticsService.getRevenueTrend(orgId);
+  async getRevenueTrend(@Request() req: AuthenticatedRequest) {
+    return this.analyticsService.getRevenueTrend(requireOrganizationId(req));
   }
 
   @Get('funnel')
-  async getFunnel(@Request() req) {
-    const orgId = req.user.organizationId || 'mock-org-id';
-    return this.analyticsService.getFunnel(orgId);
+  async getFunnel(@Request() req: AuthenticatedRequest) {
+    return this.analyticsService.getFunnel(requireOrganizationId(req));
   }
 }

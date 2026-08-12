@@ -8,44 +8,80 @@ import {
   Param,
   Query,
   UseGuards,
-  Req,
-} from '@nestjs/common';
+  Request, Inject } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SeoKeywordsService } from './seo-keywords.service';
+import {
+  AuthenticatedRequest,
+  requireOrganizationId,
+} from '../common/request-context';
+
+type SeoKeywordCreateBody = {
+  projectId: string;
+  keyword: string;
+  targetUrl?: string;
+  searchVolume?: number;
+  difficulty?: number;
+  source?: string;
+  intent?: string;
+};
+
+type SeoKeywordBulkCreateBody = {
+  projectId: string;
+  keywords: Array<{
+    keyword: string;
+    targetUrl?: string;
+    searchVolume?: number;
+    difficulty?: number;
+    source?: string;
+    intent?: string;
+  }>;
+};
+
+type SeoKeywordUpdateBody = {
+  targetUrl?: string;
+  tracked?: boolean;
+  intent?: string;
+};
 
 @Controller('seo/keywords')
 @UseGuards(JwtAuthGuard)
 export class SeoKeywordsController {
-  constructor(private readonly seoKeywordsService: SeoKeywordsService) {}
+  constructor(@Inject(SeoKeywordsService) private readonly seoKeywordsService: SeoKeywordsService) {}
 
   @Get()
-  async findAll(@Query('projectId') projectId: string, @Req() req: any) {
-    const organizationId = req.user?.organizationId || 'default-org';
-    return this.seoKeywordsService.findAll(projectId, organizationId);
+  async findAll(
+    @Query('projectId') projectId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.seoKeywordsService.findAll(
+      projectId,
+      requireOrganizationId(req),
+    );
   }
 
   @Get(':id/rankings')
   async getRankingHistory(
     @Param('id') id: string,
     @Query('limit') limit: string,
-    @Req() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
-    const organizationId = req.user?.organizationId || 'default-org';
     const limitNum = limit ? parseInt(limit, 10) : 30;
     return this.seoKeywordsService.getRankingHistory(
       id,
-      organizationId,
+      requireOrganizationId(req),
       limitNum,
     );
   }
 
   @Post()
-  async create(@Body() body: any, @Req() req: any) {
-    const organizationId = req.user?.organizationId || 'default-org';
-
+  async create(
+    @Body() body: SeoKeywordCreateBody,
+    @Request() req: AuthenticatedRequest,
+  ) {
     return this.seoKeywordsService.create({
       projectId: body.projectId,
-      organizationId,
+      organizationId: requireOrganizationId(req),
       keyword: body.keyword,
       targetUrl: body.targetUrl,
       searchVolume: body.searchVolume,
@@ -56,21 +92,24 @@ export class SeoKeywordsController {
   }
 
   @Post('bulk')
-  async bulkCreate(@Body() body: any, @Req() req: any) {
-    const organizationId = req.user?.organizationId || 'default-org';
-
+  async bulkCreate(
+    @Body() body: SeoKeywordBulkCreateBody,
+    @Request() req: AuthenticatedRequest,
+  ) {
     return this.seoKeywordsService.bulkCreate(
       body.projectId,
-      organizationId,
+      requireOrganizationId(req),
       body.keywords,
     );
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() body: any, @Req() req: any) {
-    const organizationId = req.user?.organizationId || 'default-org';
-
-    return this.seoKeywordsService.update(id, organizationId, {
+  async update(
+    @Param('id') id: string,
+    @Body() body: SeoKeywordUpdateBody,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.seoKeywordsService.update(id, requireOrganizationId(req), {
       targetUrl: body.targetUrl,
       tracked: body.tracked,
       intent: body.intent,
@@ -78,9 +117,8 @@ export class SeoKeywordsController {
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string, @Req() req: any) {
-    const organizationId = req.user?.organizationId || 'default-org';
-    return this.seoKeywordsService.delete(id, organizationId);
+  async delete(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+    return this.seoKeywordsService.delete(id, requireOrganizationId(req));
   }
 
   @Post('discover')
@@ -97,12 +135,11 @@ export class SeoKeywordsController {
   @Post('cluster')
   async cluster(
     @Body() body: { projectId: string; keywords: string[] },
-    @Req() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
-    const organizationId = req.user?.organizationId || 'default-org';
     return this.seoKeywordsService.clusterKeywords(
       body.projectId,
-      organizationId,
+      requireOrganizationId(req),
       body.keywords,
     );
   }

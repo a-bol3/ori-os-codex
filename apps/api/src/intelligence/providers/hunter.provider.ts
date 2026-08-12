@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
+import { fixtureMode, ProviderConfigurationError } from '@ori-os/core';
 
 @Injectable()
 export class HunterProvider {
@@ -8,7 +9,10 @@ export class HunterProvider {
 
     async findEmail(domain: string, firstName: string, lastName: string) {
         if (!this.apiKey || this.apiKey === 'your_hunter_key') {
-            this.logger.warn('Hunter.io API key not set, returning mock data');
+            if (!fixtureMode('ENABLE_AI_SIMULATION')) {
+                throw new ProviderConfigurationError('Hunter.io');
+            }
+            this.logger.warn('Hunter.io API key not set; explicit development fixtures are enabled');
             return {
                 email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${domain}`,
                 score: 85,
@@ -43,6 +47,9 @@ export class HunterProvider {
 
     async verifyEmail(email: string) {
         if (!this.apiKey || this.apiKey === 'your_hunter_key') {
+            if (!fixtureMode('ENABLE_AI_SIMULATION')) {
+                throw new ProviderConfigurationError('Hunter.io');
+            }
             return { status: 'valid', score: 100 };
         }
 

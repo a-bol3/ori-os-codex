@@ -1,5 +1,7 @@
 # Operations Runbook - Ori-OS
 
+> **Estado: parcialmente histórico.** Los ejemplos de este runbook pueden usar el compose base y no sustituyen la topología vigente. En el VPS de Hostinger incluye siempre `docker-compose.host-nginx.yml` y verifica los dominios canónicos; para despliegues y recuperación usa [RELEASE_PROCESS.md](./RELEASE_PROCESS.md).
+
 This document outlines common operational tasks for maintainers of the Ori-OS production environment.
 
 ## Monitoring & Logs

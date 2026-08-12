@@ -55,8 +55,8 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
                     {/* Testimonial */}
                     <div className="bg-white/10 backdrop-blur-sm rounded-none p-6 max-w-md">
                         <p className="text-white/90 mb-4">
-                            "Ori-OS replaced 5 different tools. The unified platform has saved
-                            us countless hours."
+                            &ldquo;Ori-OS replaced 5 different tools. The unified platform has saved
+                            us countless hours.&rdquo;
                         </p>
                         <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-none bg-tangerine/20 flex items-center justify-center text-tangerine font-medium">

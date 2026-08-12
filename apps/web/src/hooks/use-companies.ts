@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { fetchWorkspaceJson, getErrorMessage } from "@/lib/api-client"
 
 export interface Company {
     id: string
@@ -14,49 +15,69 @@ export interface Company {
     contactsCount: number
 }
 
-const MOCK_COMPANIES: Company[] = [
-    { id: 'm1', name: 'Acme Corp', domain: 'acmecorp.com', industry: 'Technology', size: '500-1000', location: 'Austin, US', status: 'Customer', contactsCount: 8 },
-    { id: 'm2', name: 'TechFlow', domain: 'techflow.io', industry: 'SaaS', size: '50-200', location: 'San Francisco, US', status: 'Customer', contactsCount: 3 },
-    { id: 'm3', name: 'DataVault', domain: 'datavault.eu', industry: 'Data & Analytics', size: '200-500', location: 'Berlin, DE', status: 'Prospect', contactsCount: 5 },
-    { id: 'm4', name: 'CloudSync', domain: 'cloudsync.io', industry: 'Infrastructure', size: '10-50', location: 'London, UK', status: 'Lead', contactsCount: 2 },
-    { id: 'm5', name: 'NexusAI', domain: 'nexusai.com', industry: 'Artificial Intelligence', size: '10-50', location: 'Bengaluru, IN', status: 'Lead', contactsCount: 1 },
-]
+interface CompanyApiItem {
+    id: string
+    name: string
+    domain?: string | null
+    industry?: string | null
+    size?: string | null
+    sizeBand?: string | null
+    city?: string | null
+    country?: string | null
+    description?: string | null
+    status?: Company["status"] | null
+    contacts?: unknown[]
+    _count?: {
+        contacts?: number
+    }
+}
+
+interface CompanyListResponse {
+    items: CompanyApiItem[]
+    total: number
+    limit: number
+    offset: number
+    hasMore: boolean
+}
 
 export function useCompanies() {
     const [companies, setCompanies] = useState<Company[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    const fetchCompanies = async () => {
+    const fetchCompanies = useCallback(async () => {
         setIsLoading(true)
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/crm/companies`)
-            if (!response.ok) throw new Error("Failed to fetch companies")
-            const data = await response.json()
+            const payload = await fetchWorkspaceJson<CompanyApiItem[] | CompanyListResponse>("/api/workspace/crm/companies")
+            const data = Array.isArray(payload) ? payload : payload.items
 
-            const normalizedData = data.map((c: any) => ({
-                ...c,
-                status: c.status || 'Prospect',
-                location: c.city ? `${c.city}, ${c.country || ''}`.trim().replace(/,$/, '') : (c.country || '—'),
-                size: c.sizeBand || c.size || '—',
-                contactsCount: c._count?.contacts ?? c.contacts?.length ?? 0,
+            const normalizedData: Company[] = data.map((company) => ({
+                id: company.id,
+                name: company.name,
+                domain: company.domain ?? undefined,
+                industry: company.industry ?? undefined,
+                description: company.description ?? undefined,
+                status: company.status || 'Prospect',
+                location: company.city
+                    ? `${company.city}, ${company.country || ''}`.trim().replace(/,$/, '')
+                    : (company.country || '-'),
+                size: company.sizeBand || company.size || '-',
+                contactsCount: company._count?.contacts ?? company.contacts?.length ?? 0,
             }))
 
             setCompanies(normalizedData)
             setError(null)
         } catch (err) {
-            console.warn('[Companies] API unavailable, using demo data')
-            setCompanies(MOCK_COMPANIES)
-            setError(null)
+            setCompanies([])
+            setError(getErrorMessage(err, "Failed to fetch companies"))
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [])
 
     useEffect(() => {
         fetchCompanies()
-    }, [])
+    }, [fetchCompanies])
 
     return { companies, isLoading, error, refresh: fetchCompanies }
 }
-

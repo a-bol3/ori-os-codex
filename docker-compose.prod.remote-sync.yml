@@ -1,0 +1,144 @@
+networks:
+  ori_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  meilisearch_data:
+  minio_data:
+  caddy_data:
+  caddy_config:
+
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ori-os-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ori}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ori_password}
+      POSTGRES_DB: ${POSTGRES_DB:-ori_os}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [ ori_network ]
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ori}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: ori-os-redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks: [ ori_network ]
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.6
+    container_name: ori-os-meilisearch
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-change-me}
+      MEILI_ENV: production
+    volumes:
+      - meilisearch_data:/meili_data
+    networks: [ ori_network ]
+
+  minio:
+    image: minio/minio:latest
+    container_name: ori-os-minio
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    networks: [ ori_network ]
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: ori-os-api
+    restart: always
+    env_file: .env.prod
+    environment:
+      NODE_ENV: production
+      API_PORT: "4000"
+    ports:
+      - "127.0.0.1:4100:4000"
+    expose:
+      - "4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [ ori_network ]
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: ori-os-worker
+    restart: always
+    env_file: .env.prod
+    environment:
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [ ori_network ]
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN}
+        NEXT_PUBLIC_AUTH_BYPASS: ${NEXT_PUBLIC_AUTH_BYPASS}
+    container_name: ori-os-web
+    restart: always
+    env_file: .env.prod
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      NEXT_TELEMETRY_DISABLED: "1"
+    ports:
+      - "127.0.0.1:3100:3000"
+    expose:
+      - "3000"
+    depends_on:
+      - api
+    networks: [ ori_network ]
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: ori-os-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+      - api
+    networks: [ ori_network ]

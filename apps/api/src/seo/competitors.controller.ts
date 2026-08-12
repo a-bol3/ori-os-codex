@@ -8,75 +8,92 @@ import {
   Param,
   Query,
   Request,
-  UseGuards,
-} from '@nestjs/common';
+  UseGuards, Inject } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CompetitorsService } from './competitors.service';
 import {
+  AuthenticatedRequest,
+  requireOrganizationId,
+} from '../common/request-context';
+import {
   CreateCompetitorDto,
   GetCompetitorsDto,
-  CheckCompetitorDto,
 } from './dto/competitor.dto';
 
 @Controller('seo/projects/:projectId/competitors')
 @UseGuards(JwtAuthGuard)
 export class CompetitorsController {
-  constructor(private readonly competitorsService: CompetitorsService) {}
+  constructor(@Inject(CompetitorsService) private readonly competitorsService: CompetitorsService) {}
 
   @Post()
   async createCompetitor(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('projectId') projectId: string,
     @Body() dto: CreateCompetitorDto,
   ) {
-    const orgId = req.user?.organizationId || 'default-org-id';
-    return this.competitorsService.createCompetitor(projectId, orgId, dto);
+    return this.competitorsService.createCompetitor(
+      projectId,
+      requireOrganizationId(req),
+      dto,
+    );
   }
 
   @Get()
   async getCompetitors(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('projectId') projectId: string,
     @Query() query: GetCompetitorsDto,
   ) {
-    const orgId = req.user?.organizationId || 'default-org-id';
-    return this.competitorsService.getCompetitors(projectId, orgId, query);
+    return this.competitorsService.getCompetitors(
+      projectId,
+      requireOrganizationId(req),
+      query,
+    );
   }
 
   @Get(':competitorId')
   async getCompetitor(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('competitorId') competitorId: string,
   ) {
-    const orgId = req.user?.organizationId || 'default-org-id';
-    return this.competitorsService.getCompetitorById(competitorId, orgId);
+    return this.competitorsService.getCompetitorById(
+      competitorId,
+      requireOrganizationId(req),
+    );
   }
 
   @Put(':competitorId')
   async updateCompetitor(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('competitorId') competitorId: string,
     @Body() dto: Partial<CreateCompetitorDto>,
   ) {
-    const orgId = req.user?.organizationId || 'default-org-id';
-    return this.competitorsService.updateCompetitor(competitorId, orgId, dto);
+    return this.competitorsService.updateCompetitor(
+      competitorId,
+      requireOrganizationId(req),
+      dto,
+    );
   }
 
   @Delete(':competitorId')
   async deleteCompetitor(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('competitorId') competitorId: string,
   ) {
-    const orgId = req.user?.organizationId || 'default-org-id';
-    return this.competitorsService.deleteCompetitor(competitorId, orgId);
+    return this.competitorsService.deleteCompetitor(
+      competitorId,
+      requireOrganizationId(req),
+    );
   }
 
   @Post(':competitorId/check')
   async checkCompetitor(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('competitorId') competitorId: string,
   ) {
-    const orgId = req.user?.organizationId || 'default-org-id';
-    return this.competitorsService.checkCompetitorRankings(competitorId, orgId);
+    return this.competitorsService.checkCompetitorRankings(
+      competitorId,
+      requireOrganizationId(req),
+    );
   }
 }

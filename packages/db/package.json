@@ -13,18 +13,21 @@
             "import": "./dist/nestjs.js",
             "require": "./dist/nestjs.js",
             "types": "./dist/nestjs.d.ts"
-        }
+    }
     },
     "scripts": {
-        "build": "tsc",
-        "db:generate": "prisma generate",
-        "db:push": "prisma db push"
+        "build": "node ../../node_modules/typescript/bin/tsc -p .",
+        "db:generate": "node ../../scripts/run-prisma-with-root-env.mjs generate",
+        "db:push": "node ../../scripts/run-prisma-with-root-env.mjs db push",
+        "db:migrate": "node ../../scripts/run-prisma-with-root-env.mjs migrate deploy"
     },
     "dependencies": {
         "@nestjs/common": "^10.0.0",
-        "@prisma/client": "^6.11.1"
+        "@prisma/client": "^6.11.1",
+        "bcrypt": "^6.0.0"
     },
     "devDependencies": {
+        "@types/bcrypt": "^6.0.0",
         "prisma": "^6.11.1",
         "typescript": "^5.0.0"
     }

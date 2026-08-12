@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     Button,
     Card,
@@ -14,46 +14,132 @@ import {
     Label,
     Badge,
     Checkbox,
-    Progress,
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-    Avatar,
-    AvatarFallback
 } from '@ori-os/ui';
 import {
-    Plus,
     Trash2,
     Mail,
     Clock,
-    Users,
     Rocket,
-    Check,
     AlertCircle,
     Target,
     ShieldCheck,
     Globe,
-    Zap,
     ShieldAlert,
     Search,
     Loader
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useIcpProfiles } from '@/hooks/use-icp-profiles';
 import { useMailboxes } from '@/hooks/use-mailboxes';
 import { useContacts } from '@/hooks/use-contacts';
 import { useToast } from '@ori-os/ui';
 import { useRouter } from 'next/navigation';
+import { fetchWorkspaceJson, getErrorMessage } from '@/lib/api-client';
 
 type StepType = 'EMAIL' | 'WAIT' | 'CONDITION';
+
+type SendWindowDay = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+type EmailStepConfig = {
+    subject: string;
+    body?: string;
+};
+
+type WaitStepConfig = {
+    days: number;
+};
+
+type ConditionStepConfig = Record<string, never>;
+
+type SequenceStepConfig = EmailStepConfig | WaitStepConfig | ConditionStepConfig;
 
 type SequenceStep = {
     id: string;
     type: StepType;
-    config: any;
+    config: SequenceStepConfig;
     order: number;
 };
+
+type SendWindow = {
+    tz: string;
+    start: string;
+    end: string;
+    days: SendWindowDay[];
+};
+
+type WizardMailbox = {
+    id: string;
+    email: string;
+    isActive: boolean;
+    provider?: string;
+    dailyLimit?: number;
+    domain?: {
+        lastAuditScore?: number | null;
+    } | null;
+};
+
+const PREFERRED_MAILBOX_EMAIL = 'business@ori-craftlabs.com';
+const DEFAULT_SEND_WINDOW = {
+    tz: 'Europe/Warsaw',
+    start: '09:00',
+    end: '16:30',
+    days: [1, 2, 3, 4, 5],
+} as const satisfies SendWindow;
+
+const SEND_WINDOW_DAY_OPTIONS: Array<{ value: SendWindowDay; label: string }> = [
+    { value: 1, label: 'Mon' },
+    { value: 2, label: 'Tue' },
+    { value: 3, label: 'Wed' },
+    { value: 4, label: 'Thu' },
+    { value: 5, label: 'Fri' },
+    { value: 6, label: 'Sat' },
+    { value: 7, label: 'Sun' },
+];
+
+type CreatedCampaign = {
+    id: string;
+};
+
+function isWaitStep(step: SequenceStep): step is SequenceStep & { config: WaitStepConfig } {
+    return step.type === 'WAIT';
+}
+
+function isEmailStep(step: SequenceStep): step is SequenceStep & { config: EmailStepConfig } {
+    return step.type === 'EMAIL';
+}
+
+function formatSendWindow(sendWindow: SendWindow) {
+    const dayLabels = SEND_WINDOW_DAY_OPTIONS
+        .filter((day) => sendWindow.days.includes(day.value))
+        .map((day) => day.label)
+        .join(', ');
+
+    return `${sendWindow.start}-${sendWindow.end} (${sendWindow.tz}) on ${dayLabels}`;
+}
+
+function toggleSendWindowDay(currentDays: SendWindowDay[], day: SendWindowDay): SendWindowDay[] {
+    const nextDays = currentDays.includes(day)
+        ? currentDays.filter((currentDay) => currentDay !== day)
+        : [...currentDays, day];
+
+    return [...nextDays].sort((left, right) => left - right) as SendWindowDay[];
+}
+
+function selectPreferredMailbox(mailboxes: WizardMailbox[]): WizardMailbox | null {
+    if (!mailboxes.length) {
+        return null;
+    }
+
+    const activeMailboxes = mailboxes.filter((mailbox) => mailbox.isActive);
+    const candidateMailboxes = activeMailboxes.length ? activeMailboxes : mailboxes;
+
+    return (
+        candidateMailboxes.find((mailbox) => mailbox.email.toLowerCase() === PREFERRED_MAILBOX_EMAIL) ??
+        candidateMailboxes.find((mailbox) => mailbox.email.toLowerCase().endsWith('@ori-craftlabs.com')) ??
+        candidateMailboxes[0] ??
+        null
+    );
+}
 
 const WIZARD_STEPS = [
     { id: 1, title: 'Objective & ICP', description: 'Define goal and target profile' },
@@ -69,6 +155,9 @@ export function CampaignWizard() {
     const { toast } = useToast();
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCreatingIcpProfile, setIsCreatingIcpProfile] = useState(false);
+    const [newIcpProfileName, setNewIcpProfileName] = useState('');
+    const [isSavingIcpProfile, setIsSavingIcpProfile] = useState(false);
 
     // Form data
     const [campaignName, setCampaignName] = useState('');
@@ -79,14 +168,14 @@ export function CampaignWizard() {
     ]);
     const [selectedMailboxId, setSelectedMailboxId] = useState<string>('');
     const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
+    const [sendWindow, setSendWindow] = useState<SendWindow>({ ...DEFAULT_SEND_WINDOW, days: [...DEFAULT_SEND_WINDOW.days] });
 
     // UI state
     const [contactSearch, setContactSearch] = useState('');
-    const [isValidated, setIsValidated] = useState(false);
     const [complianceAgreed, setComplianceAgreed] = useState(false);
 
     // Hooks
-    const { profiles, isLoading: isLoadingProfiles } = useIcpProfiles();
+    const { profiles, isLoading: isLoadingProfiles, refresh: refreshIcpProfiles } = useIcpProfiles();
     const { mailboxes, isLoading: isLoadingMailboxes } = useMailboxes();
     const { contacts, isLoading: isLoadingContacts } = useContacts();
 
@@ -95,9 +184,85 @@ export function CampaignWizard() {
             setSelectedIcpId(profiles[0].id);
         }
         if (mailboxes.length > 0 && !selectedMailboxId) {
-            setSelectedMailboxId(mailboxes[0].id);
+            const preferredMailbox = selectPreferredMailbox(mailboxes);
+            setSelectedMailboxId(preferredMailbox?.id ?? '');
         }
-    }, [profiles, mailboxes]);
+    }, [profiles, mailboxes, selectedIcpId, selectedMailboxId]);
+
+    const selectedContacts = useMemo(
+        () => contacts.filter((contact) => selectedContactIds.includes(contact.id)),
+        [contacts, selectedContactIds],
+    );
+
+    const selectedMailbox = useMemo(
+        () => mailboxes.find((mailbox) => mailbox.id === selectedMailboxId),
+        [mailboxes, selectedMailboxId],
+    );
+
+    const selectedIcp = useMemo(
+        () => profiles.find((profile) => profile.id === selectedIcpId),
+        [profiles, selectedIcpId],
+    );
+
+    const activeContactsCount = useMemo(
+        () => selectedContacts.filter((contact) => contact.status === 'Active').length,
+        [selectedContacts],
+    );
+
+    const inactiveContactsCount = selectedContacts.length - activeContactsCount;
+    const audienceReady = selectedContacts.length > 0 && inactiveContactsCount === 0;
+    const hasActiveMailbox = !!selectedMailbox && selectedMailbox.isActive;
+    const waitStepsCount = sequence.filter((step) => step.type === 'WAIT').length;
+    const emailStepsCount = sequence.filter((step) => step.type === 'EMAIL').length;
+    const sequenceReady = sequence.length > 0 && sequence.every((step) => {
+        if (isEmailStep(step)) {
+            return Boolean(step.config.subject?.trim()) && Boolean(step.config.body?.trim());
+        }
+
+        if (isWaitStep(step)) {
+            return step.config.days > 0;
+        }
+
+        return true;
+    });
+    const canContinueFromStep1 = Boolean(campaignName.trim()) && Boolean(selectedIcp);
+    const canContinueFromStep2 = audienceReady;
+    const canContinueFromStep3 =
+        hasActiveMailbox &&
+        Boolean(sendWindow.tz.trim()) &&
+        Boolean(sendWindow.start) &&
+        Boolean(sendWindow.end) &&
+        sendWindow.days.length > 0;
+    const canContinueFromStep4 = sequenceReady;
+    const canContinueFromStep5 = complianceAgreed;
+
+    const reviewIssues = [
+        !campaignName.trim() ? 'Campaign name is still missing.' : null,
+        !selectedIcp ? 'Pick an ICP profile before launch.' : null,
+        !audienceReady ? 'Audience is not ready yet. Keep only active contacts.' : null,
+        !hasActiveMailbox ? 'Choose an active sending mailbox from your workspace.' : null,
+        sendWindow.days.length === 0 ? 'Choose at least one allowed sending day.' : null,
+        !sequenceReady ? 'Complete every sequence step with real content before launch.' : null,
+        !complianceAgreed ? 'Compliance confirmation is still pending.' : null,
+    ].filter(Boolean) as string[];
+
+    useEffect(() => {
+        if (!mailboxes.length) {
+            if (selectedMailboxId) {
+                setSelectedMailboxId('');
+            }
+            return;
+        }
+
+        const mailboxStillAvailable = mailboxes.some(
+            (mailbox) => mailbox.id === selectedMailboxId && mailbox.isActive,
+        );
+
+        if (!mailboxStillAvailable) {
+            const fallbackMailbox = selectPreferredMailbox(mailboxes);
+            setSelectedMailboxId(fallbackMailbox?.id ?? '');
+        }
+    }, [mailboxes, selectedMailboxId]);
 
     const addStep = (type: StepType) => {
         const nextOrder = sequence.length + 1;
@@ -115,8 +280,39 @@ export function CampaignWizard() {
         setSequence(filtered.map((s, i) => ({ ...s, order: i + 1 })));
     };
 
-    const updateStepConfig = (id: string, config: any) => {
-        setSequence(sequence.map(s => s.id === id ? { ...s, config: { ...s.config, ...config } } : s));
+    const updateStepConfig = (
+        id: string,
+        config: Partial<EmailStepConfig> | Partial<WaitStepConfig>,
+    ) => {
+        setSequence((currentSequence) =>
+            currentSequence.map((step) => {
+                if (step.id !== id) {
+                    return step;
+                }
+
+                if (isEmailStep(step)) {
+                    return {
+                        ...step,
+                        config: {
+                            ...step.config,
+                            ...(config as Partial<EmailStepConfig>),
+                        },
+                    };
+                }
+
+                if (isWaitStep(step)) {
+                    return {
+                        ...step,
+                        config: {
+                            ...step.config,
+                            ...(config as Partial<WaitStepConfig>),
+                        },
+                    };
+                }
+
+                return step;
+            }),
+        );
     };
 
     const filteredContacts = contacts.filter(c =>
@@ -128,6 +324,54 @@ export function CampaignWizard() {
         setSelectedContactIds(prev =>
             prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
         );
+    };
+
+    const handleCreateIcpProfile = async () => {
+        const profileName = newIcpProfileName.trim();
+
+        if (!profileName) {
+            toast({
+                title: 'Profile name required',
+                description: 'Give the ICP profile a clear name before saving it.',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        setIsSavingIcpProfile(true);
+        try {
+            const createdProfile = await fetchWorkspaceJson<{ id?: string }>('/api/workspace/intelligence/icp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: profileName,
+                    criteriaJson: { industry: 'Any', employees: 'Any' },
+                    blacklistPersonasJson: {},
+                    regionsJson: {},
+                }),
+            });
+
+            await refreshIcpProfiles();
+            if (createdProfile?.id) {
+                setSelectedIcpId(createdProfile.id);
+            }
+            setNewIcpProfileName('');
+            setIsCreatingIcpProfile(false);
+
+            toast({
+                title: 'ICP profile created',
+                description: `${profileName} is now available for this campaign.`,
+            });
+        } catch (error) {
+            console.error('ICP profile creation error:', error);
+            toast({
+                title: 'Could not create profile',
+                description: getErrorMessage(error, 'Something went wrong while creating the ICP profile.'),
+                variant: 'destructive',
+            });
+        } finally {
+            setIsSavingIcpProfile(false);
+        }
     };
 
     const handleLaunch = async () => {
@@ -143,43 +387,58 @@ export function CampaignWizard() {
             toast({ title: "Please select a mailbox", variant: 'destructive' });
             return;
         }
+        if (!hasActiveMailbox) {
+            toast({
+                title: "Active mailbox required",
+                description: "Choose a valid active sending mailbox before launching this campaign.",
+                variant: 'destructive',
+            });
+            return;
+        }
 
         setIsSubmitting(true);
         try {
-            // 1. Create Campaign
-            const campaignRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/engagement/campaigns`, {
+            const newCampaign = await fetchWorkspaceJson<CreatedCampaign>('/api/workspace/engagement/campaigns', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name: campaignName,
                     objective,
-                    status: 'RUNNING',
+                    status: 'DRAFT',
                     mailboxId: selectedMailboxId,
+                    sendWindowJson: sendWindow,
                     sequenceSteps: sequence.map(s => ({
                         stepType: s.type,
                         order: s.order,
                         configJson: s.config
                     }))
-                })
+                }),
             });
 
-            if (!campaignRes.ok) throw new Error('Failed to create campaign');
-            const newCampaign = await campaignRes.json();
-
-            // 2. Add Recipients
-            const recipientRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/engagement/campaigns/${newCampaign.id}/recipients`, {
+            await fetchWorkspaceJson(`/api/workspace/engagement/campaigns/${newCampaign.id}/recipients`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({ contactIds: selectedContactIds })
             });
 
-            if (!recipientRes.ok) throw new Error('Failed to add recipients');
+            await fetchWorkspaceJson(`/api/workspace/engagement/campaigns/${newCampaign.id}/launch`, {
+                method: 'POST',
+            });
 
-            toast({ title: "Campaign Launched!", description: `${selectedContactIds.length} recipients enrolled.` });
-            router.push('/dashboard/engagement');
+            toast({
+                title: "Campaign launched",
+                description: `${selectedContactIds.length} recipients enrolled and the sequence is now live.`,
+            });
+            router.push(`/dashboard/engagement/campaigns/${newCampaign.id}`);
         } catch (error) {
             console.error('Launch error:', error);
-            toast({ title: "Launch Failed", description: "Something went wrong during launch.", variant: 'destructive' });
+            toast({
+                title: "Launch failed",
+                description: getErrorMessage(error, "Something went wrong while preparing the campaign."),
+                variant: 'destructive',
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -214,21 +473,79 @@ export function CampaignWizard() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label>Target ICP Profile</Label>
-                                <select
-                                    className="flex h-10 w-full rounded-none border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                                    value={selectedIcpId}
-                                    onChange={(e) => setSelectedIcpId(e.target.value)}
-                                >
-                                    {isLoadingProfiles ? (
-                                        <option>Loading profiles...</option>
-                                    ) : (
-                                        profiles.map(p => (
-                                            <option key={p.id} value={p.id}>{p.name}</option>
-                                        ))
-                                    )}
-                                    <option value="new">+ Create New Profile...</option>
-                                </select>
+                                <div className="flex items-center justify-between gap-3">
+                                    <Label>Target ICP Profile</Label>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setIsCreatingIcpProfile((current) => !current)}
+                                        disabled={isSavingIcpProfile}
+                                    >
+                                        {isCreatingIcpProfile ? 'Hide create form' : 'Create new profile'}
+                                    </Button>
+                                </div>
+                                {profiles.length > 0 ? (
+                                    <select
+                                        className="flex h-10 w-full rounded-none border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                        value={selectedIcpId}
+                                        onChange={(e) => setSelectedIcpId(e.target.value)}
+                                    >
+                                        {isLoadingProfiles ? (
+                                            <option>Loading profiles...</option>
+                                        ) : (
+                                            profiles.map((p) => (
+                                                <option key={p.id} value={p.id}>{p.name}</option>
+                                            ))
+                                        )}
+                                    </select>
+                                ) : (
+                                    <Card className="rounded-none border border-dashed">
+                                        <CardContent className="p-4 space-y-3">
+                                            <div className="space-y-1">
+                                                <p className="text-sm font-medium">No ICP profiles yet</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Create one now so this campaign can target a real audience instead of a placeholder profile.
+                                                </p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )}
+                                {isCreatingIcpProfile ? (
+                                    <Card className="rounded-none border border-dashed">
+                                        <CardContent className="p-4 space-y-3">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="new-icp-profile-name">New ICP profile name</Label>
+                                                <Input
+                                                    id="new-icp-profile-name"
+                                                    placeholder="e.g. B2B SaaS - VP Engineering"
+                                                    value={newIcpProfileName}
+                                                    onChange={(e) => setNewIcpProfileName(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        setIsCreatingIcpProfile(false);
+                                                        setNewIcpProfileName('');
+                                                    }}
+                                                    disabled={isSavingIcpProfile}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    onClick={handleCreateIcpProfile}
+                                                    disabled={isSavingIcpProfile || !newIcpProfileName.trim()}
+                                                >
+                                                    {isSavingIcpProfile ? 'Creating…' : 'Save profile'}
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ) : null}
                             </div>
                         </div>
                     </motion.div>
@@ -251,9 +568,28 @@ export function CampaignWizard() {
                                 <div className="max-h-[300px] overflow-y-auto border rounded-none bg-background">
                                     {isLoadingContacts ? (
                                         <div className="p-4 text-center"><Loader className="h-4 w-4 animate-spin mx-auto" /></div>
+                                    ) : contacts.length === 0 ? (
+                                        <div className="p-6 text-center space-y-2">
+                                            <p className="text-sm font-medium">No contacts are available yet</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                Create real contacts in CRM first so this campaign can be targeted to a real audience.
+                                            </p>
+                                        </div>
+                                    ) : filteredContacts.length === 0 ? (
+                                        <div className="p-6 text-center space-y-2">
+                                            <p className="text-sm font-medium">No contacts match this search</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                Try another name, company, or email to find the right recipients.
+                                            </p>
+                                        </div>
                                     ) : (
                                         filteredContacts.map(contact => (
-                                            <div key={contact.id} className="flex items-center space-x-3 p-3 border-b last:border-0 hover:bg-muted/30">
+                                            <div
+                                                key={contact.id}
+                                                className={`flex items-start space-x-3 p-3 border-b last:border-0 transition-colors ${
+                                                    selectedContactIds.includes(contact.id) ? 'bg-tangerine/5' : 'hover:bg-muted/30'
+                                                }`}
+                                            >
                                                 <Checkbox
                                                     id={`contact-${contact.id}`}
                                                     checked={selectedContactIds.includes(contact.id)}
@@ -262,6 +598,19 @@ export function CampaignWizard() {
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-sm font-medium truncate">{contact.name}</p>
                                                     <p className="text-xs text-muted-foreground truncate">{contact.email}</p>
+                                                    <div className="mt-2 flex flex-wrap gap-2">
+                                                        <Badge variant={contact.status === 'Active' ? 'success' : 'secondary'} className="text-[10px]">
+                                                            {contact.status}
+                                                        </Badge>
+                                                        <Badge variant="outline" className="text-[10px]">
+                                                            {contact.company || 'No company linked'}
+                                                        </Badge>
+                                                        {contact.location ? (
+                                                            <Badge variant="outline" className="text-[10px]">
+                                                                {contact.location}
+                                                            </Badge>
+                                                        ) : null}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))
@@ -274,20 +623,47 @@ export function CampaignWizard() {
                                         <p className="text-sm font-medium">Audience Summary</p>
                                         <Badge variant="outline">{selectedContactIds.length} Selected</Badge>
                                     </div>
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between text-xs">
-                                            <span>Email Validation</span>
-                                            <span className={isValidated ? 'text-success' : 'text-warning'}>
-                                                {isValidated ? 'Validated' : 'Requires Validation'}
+                                    <div className="space-y-3 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Active contacts</span>
+                                            <span className="font-medium">{activeContactsCount}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Inactive / opted-out</span>
+                                            <span className="font-medium">{inactiveContactsCount}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Audience readiness</span>
+                                            <span className={audienceReady ? 'font-medium text-success' : 'font-medium text-warning'}>
+                                                {audienceReady ? 'Ready to enroll' : 'Needs attention'}
                                             </span>
                                         </div>
-                                        <Progress value={isValidated ? 100 : 0} className="h-1.5" />
-                                        {!isValidated && (
-                                            <Button size="sm" className="w-full mt-2" onClick={() => setIsValidated(true)}>
-                                                Run Validation Pipeline
-                                            </Button>
+                                        {!audienceReady && (
+                                            <p className="text-xs text-muted-foreground">
+                                                Select at least one active contact before launching the campaign.
+                                            </p>
                                         )}
                                     </div>
+                                    {selectedContacts.length > 0 ? (
+                                        <div className="space-y-2 border-t pt-3">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                                Selected audience
+                                            </p>
+                                            <div className="space-y-2">
+                                                {selectedContacts.map((contact) => (
+                                                    <div key={contact.id} className="flex items-center justify-between gap-3 text-xs">
+                                                        <div className="min-w-0">
+                                                            <p className="truncate font-medium text-foreground">{contact.name}</p>
+                                                            <p className="truncate text-muted-foreground">{contact.email}</p>
+                                                        </div>
+                                                        <Badge variant={contact.status === 'Active' ? 'success' : 'secondary'} className="shrink-0 text-[10px]">
+                                                            {contact.status}
+                                                        </Badge>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : null}
                                 </CardContent>
                             </Card>
                         </div>
@@ -300,6 +676,15 @@ export function CampaignWizard() {
                             <Label>Select Sending Identity</Label>
                             {isLoadingMailboxes ? (
                                 <div className="flex justify-center p-10"><Loader className="h-8 w-8 animate-spin text-tangerine" /></div>
+                            ) : mailboxes.length === 0 ? (
+                                <Card className="border-warning/40 bg-warning/5">
+                                    <CardContent className="p-4 space-y-2">
+                                        <p className="text-sm font-medium">No sending mailboxes are available yet</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Complete deliverability setup first so this campaign can launch with a real mailbox.
+                                        </p>
+                                    </CardContent>
+                                </Card>
                             ) : (
                                 mailboxes.map((mb) => (
                                     <Card
@@ -315,20 +700,90 @@ export function CampaignWizard() {
                                                 <div>
                                                     <p className="font-medium text-sm">{mb.email}</p>
                                                     <div className="flex space-x-2 mt-1">
-                                                        <Badge variant="outline" className="text-[10px] py-0">Provider: {mb.provider}</Badge>
+                                                        <Badge variant="outline" className="text-[10px] py-0">Provider: {mb.provider ?? 'Custom'}</Badge>
                                                         <Badge variant="outline" className="text-[10px] py-0">Score: {mb.domain?.lastAuditScore || '—'}/10</Badge>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="text-right">
                                                 <Badge variant={mb.isActive ? 'success' : 'secondary'}>{mb.isActive ? 'Healthy' : 'Inactive'}</Badge>
-                                                <p className="text-[11px] text-muted-foreground mt-1">Limit: {mb.dailyLimit}/day</p>
+                                                <p className="text-[11px] text-muted-foreground mt-1">Limit: {mb.dailyLimit ?? '—'}/day</p>
                                             </div>
                                         </CardContent>
                                     </Card>
                                 ))
                             )}
                         </div>
+
+                        <Card>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium">Sending window</CardTitle>
+                                <CardDescription>
+                                    Choose when this sequence is allowed to send follow-ups.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid gap-4 sm:grid-cols-3">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="send-window-tz">Timezone</Label>
+                                        <Input
+                                            id="send-window-tz"
+                                            value={sendWindow.tz}
+                                            onChange={(e) => setSendWindow((current) => ({ ...current, tz: e.target.value }))}
+                                            placeholder="Europe/Warsaw"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="send-window-start">Start</Label>
+                                        <Input
+                                            id="send-window-start"
+                                            type="time"
+                                            value={sendWindow.start}
+                                            onChange={(e) => setSendWindow((current) => ({ ...current, start: e.target.value }))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="send-window-end">End</Label>
+                                        <Input
+                                            id="send-window-end"
+                                            type="time"
+                                            value={sendWindow.end}
+                                            onChange={(e) => setSendWindow((current) => ({ ...current, end: e.target.value }))}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Allowed days</Label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {SEND_WINDOW_DAY_OPTIONS.map((day) => {
+                                            const isSelected = sendWindow.days.includes(day.value);
+
+                                            return (
+                                                <Button
+                                                    key={day.value}
+                                                    type="button"
+                                                    variant={isSelected ? 'default' : 'outline'}
+                                                    className={isSelected ? 'bg-tangerine text-white hover:bg-tangerine/90' : ''}
+                                                    onClick={() =>
+                                                        setSendWindow((current) => ({
+                                                            ...current,
+                                                            days: toggleSendWindowDay(current.days, day.value),
+                                                        }))
+                                                    }
+                                                >
+                                                    {day.label}
+                                                </Button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                <p className="text-xs text-muted-foreground">
+                                    Current policy: {formatSendWindow(sendWindow)}
+                                </p>
+                            </CardContent>
+                        </Card>
                     </motion.div>
                 );
             case 4: // Sequence & Content
@@ -358,7 +813,7 @@ export function CampaignWizard() {
                                             </Button>
                                         </CardHeader>
                                         <CardContent className="pb-4">
-                                            {step.type === 'EMAIL' ? (
+                                            {isEmailStep(step) ? (
                                                 <div className="space-y-2">
                                                     <Input
                                                         placeholder="Subject"
@@ -385,8 +840,10 @@ export function CampaignWizard() {
                                                     <span className="text-sm">Wait for</span>
                                                     <Input
                                                         type="number"
-                                                        value={step.config.days}
-                                                        onChange={(e) => updateStepConfig(step.id, { days: parseInt(e.target.value) })}
+                                                        value={isWaitStep(step) ? step.config.days : 2}
+                                                        onChange={(e) =>
+                                                            updateStepConfig(step.id, { days: parseInt(e.target.value, 10) || 1 })
+                                                        }
                                                         className="w-16 h-8 text-sm"
                                                     />
                                                     <span className="text-sm">days before next step</span>
@@ -406,7 +863,7 @@ export function CampaignWizard() {
                         <div className="text-center space-y-2">
                             <h3 className="text-lg font-medium">Compliance Review</h3>
                             <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                                We've analyzed your recipient list geography and adjusted settings for maximal safety.
+                                We&apos;ve analyzed your recipient list geography and adjusted settings for maximal safety.
                             </p>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -437,6 +894,11 @@ export function CampaignWizard() {
                                 </Label>
                             </div>
                         </div>
+                        {!complianceAgreed ? (
+                            <p className="text-xs text-center text-muted-foreground">
+                                Confirm the legal basis now so this campaign is fully ready on the launch step.
+                            </p>
+                        ) : null}
                     </motion.div>
                 );
             case 6: // Review & Launch
@@ -446,8 +908,8 @@ export function CampaignWizard() {
                             <div className="inline-block p-3 rounded-none bg-success/10 text-success mb-2">
                                 <Rocket className="h-8 w-8" />
                             </div>
-                            <h3 className="text-xl font-bold">Ready for Blast Off?</h3>
-                            <p className="text-sm text-muted-foreground">Everything looks good. Your campaign is ready to go.</p>
+                            <h3 className="text-xl font-bold">Ready to launch?</h3>
+                            <p className="text-sm text-muted-foreground">Review the real audience, sender, and sequence before turning this campaign live.</p>
                         </div>
 
                         <div className="grid gap-3">
@@ -457,15 +919,83 @@ export function CampaignWizard() {
                                     <span className="text-sm font-medium">{campaignName || 'Unnamed'}</span>
                                 </div>
                                 <div className="flex justify-between items-center mt-2">
+                                    <span className="text-sm text-muted-foreground">Objective</span>
+                                    <span className="text-sm font-medium">{objective}</span>
+                                </div>
+                                <div className="flex justify-between items-center mt-2">
+                                    <span className="text-sm text-muted-foreground">ICP Profile</span>
+                                    <span className="text-sm font-medium">{selectedIcp?.name || 'Not selected'}</span>
+                                </div>
+                                <div className="flex justify-between items-center mt-2">
                                     <span className="text-sm text-muted-foreground">Recipients</span>
                                     <span className="text-sm font-medium">{selectedContactIds.length} leads</span>
+                                </div>
+                                <div className="flex justify-between items-center mt-2">
+                                    <span className="text-sm text-muted-foreground">Audience readiness</span>
+                                    <span className={`text-sm font-medium ${audienceReady ? 'text-success' : 'text-warning'}`}>
+                                        {audienceReady ? 'Ready' : 'Needs review'}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center mt-2">
+                                    <span className="text-sm text-muted-foreground">Sending mailbox</span>
+                                    <span className="text-sm font-medium">{selectedMailbox?.email || 'Not selected'}</span>
+                                </div>
+                                <div className="flex justify-between items-center mt-2">
+                                    <span className="text-sm text-muted-foreground">Send window</span>
+                                    <span className="text-sm font-medium">{formatSendWindow(sendWindow)}</span>
+                                </div>
+                                <div className="flex justify-between items-center mt-2">
+                                    <span className="text-sm text-muted-foreground">Mailbox status</span>
+                                    <span className={`text-sm font-medium ${hasActiveMailbox ? 'text-success' : 'text-warning'}`}>
+                                        {hasActiveMailbox ? 'Active and ready' : 'Needs deliverability setup'}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between items-center mt-2">
                                     <span className="text-sm text-muted-foreground">Steps</span>
                                     <span className="text-sm font-medium">{sequence.length} steps</span>
                                 </div>
+                                <div className="flex justify-between items-center mt-2">
+                                    <span className="text-sm text-muted-foreground">Email / wait steps</span>
+                                    <span className="text-sm font-medium">{emailStepsCount} email · {waitStepsCount} wait</span>
+                                </div>
+                                <div className="flex justify-between items-center mt-2">
+                                    <span className="text-sm text-muted-foreground">Compliance confirmation</span>
+                                    <span className={`text-sm font-medium ${complianceAgreed ? 'text-success' : 'text-warning'}`}>
+                                        {complianceAgreed ? 'Confirmed' : 'Pending'}
+                                    </span>
+                                </div>
                             </Card>
                         </div>
+                        {reviewIssues.length > 0 ? (
+                            <Card className="border-warning/40 bg-warning/5">
+                                <CardContent className="p-4 space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <AlertCircle className="h-4 w-4 text-warning" />
+                                        <p className="text-sm font-medium">Still needs attention before launch</p>
+                                    </div>
+                                    <ul className="space-y-2 text-xs text-muted-foreground">
+                                        {reviewIssues.map((issue) => (
+                                            <li key={issue} className="flex items-start gap-2">
+                                                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-warning shrink-0" />
+                                                <span>{issue}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <Card className="border-success/40 bg-success/5">
+                                <CardContent className="p-4 flex items-center gap-3">
+                                    <ShieldCheck className="h-5 w-5 text-success shrink-0" />
+                                    <div>
+                                        <p className="text-sm font-medium">Launch checklist complete</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            This campaign already has a real audience, an active mailbox, a valid send window, and completed sequence content.
+                                        </p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
                     </motion.div>
                 );
             default:
@@ -513,6 +1043,13 @@ export function CampaignWizard() {
                 <div className="flex gap-3">
                     {currentStep < 6 ? (
                         <Button
+                            disabled={
+                                (currentStep === 1 && !canContinueFromStep1) ||
+                                (currentStep === 2 && !canContinueFromStep2) ||
+                                (currentStep === 3 && !canContinueFromStep3) ||
+                                (currentStep === 4 && !canContinueFromStep4) ||
+                                (currentStep === 5 && !canContinueFromStep5)
+                            }
                             className="px-8 shadow-lg shadow-tangerine/20 bg-tangerine hover:bg-tangerine/90 text-white"
                             onClick={() => setCurrentStep(prev => Math.min(6, prev + 1))}
                         >
@@ -520,8 +1057,8 @@ export function CampaignWizard() {
                         </Button>
                     ) : (
                         <Button
-                            disabled={!complianceAgreed || isSubmitting}
-                            className={`px-8 bg-tangerine shadow-lg shadow-tangerine/30 hover:bg-tangerine/90 text-white ${(!complianceAgreed || isSubmitting) ? 'opacity-50' : 'hover:scale-105 transition-transform'}`}
+                            disabled={!complianceAgreed || isSubmitting || !audienceReady || !hasActiveMailbox}
+                            className={`px-8 bg-tangerine shadow-lg shadow-tangerine/30 hover:bg-tangerine/90 text-white ${(!complianceAgreed || isSubmitting || !audienceReady || !hasActiveMailbox) ? 'opacity-50' : 'hover:scale-105 transition-transform'}`}
                             onClick={handleLaunch}
                         >
                             {isSubmitting ? <Loader className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="mr-2 h-4 w-4" />}
@@ -533,6 +1070,3 @@ export function CampaignWizard() {
         </Card>
     );
 }
-
-
-

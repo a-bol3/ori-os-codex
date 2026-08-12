@@ -6,11 +6,25 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { PrismaModule } from '@ori-os/db/nestjs'; // Assuming PrismaModule is exported from @ori-os/db
 
+function requireJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+
+  if (secret) {
+    return secret;
+  }
+
+  if (process.env.NODE_ENV === 'test') {
+    return 'ori-os-test-only-secret';
+  }
+
+  throw new Error('JWT_SECRET is required');
+}
+
 @Module({
   imports: [
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'secretKey',
+      secret: requireJwtSecret(),
       signOptions: { expiresIn: '60m' },
     }),
     PrismaModule,

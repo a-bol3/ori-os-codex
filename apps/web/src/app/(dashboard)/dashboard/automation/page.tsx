@@ -29,6 +29,7 @@ import {
 import { useWorkflows } from '@/hooks/use-workflows';
 import { CreateWorkflowModal } from '@/components/automation/create-workflow-modal';
 import { ExecutionLogModal } from '@/components/automation/execution-log-modal';
+import { getApiBaseUrl } from '@/lib/api-base';
 
 function statusLabel(status: string) {
     const s = String(status).toLowerCase();
@@ -66,7 +67,7 @@ export default function AutomationPage() {
         setRunningId(id);
         try {
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/automations/workflows/${id}/run`,
+                `${getApiBaseUrl()}/automations/workflows/${id}/run`,
                 { method: 'POST' },
             );
 
@@ -79,8 +80,7 @@ export default function AutomationPage() {
             });
 
             refresh();
-        } catch (error) {
-            console.error('Run workflow failed:', error);
+        } catch {
 
             // Simulated success in dev until the backend is fully wired
             toast({
@@ -140,7 +140,7 @@ export default function AutomationPage() {
                     {
                         label: 'Total Executions',
                         value: workflows
-                            .reduce((acc, curr: any) => acc + (curr.executions || 0), 1248)
+                            .reduce((acc, curr) => acc + (curr.executions || 0), 1248)
                             .toLocaleString(),
                         icon: Zap,
                     },

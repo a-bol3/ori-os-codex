@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {  Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 import { Queue } from 'bullmq';
 
@@ -6,7 +6,7 @@ import { Queue } from 'bullmq';
 export class CrawlService {
   private crawlQueue: Queue;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {
     // Initialize BullMQ queue
     this.crawlQueue = new Queue('seo-crawl', {
       connection: {

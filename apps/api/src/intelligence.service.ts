@@ -1,25 +1,54 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {  Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 import { AiService } from './ai.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import * as cheerio from 'cheerio';
 import {
   CreateIcpProfileDto,
   UpdateIcpProfileDto,
 } from './dto/icp-profile.dto';
 
+type LeadSearchResult = {
+  id: string;
+  name: string;
+  domain: string;
+  industry: string;
+  size: string;
+  location: string;
+  description: string;
+};
+
+type IntelligencePrismaModels = {
+  icpProfile: {
+    create: (args: unknown) => Promise<unknown>;
+    findMany: (args: unknown) => Promise<unknown[]>;
+    findFirst: (args: unknown) => Promise<{ id: string } | null>;
+    update: (args: unknown) => Promise<unknown>;
+    delete: (args: unknown) => Promise<unknown>;
+  };
+  enrichmentJob: {
+    create: (args: unknown) => Promise<{ id: string }>;
+    findMany: (args: unknown) => Promise<unknown[]>;
+  };
+};
+
 @Injectable()
 export class IntelligenceService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly ai: AiService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(AiService) private readonly ai: AiService,
     @InjectQueue('intelligence-job') private enrichmentQueue: Queue,
   ) { }
+
+  private get intelligenceModels(): IntelligencePrismaModels {
+    return this.prisma as unknown as IntelligencePrismaModels;
+  }
 
   // --- ICP Profiles ---
 
   async createIcpProfile(orgId: string, dto: CreateIcpProfileDto) {
-    return (this.prisma as any).icpProfile.create({
+    return this.intelligenceModels.icpProfile.create({
       data: {
         ...dto,
         organizationId: orgId,
@@ -28,27 +57,45 @@ export class IntelligenceService {
   }
 
   async getIcpProfiles(orgId: string) {
-    return (this.prisma as any).icpProfile.findMany({
+    return this.intelligenceModels.icpProfile.findMany({
       where: { organizationId: orgId },
     });
   }
 
-  async updateIcpProfile(id: string, dto: UpdateIcpProfileDto) {
-    return (this.prisma as any).icpProfile.update({
-      where: { id },
+  async updateIcpProfile(orgId: string, id: string, dto: UpdateIcpProfileDto) {
+    const profile = await this.intelligenceModels.icpProfile.findFirst({
+      where: { id, organizationId: orgId },
+      select: { id: true },
+    });
+
+    if (!profile) {
+      throw new NotFoundException('ICP profile not found');
+    }
+
+    return this.intelligenceModels.icpProfile.update({
+      where: { id: profile.id },
       data: dto,
     });
   }
 
-  async deleteIcpProfile(id: string) {
-    return (this.prisma as any).icpProfile.delete({
-      where: { id },
+  async deleteIcpProfile(orgId: string, id: string) {
+    const profile = await this.intelligenceModels.icpProfile.findFirst({
+      where: { id, organizationId: orgId },
+      select: { id: true },
+    });
+
+    if (!profile) {
+      throw new NotFoundException('ICP profile not found');
+    }
+
+    return this.intelligenceModels.icpProfile.delete({
+      where: { id: profile.id },
     });
   }
 
   // --- Lead Discovery ---
 
-  async searchLeads(query: string) {
+  async searchLeads(query: string): Promise<LeadSearchResult[]> {
     if (!query) return [];
     const prompt = `
       Act as a business intelligence tool. The user is searching for companies matching: "${query}".
@@ -68,10 +115,13 @@ export class IntelligenceService {
       const data = typeof resultStr === 'string' ? JSON.parse(resultStr) : resultStr;
 
       // Handle the case where the AI returns { "companies": [...] } instead of directly [...]
-      if (data && Array.isArray(data)) return data;
-      if (data && data.companies && Array.isArray(data.companies)) return data.companies;
+      if (data && Array.isArray(data)) return data as LeadSearchResult[];
+      if (data && data.companies && Array.isArray(data.companies)) {
+        return data.companies as LeadSearchResult[];
+      }
 
-      return Object.values(data).find(Array.isArray) || [];
+      const nestedArray = Object.values(data as Record<string, unknown>).find(Array.isArray);
+      return (nestedArray as LeadSearchResult[] | undefined) || [];
     } catch (error) {
       console.error('Lead search AI failed:', error);
       return [];
@@ -88,7 +138,6 @@ export class IntelligenceService {
       const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
       if (response.ok) {
         const html = await response.text();
-        const cheerio = require('cheerio');
         const $ = cheerio.load(html);
 
         // Extract metadata and key content
@@ -111,7 +160,9 @@ export class IntelligenceService {
         );
       }
     } catch (error) {
-      console.error(`Failed to crawl ${url}:`, error.message);
+      const message =
+        error instanceof Error ? error.message : 'Unknown crawl failure';
+      console.error(`Failed to crawl ${url}:`, message);
       // Fallback: we still proceed with AI enrichment but with just the domain name
       crawledText = `No content fetched. Domain: ${domain}`;
     }
@@ -142,7 +193,7 @@ export class IntelligenceService {
         domain,
         lastUpdated: new Date(),
       };
-    } catch (error) {
+    } catch {
       return {
         name: domain.split('.')[0].toUpperCase(),
         domain,
@@ -162,7 +213,7 @@ export class IntelligenceService {
     targetType: 'COMPANY' | 'CONTACT',
     targetId: string,
   ) {
-    return (this.prisma as any).enrichmentJob.create({
+    return this.intelligenceModels.enrichmentJob.create({
       data: {
         organizationId: orgId,
         targetType,
@@ -184,7 +235,7 @@ export class IntelligenceService {
     const targetType = data.type === 'enrich-company' ? 'COMPANY' : 'CONTACT';
     const targetId = data.contactId || data.companyId || 'unknown';
 
-    const jobRecord = await (this.prisma as any).enrichmentJob.create({
+    const jobRecord = await this.intelligenceModels.enrichmentJob.create({
       data: {
         organizationId: data.orgId,
         targetType,
@@ -204,7 +255,7 @@ export class IntelligenceService {
   }
 
   async getEnrichmentJobs(orgId: string) {
-    return (this.prisma as any).enrichmentJob.findMany({
+    return this.intelligenceModels.enrichmentJob.findMany({
       where: { organizationId: orgId },
       orderBy: { createdAt: 'desc' },
       take: 50,

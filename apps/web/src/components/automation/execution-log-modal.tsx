@@ -11,41 +11,61 @@ import {
 import { CheckCircle2, Clock, XCircle, ChevronRight, Zap } from 'lucide-react';
 
 import { useState, useEffect } from 'react';
+import { getApiBaseUrl } from '@/lib/api-base';
 
 interface ExecutionLogModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }
 
+interface WorkflowRunStep {
+    errorMessage?: string | null;
+}
+
+interface WorkflowRunApiItem {
+    id: string;
+    status: string;
+    startedAt: string;
+    workflow?: {
+        name?: string | null;
+    } | null;
+    steps?: WorkflowRunStep[];
+}
+
+interface ExecutionLogItem {
+    id: string;
+    workflow: string;
+    status: string;
+    time: string;
+    steps: number;
+    error: string | null;
+}
+
 export function ExecutionLogModal({ open, onOpenChange }: ExecutionLogModalProps) {
-    const [logs, setLogs] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [logs, setLogs] = useState<ExecutionLogItem[]>([]);
 
     useEffect(() => {
         if (!open) return;
         const fetchLogs = async () => {
-            setLoading(true);
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/automations/workflows/runs`);
-                const data = await res.json();
-                setLogs(data.map((run: any) => ({
+                const res = await fetch(`${getApiBaseUrl()}/automations/workflows/runs`);
+                const data: WorkflowRunApiItem[] = await res.json();
+                setLogs(data.map((run) => ({
                     id: run.id,
                     workflow: run.workflow?.name || 'Unknown Workflow',
                     status: run.status.charAt(0).toUpperCase() + run.status.slice(1),
                     time: new Date(run.startedAt).toLocaleString(),
                     steps: run.steps?.length || 0,
-                    error: run.status === 'failed' ? (run.steps?.find((s: any) => s.errorMessage)?.errorMessage || 'Execution error') : null
+                    error: run.status === 'failed'
+                        ? (run.steps?.find((step) => step.errorMessage)?.errorMessage || 'Execution error')
+                        : null
                 })));
             } catch (error) {
                 console.error('Failed to fetch logs:', error);
-            } finally {
-                setLoading(false);
             }
         };
         fetchLogs();
     }, [open]);
-    Joe
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[650px] p-0 overflow-hidden">

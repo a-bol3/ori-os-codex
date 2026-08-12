@@ -52,34 +52,59 @@ Managed via **Turborepo** and **pnpm** for optimized build pipelines and shared 
 ### Setup Steps
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/ib4d/ori-os-chatzai.git
-   cd ori-os-chatzai
+   git clone https://github.com/ib4d/ori-os.git
+   cd ori-os
    ```
 
 2. **Install dependencies**:
    ```bash
-   pnpm install
+   npm install
    ```
 
-3. **Spin up infrastructure**:
+3. **Create your environment file**:
    ```bash
-   docker-compose up -d
+   copy .env.example .env
    ```
 
-4. **Initialize Database**:
+4. **Spin up local infrastructure**:
    ```bash
-   cp .env.example .env
-   # Update .env with your local credentials
-   pnpm db:generate
-   pnpm db:push
+   npm run dev:up
    ```
 
-5. **Start development server**:
+5. **Initialize Database**:
    ```bash
-   pnpm dev
+   npm run db:generate
+   npm run db:push
+   ```
+
+6. **Start the app locally**:
+   ```bash
+   npm run dev:local
    ```
    - Web: `http://localhost:3000`
    - API: `http://localhost:4000`
+
+### Local recovery commands
+- **Reset local app processes and build caches**:
+  ```bash
+  npm run dev:reset
+  ```
+- **Run only the frontend**:
+  ```bash
+  npm run dev:web
+  ```
+- **Run only the API**:
+  ```bash
+  npm run dev:api
+  ```
+
+### Development auth bypass
+- Keep `ORI_AUTH_BYPASS=0` by default.
+- Enable it only for local development when you need to access the dashboard without full auth wiring.
+- When bypass is enabled locally, also set:
+  - `ORI_DEV_USER_ID`
+  - `ORI_DEV_ORGANIZATION_ID`
+- The backend guard already blocks auth bypass outside `NODE_ENV=development`.
 
 ## 🌐 Production Readiness & Deployment
 

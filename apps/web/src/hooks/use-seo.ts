@@ -3,17 +3,18 @@
 import { useSEOProjects } from './use-seo-projects';
 import { useCrawls, useCrawlIssues } from './use-crawls';
 import { useState, useEffect } from 'react';
+import { apiFetch, getErrorMessage } from '@/lib/api-client';
 
 export function useSEO() {
-    const { projects, isLoading: projectsLoading, refresh: refreshProjects } = useSEOProjects();
+    const { projects, isLoading: projectsLoading, error: projectsError, refresh: refreshProjects } = useSEOProjects();
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
     const selectedProject = projects.find(p => p.id === selectedProjectId) || (projects.length > 0 ? projects[0] : null);
 
-    const { crawls, isLoading: crawlsLoading } = useCrawls(selectedProject?.id);
+    const { crawls, isLoading: crawlsLoading, error: crawlsError } = useCrawls(selectedProject?.id);
     const latestCrawl = crawls && crawls.length > 0 ? crawls.find(c => c.status === 'completed') || crawls[0] : null;
 
-    const { issues, summary: issuesSummary, isLoading: issuesLoading } = useCrawlIssues(latestCrawl?.id);
+    const { issues, summary: issuesSummary, isLoading: issuesLoading, error: issuesError } = useCrawlIssues(latestCrawl?.id);
 
     useEffect(() => {
         if (projects.length > 0 && !selectedProjectId) {
@@ -23,7 +24,7 @@ export function useSEO() {
 
     const startCrawl = async (projectId: string) => {
         try {
-            const response = await fetch(`/api/seo/projects/${projectId}/crawl`, {
+            const response = await apiFetch(`/seo/projects/${projectId}/crawl`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ maxPages: 1 }), // MVP: Homepage only
@@ -38,7 +39,7 @@ export function useSEO() {
 
     const addKeyword = async (projectId: string, keyword: string, targetUrl?: string) => {
         try {
-            const response = await fetch(`/api/seo/keywords`, {
+            const response = await apiFetch(`/seo/keywords`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ projectId, keyword, targetUrl }),
@@ -51,6 +52,8 @@ export function useSEO() {
         }
     };
 
+    const error = projectsError || crawlsError || issuesError || null;
+
     return {
         projects,
         selectedProject,
@@ -58,6 +61,7 @@ export function useSEO() {
         latestCrawl,
         issues,
         issuesSummary,
+        error,
         isLoading: projectsLoading || (selectedProject && (crawlsLoading || issuesLoading)),
         refreshProjects,
         startCrawl,

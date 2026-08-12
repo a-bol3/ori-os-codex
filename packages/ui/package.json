@@ -11,7 +11,8 @@
         "./tailwind.config": "./tailwind.config.ts"
     },
     "scripts": {
-        "lint": "eslint src/",
+        "lint": "eslint \"src/**/*.{ts,tsx}\"",
+        "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
         "clean": "rm -rf dist node_modules .turbo"
     },
     "dependencies": {

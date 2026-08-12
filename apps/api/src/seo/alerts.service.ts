@@ -1,12 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {  Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 import { NotificationsService } from '../notifications.service';
 
 @Injectable()
 export class AlertsService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly notificationsService: NotificationsService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(NotificationsService) private readonly notificationsService: NotificationsService,
   ) {}
 
   async createAlert(

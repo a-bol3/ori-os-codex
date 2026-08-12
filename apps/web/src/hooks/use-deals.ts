@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { fetchWorkspaceJson, getErrorMessage } from "@/lib/api-client"
 
 export interface Deal {
     id: string
@@ -8,18 +9,53 @@ export interface Deal {
     value: number
     stage: string
     probability: number
+    companyId?: string
+    contactId?: string
+    contactName?: string
+    closeDate?: string
     expectedClose?: string
-    company?: string // Virtual property for UI
-    owner?: string // Virtual property for UI
+    company?: string
+    owner?: string
 }
 
-const MOCK_DEALS: Deal[] = [
-    { id: 'm1', name: 'Acme Corp Enterprise License', value: 85000, stage: 'Negotiation', probability: 75, expectedClose: '2026-03-15', company: 'Acme Corp', owner: 'James K.' },
-    { id: 'm2', name: 'TechFlow SaaS Bundle', value: 42000, stage: 'Proposal', probability: 55, expectedClose: '2026-03-30', company: 'TechFlow', owner: 'Anna S.' },
-    { id: 'm3', name: 'DataVault Integration', value: 31500, stage: 'Qualified', probability: 40, expectedClose: '2026-04-10', company: 'DataVault', owner: 'James K.' },
-    { id: 'm4', name: 'CloudSync Platform', value: 29000, stage: 'Lead', probability: 25, expectedClose: '2026-04-30', company: 'CloudSync', owner: 'Anna S.' },
-    { id: 'm5', name: 'NexusAI Pilot', value: 18000, stage: 'Qualified', probability: 35, expectedClose: '2026-05-01', company: 'NexusAI', owner: 'James K.' },
-]
+interface DealApiItem {
+    id: string
+    name: string
+    valueAmount?: number | null
+    value?: number | null
+    probability?: number | null
+    closeDate?: string | null
+    expectedCloseDate?: string | null
+    stage?: {
+        name?: string | null
+        probability?: number | null
+    } | string | null
+    stageName?: string | null
+    company?: {
+        id?: string | null
+        name?: string | null
+    } | null
+    contact?: {
+        id?: string | null
+        firstName?: string | null
+        lastName?: string | null
+        email?: string | null
+    } | null
+    organization?: {
+        name?: string | null
+    } | null
+    owner?: {
+        name?: string | null
+    } | null
+}
+
+interface DealListResponse {
+    items: DealApiItem[]
+    total: number
+    limit: number
+    offset: number
+    hasMore: boolean
+}
 
 export function useDeals() {
     const [deals, setDeals] = useState<Deal[]>([])
@@ -27,36 +63,35 @@ export function useDeals() {
     const [error, setError] = useState<string | null>(null)
 
     const fetchDeals = useCallback(async () => {
-        setIsLoading(true);
+        setIsLoading(true)
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/crm/deals`)
-            if (!response.ok) throw new Error("Failed to fetch deals")
-            const data = await response.json()
+            const payload = await fetchWorkspaceJson<DealApiItem[] | DealListResponse>("/api/workspace/crm/deals")
+            const data = Array.isArray(payload) ? payload : payload.items
 
-            const normalizedData = data.map((d: any) => ({
-                ...d,
-                // API returns valueAmount, frontend expects value
-                value: d.valueAmount ?? d.value ?? 0,
-                // API returns stage as a relation object with a name field
-                stage: d.stage?.name ?? d.stageName ?? d.stage ?? 'Unknown',
-                // Company from relation
-                company: d.company?.name ?? d.organization?.name ?? '—',
-                owner: d.owner?.name ?? '—',
-                expectedClose: d.closeDate
-                    ? new Date(d.closeDate).toLocaleDateString()
-                    : d.expectedCloseDate
-                        ? new Date(d.expectedCloseDate).toLocaleDateString()
+            const normalizedData: Deal[] = data.map((deal) => ({
+                id: deal.id,
+                name: deal.name,
+                value: deal.valueAmount ?? deal.value ?? 0,
+                stage: typeof deal.stage === 'string' ? deal.stage : deal.stage?.name ?? deal.stageName ?? 'Unknown',
+                probability: deal.probability ?? (typeof deal.stage === 'string' ? 0 : deal.stage?.probability) ?? 0,
+                companyId: deal.company?.id ?? undefined,
+                contactId: deal.contact?.id ?? undefined,
+                contactName: `${deal.contact?.firstName || ''} ${deal.contact?.lastName || ''}`.trim() || deal.contact?.email || undefined,
+                closeDate: deal.closeDate ?? deal.expectedCloseDate ?? undefined,
+                expectedClose: deal.closeDate
+                    ? new Date(deal.closeDate).toLocaleDateString()
+                    : deal.expectedCloseDate
+                        ? new Date(deal.expectedCloseDate).toLocaleDateString()
                         : 'TBD',
-                // Probability from stage if not set
-                probability: d.probability ?? d.stage?.probability ?? 0,
+                company: deal.company?.name ?? deal.organization?.name ?? '-',
+                owner: deal.owner?.name ?? '-',
             }))
 
             setDeals(normalizedData)
             setError(null)
         } catch (err) {
-            console.warn('[Deals] API unavailable, using demo data')
-            setDeals(MOCK_DEALS)
-            setError(null)
+            setDeals([])
+            setError(getErrorMessage(err, "Failed to fetch deals"))
         } finally {
             setIsLoading(false)
         }
@@ -68,4 +103,3 @@ export function useDeals() {
 
     return { deals, isLoading, error, refresh: fetchDeals }
 }
-

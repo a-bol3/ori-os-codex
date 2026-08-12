@@ -1,10 +1,10 @@
-import { Injectable, NestMiddleware, ForbiddenException } from '@nestjs/common';
+import {  Injectable, NestMiddleware, ForbiddenException, Inject } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { PrismaService } from '@ori-os/db/nestjs';
 
 @Injectable()
 export class UsageLimitMiddleware implements NestMiddleware {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async use(req: Request & { user?: any }, res: Response, next: NextFunction) {
     const organizationId = req.user?.organizationId;

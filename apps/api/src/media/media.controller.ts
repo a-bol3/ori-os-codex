@@ -9,37 +9,42 @@ import {
   UseInterceptors,
   UploadedFile,
   UseGuards,
-  Req,
-} from '@nestjs/common';
+  Req, Inject } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MediaService } from './media.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import {
+  AuthenticatedRequest,
+  requireOrganizationId,
+} from '../common/request-context';
+
+type MediaRequestBody = { bucket?: string; path?: string; connectorId?: string };
 
 @Controller('media')
 @UseGuards(JwtAuthGuard)
 export class MediaController {
-  constructor(private readonly mediaService: MediaService) {}
+  constructor(@Inject(MediaService) private readonly mediaService: MediaService) {}
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: { bucket?: string; path?: string; connectorId?: string },
+    @Body() body: MediaRequestBody,
   ) {
-    const organizationId = req.user?.organizationId || 'mock-org-id';
+    const organizationId = requireOrganizationId(req);
     return this.mediaService.uploadFile(organizationId, file, body);
   }
 
   @Get('url/:bucket/:key')
   getSignedUrl(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('bucket') bucket: string,
     @Param('key') key: string,
     @Query('connectorId') connectorId?: string,
     @Query('expiresIn') expiresIn?: string,
   ) {
-    const organizationId = req.user?.organizationId || 'mock-org-id';
+    const organizationId = requireOrganizationId(req);
     return this.mediaService.getDownloadUrl(
       organizationId,
       bucket,
@@ -51,12 +56,12 @@ export class MediaController {
 
   @Delete(':bucket/:key')
   deleteFile(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Param('bucket') bucket: string,
     @Param('key') key: string,
     @Query('connectorId') connectorId?: string,
   ) {
-    const organizationId = req.user?.organizationId || 'mock-org-id';
+    const organizationId = requireOrganizationId(req);
     return this.mediaService.deleteFile(
       organizationId,
       bucket,

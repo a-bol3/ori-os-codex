@@ -1,15 +1,10 @@
 import type { Metadata } from 'next';
-import { Urbanist } from 'next/font/google';
 import '../styles/globals.css';
 import { cn, Toaster } from '@ori-os/ui';
 import { SessionProvider } from 'next-auth/react';
 import { Providers } from '@/components/providers';
-
-const urbanist = Urbanist({
-    subsets: ['latin'],
-    variable: '--font-urbanist',
-    display: 'swap',
-});
+import { auth } from '@/auth';
+import { SessionTokenBridge } from '@/components/providers/session-token-bridge';
 
 export const metadata: Metadata = {
     title: {
@@ -31,15 +26,24 @@ export const metadata: Metadata = {
 
 import { CookieConsent } from '@/components/layout/cookie-consent';
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const session = await auth();
+    const accessToken = typeof (session as { accessToken?: unknown } | null)?.accessToken === "string"
+        ? (session as { accessToken?: string }).accessToken
+        : undefined;
+    const organizationId = typeof (session as { organizationId?: unknown } | null)?.organizationId === "string"
+        ? (session as { organizationId?: string }).organizationId
+        : undefined;
+
     return (
         <html lang="en" suppressHydrationWarning>
-            <body className={cn('min-h-screen bg-background font-sans antialiased', urbanist.variable)}>
-                <SessionProvider>
+            <body className={cn('min-h-screen bg-background font-sans antialiased')}>
+                <SessionProvider session={session}>
+                    <SessionTokenBridge accessToken={accessToken} organizationId={organizationId} />
                     <Providers>
                         {children}
                         <CookieConsent />

@@ -1,5 +1,7 @@
 # Hostinger VPS Deployment Guide - Ori-OS
 
+> **Estado: histórico / sustituido.** Este documento conserva notas de aprovisionamiento, pero contiene referencias antiguas (Caddy y puertos que ya posee nginx). Para el despliegue real usa [HOSTINGER_ORIOS_DEPLOY.md](./HOSTINGER_ORIOS_DEPLOY.md) y [RELEASE_PROCESS.md](./RELEASE_PROCESS.md).
+
 This guide provides step-by-step instructions for provisioning a Hostinger VPS and deploying the Ori-OS production stack.
 
 ## 1. VPS Provisioning (Hostinger Panel)

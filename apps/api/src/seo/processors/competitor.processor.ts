@@ -1,6 +1,6 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import { Injectable } from '@nestjs/common';
+import {  Injectable, Inject } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 import { AlertsService } from '../alerts.service';
 import * as cheerio from 'cheerio';
@@ -9,8 +9,8 @@ import * as cheerio from 'cheerio';
 @Injectable()
 export class SEOCompetitorProcessor extends WorkerHost {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly alertsService: AlertsService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(AlertsService) private readonly alertsService: AlertsService,
   ) {
     super();
   }

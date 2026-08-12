@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {  Injectable, Inject } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 
 @Injectable()
 export class SeoProjectsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(@Inject(PrismaService) private prisma: PrismaService) { }
 
   async findAll(organizationId: string): Promise<any> {
     return this.prisma.sEOProject.findMany({

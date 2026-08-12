@@ -1,5 +1,7 @@
 # Rollback Plan
 
+> **Estado: histórico / no canónico para el VPS actual.** La estrategia de tags de imagen descrita aquí no está automatizada en el repositorio. El rollback vigente es controlado por el operador: restaurar backup si procede, fijar un commit revisado y ejecutar `./scripts/deploy-host-nginx.sh`, siguiendo [RELEASE_PROCESS.md](./RELEASE_PROCESS.md).
+
 This document defines the procedure for reverting to a previous stable version of Ori-OS in case of a failed deployment.
 
 ## 1. Rollback Triggers

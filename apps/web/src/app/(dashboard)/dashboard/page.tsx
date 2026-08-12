@@ -8,15 +8,10 @@ import {
     CardTitle,
     CardDescription,
     Button,
-    Badge,
-    Progress,
 } from '@ori-os/ui';
 import {
-    TrendingUp,
-    TrendingDown,
     Users,
     Building2,
-    DollarSign,
     Mail,
     ArrowRight,
     Sparkles,
@@ -26,11 +21,37 @@ import {
     Beaker,
 } from 'lucide-react';
 import { useDashboard } from '@/hooks/use-dashboard';
-import { useMemo } from 'react';
 import Link from 'next/link';
 import { DashboardStats } from '@/components/dashboard-stats';
 
-return (
+export default function DashboardPage() {
+    const { data: dashboardData, isLoading, error } = useDashboard();
+    const activities = dashboardData?.recentActivity || [];
+    const contactGrowth = dashboardData?.contacts.growth ?? 0;
+    const activeCampaigns = dashboardData?.campaigns.active ?? 0;
+    const activeWorkflows = dashboardData?.workflows.active ?? 0;
+    const insightMessage = dashboardData
+        ? contactGrowth > 0
+            ? `Contact growth is up ${contactGrowth}% this month. Keep momentum by converting fresh activity into new deals and follow-up tasks.`
+            : activeCampaigns > 0
+                ? `${activeCampaigns} campaign${activeCampaigns === 1 ? '' : 's'} ${activeCampaigns === 1 ? 'is' : 'are'} running now. Review opens and replies to prioritize the next round of outreach.`
+                : activeWorkflows > 0
+                    ? `${activeWorkflows} workflow${activeWorkflows === 1 ? '' : 's'} ${activeWorkflows === 1 ? 'is' : 'are'} active. This is a good moment to verify outcomes and tighten automation rules.`
+                    : 'Your workspace is live but still early. Add contacts, create deals, and launch your first campaign to turn the dashboard into a real operating view.'
+        : 'Loading intelligence insight...';
+
+    if (error) {
+        return (
+            <div className="p-6 bg-destructive/10 text-destructive text-sm rounded-none border border-destructive/20 flex flex-col items-center gap-4">
+                <p>Failed to load dashboard: {error}</p>
+                <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+                    Retry
+                </Button>
+            </div>
+        );
+    }
+
+    return (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -41,7 +62,7 @@ return (
             <div>
                 <h1 className="text-3xl font-bold text-foreground tracking-tight">Dashboard</h1>
                 <p className="text-muted-foreground mt-1">
-                    Welcome back! Here's what's happening with your business.
+                    Welcome back! Here&apos;s what&apos;s happening with your business.
                 </p>
             </div>
             <div className="flex items-center gap-3">
@@ -193,8 +214,7 @@ return (
                             <span className="text-xs font-black uppercase tracking-[0.2em]">Intelligence Insight</span>
                         </div>
                         <p className="text-sm text-foreground leading-relaxed">
-                            Your deal pipeline is <strong>23% larger</strong> than last month.
-                            Consider enlisting 4 more companies for enrichment to maintain momentum.
+                            {insightMessage}
                         </p>
                         <Button size="sm" className="w-full mt-6 bg-tangerine hover:bg-tangerine/90 text-white border-none shadow-lg shadow-tangerine/20 rounded-none font-bold uppercase tracking-wider h-10 group" asChild>
                             <Link href="/dashboard/intelligence">

@@ -1,14 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {  Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { promises as dns } from 'node:dns';
 import { PrismaService } from '@ori-os/db/nestjs';
-import { CreateDomainDto, UpdateDomainDto } from './dto/domain.dto';
+import { CreateDomainDto } from './dto/domain.dto';
 import { CreateMailboxDto, UpdateMailboxDto } from './dto/mailbox.dto';
 
 @Injectable()
 export class DeliverabilityService {
-  constructor(private prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private prisma: PrismaService) {}
 
   async createDomain(orgId: string, dto: CreateDomainDto) {
-    return (this.prisma as any).domain.create({
+    return this.prisma.domain.create({
       data: {
         ...dto,
         organizationId: orgId,
@@ -17,20 +18,18 @@ export class DeliverabilityService {
   }
 
   async getDomains(orgId: string) {
-    return (this.prisma as any).domain.findMany({
+    return this.prisma.domain.findMany({
       where: { organizationId: orgId },
       include: { mailboxes: true },
     });
   }
 
-  async verifyDns(domainId: string) {
-    const domain = await (this.prisma as any).domain.findUnique({
-      where: { id: domainId },
+  async verifyDns(orgId: string, domainId: string) {
+    const domain = await this.prisma.domain.findFirst({
+      where: { id: domainId, organizationId: orgId },
     });
     if (!domain) throw new NotFoundException('Domain not found');
 
-    // Real DNS checks using node:dns
-    const dns = require('dns').promises;
     let spfStatus = false;
     let dmarcStatus = false;
 
@@ -44,14 +43,14 @@ export class DeliverabilityService {
         dmarcStatus = dmarcRecords
           .flat()
           .some((r: string) => r.includes('v=DMARC1'));
-      } catch (e) {
+      } catch {
         // _dmarc record might not exist
       }
-    } catch (e) {
+    } catch {
       // Domain might not exist or have TXT records
     }
 
-    return (this.prisma as any).domain.update({
+    return this.prisma.domain.update({
       where: { id: domainId },
       data: {
         spfStatus,
@@ -63,7 +62,7 @@ export class DeliverabilityService {
   }
 
   async createMailbox(orgId: string, dto: CreateMailboxDto) {
-    return (this.prisma as any).mailbox.create({
+    return this.prisma.mailbox.create({
       data: {
         ...dto,
         organizationId: orgId,
@@ -72,14 +71,22 @@ export class DeliverabilityService {
   }
 
   async getMailboxes(orgId: string) {
-    return (this.prisma as any).mailbox.findMany({
+    return this.prisma.mailbox.findMany({
       where: { organizationId: orgId },
       include: { domain: true },
     });
   }
 
-  async updateMailbox(id: string, dto: UpdateMailboxDto) {
-    return (this.prisma as any).mailbox.update({
+  async updateMailbox(orgId: string, id: string, dto: UpdateMailboxDto) {
+    const mailbox = await this.prisma.mailbox.findFirst({
+      where: { id, organizationId: orgId },
+    });
+
+    if (!mailbox) {
+      throw new NotFoundException('Mailbox not found');
+    }
+
+    return this.prisma.mailbox.update({
       where: { id },
       data: dto,
     });

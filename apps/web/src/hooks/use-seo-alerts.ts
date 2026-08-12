@@ -1,45 +1,55 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@ori-os/ui';
+import { getApiBaseUrl } from '@/lib/api-base';
 
-// Mock hook implementation until we have the real API client generated or generic fetcher
-// In a real app, this would use SWR or React Query
+interface SeoAlert {
+    id: string;
+    status?: string;
+    [key: string]: unknown;
+}
+
+interface SeoAlertsResponse {
+    data?: SeoAlert[];
+}
+
 export function useSEOAlerts(projectId: string) {
-    const [alerts, setAlerts] = useState<any[]>([]);
+    const [alerts, setAlerts] = useState<SeoAlert[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
 
-    const fetchAlerts = async () => {
+    const fetchAlerts = useCallback(async () => {
         try {
             setIsLoading(true);
-            const token = localStorage.getItem('token'); // Simplistic auth
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/seo/projects/${projectId}/alerts`, {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${getApiBaseUrl()}/seo/projects/${projectId}/alerts`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
+
             if (response.ok) {
-                const data = await response.json();
-                setAlerts(data.data);
+                const data: SeoAlertsResponse = await response.json();
+                setAlerts(data.data ?? []);
             }
         } catch (error) {
             console.error('Failed to fetch alerts', error);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [projectId]);
 
     useEffect(() => {
         if (projectId) {
             fetchAlerts();
         }
-    }, [projectId]);
+    }, [projectId, fetchAlerts]);
 
     const markAsRead = async (alertId: string) => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/seo/projects/${projectId}/alerts/${alertId}`, {
+            const response = await fetch(`${getApiBaseUrl()}/seo/projects/${projectId}/alerts/${alertId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -49,10 +59,10 @@ export function useSEOAlerts(projectId: string) {
             });
 
             if (response.ok) {
-                setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, status: 'read' } : a));
+                setAlerts(prev => prev.map(alert => alert.id === alertId ? { ...alert, status: 'read' } : alert));
                 toast({ title: 'Alert marked as read' });
             }
-        } catch (error) {
+        } catch {
             toast({ title: 'Failed to update alert', variant: 'destructive' });
         }
     };
@@ -60,7 +70,7 @@ export function useSEOAlerts(projectId: string) {
     const markAllAsRead = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/seo/projects/${projectId}/alerts/mark-all-read`, {
+            const response = await fetch(`${getApiBaseUrl()}/seo/projects/${projectId}/alerts/mark-all-read`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -68,10 +78,10 @@ export function useSEOAlerts(projectId: string) {
             });
 
             if (response.ok) {
-                setAlerts(prev => prev.map(a => ({ ...a, status: 'read' })));
+                setAlerts(prev => prev.map(alert => ({ ...alert, status: 'read' })));
                 toast({ title: 'All alerts marked as read' });
             }
-        } catch (error) {
+        } catch {
             toast({ title: 'Failed to update alerts', variant: 'destructive' });
         }
     };

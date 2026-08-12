@@ -1,11 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {  Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
+import { fixtureMode, ProviderConfigurationError } from '@ori-os/core';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 @Injectable()
 export class ContentAnalysisService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async analyzeContent(
     projectId: string,
@@ -145,8 +146,14 @@ export class ContentAnalysisService {
   }
 
   private async analyzeCompetitors(keyword: string) {
-    // In production, use SERP API to get top 10 results
-    // For now, return mock competitor data
+    if (!fixtureMode('ENABLE_SEO_FIXTURES')) {
+      throw new ProviderConfigurationError(
+        'SEO competitor provider',
+        'Configure a verified SERP/competitor provider before requesting competitor analysis.',
+      );
+    }
+
+    // Development-only fixtures. They are never available in production.
     return [
       {
         url: 'https://competitor1.com/article',

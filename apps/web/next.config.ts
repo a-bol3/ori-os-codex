@@ -1,15 +1,19 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+    output: 'standalone',
     reactStrictMode: true,
     transpilePackages: ['@ori-os/ui', '@ori-os/db'],
     async rewrites() {
         return [
             {
-                // Proxy all /api requests to the NestJS backend, 
-                // EXCEPT for /api/auth which matches NextAuth routes
-                source: '/api/((?!auth).*)',
-                destination: 'http://127.0.0.1:4000/api/$1',
+                // Proxy same-origin /api/* calls to the NestJS container.
+                // Keep /api/auth on NextAuth and /api/workspace on the
+                // Next.js app itself. Forward every other path without the
+                // /api prefix because the backend routes are /crm/*,
+                // /dashboard, /activities, etc.
+                source: '/api/:path((?!auth|workspace).*)',
+                destination: 'http://api:4000/:path',
             },
         ];
     },

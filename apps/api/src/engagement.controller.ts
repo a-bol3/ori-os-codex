@@ -8,63 +8,80 @@ import {
   Delete,
   UseGuards,
   Request,
-} from '@nestjs/common';
+  NotFoundException, Inject } from '@nestjs/common';
 import { EngagementService } from './engagement.service';
 import { CampaignLaunchService } from './engagement/campaign-launch.service';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { CreateCampaignDto, UpdateCampaignDto } from './dto/campaign.dto';
+import {
+  AuthenticatedRequest,
+  requireOrganizationId,
+  requireUserId,
+} from './common/request-context';
 
 @Controller('engagement/campaigns')
 @UseGuards(JwtAuthGuard)
 export class CampaignsController {
   constructor(
-    private readonly service: EngagementService,
-    private readonly launchService: CampaignLaunchService,
+    @Inject(EngagementService) private readonly service: EngagementService,
+    @Inject(CampaignLaunchService) private readonly launchService: CampaignLaunchService,
   ) { }
 
   @Get()
-  async findAll(@Request() req) {
-    const orgId = req.user.organizationId || 'default-org-id';
-    return this.service.findAll(orgId);
+  async findAll(@Request() req: AuthenticatedRequest) {
+    return this.service.findAll(requireOrganizationId(req));
   }
 
   @Get(':id')
-  async findOne(@Request() req, @Param('id') id: string) {
-    const orgId = req.user.organizationId || 'default-org-id';
-    return this.service.findOne(orgId, id);
+  async findOne(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.service.findOne(requireOrganizationId(req), id);
   }
 
   @Post()
-  async create(@Request() req, @Body() dto: CreateCampaignDto) {
-    const orgId = req.user.organizationId || 'default-org-id';
-    const userId = req.user.userId;
+  async create(@Request() req: AuthenticatedRequest, @Body() dto: CreateCampaignDto) {
+    const orgId = requireOrganizationId(req);
+    const userId = requireUserId(req);
     return this.service.createCampaign(orgId, userId, dto);
   }
 
   @Put(':id')
   async update(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: UpdateCampaignDto,
   ) {
-    const orgId = req.user.organizationId || 'default-org-id';
-    return this.service.updateCampaign(orgId, id, dto);
+    return this.service.updateCampaign(requireOrganizationId(req), id, dto);
   }
 
   @Delete(':id')
-  async delete(@Request() req, @Param('id') id: string) {
-    const orgId = req.user.organizationId || 'default-org-id';
-    return this.service.deleteCampaign(orgId, id);
+  async delete(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.service.deleteCampaign(requireOrganizationId(req), id);
   }
 
   @Post(':id/recipients')
   async addRecipients(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() body: { contactIds: string[] },
   ) {
-    const orgId = req.user.organizationId || 'default-org-id';
-    return this.service.addRecipients(orgId, id, body.contactIds);
+    return this.service.addRecipients(
+      requireOrganizationId(req),
+      id,
+      body.contactIds,
+    );
+  }
+
+  @Delete(':id/recipients/:contactId')
+  async removeRecipient(
+    @Request() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Param('contactId') contactId: string,
+  ) {
+    return this.service.removeRecipient(
+      requireOrganizationId(req),
+      id,
+      contactId,
+    );
   }
 
   @Post('process')
@@ -73,8 +90,8 @@ export class CampaignsController {
     return { status: 'success', message: 'Campaign processing triggered' };
   }
   @Post(':id/launch')
-  async launch(@Param('id') id: string) {
-    return this.launchService.launch(id);
+  async launch(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.launchService.launch(requireOrganizationId(req), id);
   }
 }
 
@@ -82,18 +99,37 @@ export class CampaignsController {
 import { EmailService } from './email.service';
 import { PrismaService } from '@ori-os/db/nestjs';
 
+type EmailEventRecord = {
+  contact: { email: string } | null;
+  campaign: { organizationId: string } | null;
+};
+
+type EmailEventModel = {
+  findMany: (args: unknown) => Promise<unknown[]>;
+  findUnique: (args: unknown) => Promise<EmailEventRecord | null>;
+};
+
+type SendEmailResult = {
+  success: boolean;
+  simulated?: boolean;
+};
+
 @Controller('engagement/inbox')
 @UseGuards(JwtAuthGuard)
 export class InboxController {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly email: EmailService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(EmailService) private readonly email: EmailService,
   ) { }
 
+  private get emailEventModel(): EmailEventModel {
+    return (this.prisma as unknown as { emailEvent: EmailEventModel }).emailEvent;
+  }
+
   @Get()
-  async findAll(@Request() req) {
-    const orgId = req.user.organizationId || 'default-org-id';
-    return (this.prisma as any).emailEvent.findMany({
+  async findAll(@Request() req: AuthenticatedRequest) {
+    const orgId = requireOrganizationId(req);
+    return this.emailEventModel.findMany({
       where: {
         eventType: 'REPLY',
         campaign: { organizationId: orgId },
@@ -105,30 +141,29 @@ export class InboxController {
 
   @Post(':id/reply')
   async reply(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() body: { content: string },
   ) {
-    const event = await (this.prisma as any).emailEvent.findUnique({
+    const orgId = requireOrganizationId(req);
+    const event = await this.emailEventModel.findUnique({
       where: { id },
-      include: { contact: true },
+      include: { contact: true, campaign: true },
     });
 
-    if (!event || !event.contact)
-      return {
-        status: 'error',
-        message: 'Original message or contact not found',
-      };
+    if (!event || !event.contact || event.campaign?.organizationId !== orgId) {
+      throw new NotFoundException('Original message or contact not found');
+    }
 
-    const result = await this.email.sendEmail(
+    const result = (await this.email.sendEmail(
       event.contact.email,
       `Re: Follow up`,
       body.content,
-    );
+    )) as SendEmailResult;
 
     return {
       status: result.success ? 'success' : 'error',
-      simulated: (result as any).simulated,
+      simulated: result.simulated,
     };
   }
 }

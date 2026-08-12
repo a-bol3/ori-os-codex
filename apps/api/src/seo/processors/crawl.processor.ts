@@ -1,6 +1,6 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import { Injectable } from '@nestjs/common';
+import {  Injectable, Inject } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 import { AlertsService } from '../alerts.service';
 
@@ -8,8 +8,8 @@ import { AlertsService } from '../alerts.service';
 @Injectable()
 export class SEOCrawlProcessor extends WorkerHost {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly alertsService: AlertsService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(AlertsService) private readonly alertsService: AlertsService,
   ) {
     super();
   }
@@ -41,13 +41,13 @@ export class SEOCrawlProcessor extends WorkerHost {
       }
 
       // Simulate crawling (in production, you'd use a real crawler like Puppeteer or Playwright)
-      const mockPages = await this.crawlSite(
+      const pages = await this.crawlSite(
         project.domain,
         project.maxPagesToCrawl,
       );
 
       // Save crawled pages
-      for (const page of mockPages) {
+      for (const page of pages) {
         await (this.prisma as any).sEOPage.create({
           data: {
             crawlId,
@@ -57,7 +57,7 @@ export class SEOCrawlProcessor extends WorkerHost {
       }
 
       // Detect issues
-      const issues = this.detectIssues(mockPages);
+      const issues = this.detectIssues(pages);
 
       // Save issues
       for (const issue of issues) {
@@ -118,8 +118,8 @@ export class SEOCrawlProcessor extends WorkerHost {
         data: {
           status: 'completed',
           completedAt: new Date(),
-          pagesFound: mockPages.length,
-          pagesCrawled: mockPages.length,
+          pagesFound: pages.length,
+          pagesCrawled: pages.length,
           issuesFound: issues.length,
           criticalIssues: criticalIssuesCount,
           warnings: warningsCount,
@@ -129,7 +129,7 @@ export class SEOCrawlProcessor extends WorkerHost {
       console.log(`[SEO Crawl] Completed crawl for project ${projectId}`);
 
       return {
-        pagesFound: mockPages.length,
+        pagesFound: pages.length,
         issuesFound: issues.length,
       };
     } catch (error) {

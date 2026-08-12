@@ -37,7 +37,7 @@ export function CookieConsent() {
                 <CardContent className="pb-2">
                     <p className="text-sm text-muted-foreground">
                         We use cookies to enhance your experience, analyze our traffic, and for security purposes.
-                        By clicking "Accept", you consent to our use of cookies.
+                        By clicking &ldquo;Accept&rdquo;, you consent to our use of cookies.
                         Read our <Link href="/privacy" className="text-primary hover:underline underline-offset-4">Privacy Policy</Link>.
                     </p>
                 </CardContent>

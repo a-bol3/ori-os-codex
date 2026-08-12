@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 
-import { BarChart3, TrendingUp, Users, DollarSign, Target, Calendar, Download, Loader, PieChart, Activity, Zap, Mail } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Target, Download, Loader, Activity, Zap, Mail } from 'lucide-react';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { exportToCSV } from '@/lib/export';
 import {
@@ -23,10 +23,10 @@ import {
     CardTitle,
     Button
 } from '@ori-os/ui';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function AnalyticsPage() {
-    const { data, isLoading } = useAnalytics();
+    const { data, isLoading, error } = useAnalytics();
     const { toast } = useToast();
 
     const handleExport = () => {
@@ -39,11 +39,30 @@ export default function AnalyticsPage() {
         toast({ title: 'Export Successful', description: 'Analytics data exported to CSV.' });
     };
 
-    if (isLoading || !data) {
+    if (isLoading) {
         return (
             <div className="flex h-[400px] items-center justify-center">
                 <Loader className="h-8 w-8 animate-spin text-tangerine" />
             </div>
+        );
+    }
+
+    if (error || !data) {
+        return (
+            <Card>
+                <CardContent className="flex min-h-[320px] flex-col items-center justify-center gap-4 p-8 text-center">
+                    <Activity className="h-10 w-10 text-destructive" />
+                    <div className="space-y-1">
+                        <h2 className="text-xl font-semibold text-foreground">Analytics unavailable</h2>
+                        <p className="max-w-xl text-sm text-muted-foreground">
+                            {error || 'Analytics data is not available right now.'}
+                        </p>
+                    </div>
+                    <Button variant="outline" onClick={() => window.location.reload()}>
+                        Retry
+                    </Button>
+                </CardContent>
+            </Card>
         );
     }
 

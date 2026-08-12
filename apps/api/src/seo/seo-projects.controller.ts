@@ -7,71 +7,90 @@ import {
   Body,
   Param,
   UseGuards,
-  Req,
-} from '@nestjs/common';
+  Req, Inject } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SeoProjectsService } from './seo-projects.service';
+import {
+  AuthenticatedRequest,
+  requireOrganizationId,
+  requireUserId,
+} from '../common/request-context';
+
+type CreateSeoProjectBody = {
+  name: string;
+  domain: string;
+  description?: string;
+  companyId?: string;
+  crawlFrequency?: string;
+  maxPagesToCrawl?: string | number;
+};
+
+type UpdateSeoProjectBody = {
+  name?: string;
+  description?: string;
+  crawlFrequency?: string;
+  maxPagesToCrawl?: number;
+  gscConnected?: boolean;
+  gscSiteUrl?: string;
+};
 
 @Controller('seo/projects')
 @UseGuards(JwtAuthGuard)
 export class SeoProjectsController {
-  constructor(private readonly seoProjectsService: SeoProjectsService) { }
+  constructor(@Inject(SeoProjectsService) private readonly seoProjectsService: SeoProjectsService) {}
 
   @Get()
-  async findAll(@Req() req: any): Promise<any> {
-    console.log('[SEO DEBUG] Entering findAll');
-    try {
-      const organizationId = req.user?.organizationId || 'mock-org-id';
-      console.log(`[SEO DEBUG] organizationId: ${organizationId}`);
-      const results = await this.seoProjectsService.findAll(organizationId);
-      console.log(`[SEO DEBUG] Found projects: ${results.length}`);
-      return results;
-    } catch (error) {
-      console.error('[SEO DEBUG] Error in findAll:', error);
-      throw error;
-    }
+  async findAll(@Req() req: AuthenticatedRequest) {
+    return this.seoProjectsService.findAll(requireOrganizationId(req));
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @Req() req: any): Promise<any> {
-    const organizationId = req.user?.organizationId || 'mock-org-id';
+  async findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    const organizationId = requireOrganizationId(req);
     return this.seoProjectsService.findOne(id, organizationId);
   }
 
   @Post()
-  async create(@Body() body: any, @Req() req: any): Promise<any> {
-    console.log('[SEO DEBUG] Entering create');
-    try {
-      const organizationId = req.user?.organizationId || 'mock-org-id';
-      const creatorId = req.user?.id || req.user?.userId || 'mock-user-id';
+  async create(
+    @Body() body: CreateSeoProjectBody,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const organizationId = requireOrganizationId(req);
+    const creatorId = requireUserId(req);
 
-      console.log(
-        `[SEO DEBUG] Creating project with org=${organizationId}, creator=${creatorId}`,
-      );
+    const createData: {
+      organizationId: string;
+      creatorId: string;
+      name: string;
+      domain: string;
+      description?: string;
+      companyId?: string;
+      crawlFrequency?: string;
+      maxPagesToCrawl?: number;
+    } = {
+      organizationId,
+      creatorId,
+      name: body.name,
+      domain: body.domain,
+    };
 
-      const createData: any = {
-        organizationId,
-        creatorId,
-        name: body.name,
-        domain: body.domain,
-      };
-
-      if (body.description) createData.description = body.description;
-      if (body.companyId) createData.companyId = body.companyId;
-      if (body.crawlFrequency) createData.crawlFrequency = body.crawlFrequency;
-      if (body.maxPagesToCrawl)
-        createData.maxPagesToCrawl = parseInt(body.maxPagesToCrawl);
-
-      return await this.seoProjectsService.create(createData);
-    } catch (error) {
-      console.error('[SEO DEBUG] Error in create:', error);
-      throw error;
+    if (body.description) createData.description = body.description;
+    if (body.companyId) createData.companyId = body.companyId;
+    if (body.crawlFrequency) createData.crawlFrequency = body.crawlFrequency;
+    if (body.maxPagesToCrawl !== undefined) {
+      createData.maxPagesToCrawl = Number(body.maxPagesToCrawl);
     }
+
+    return this.seoProjectsService.create(createData);
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() body: any, @Req() req: any): Promise<any> {
-    const organizationId = req.user?.organizationId || 'default-org';
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateSeoProjectBody,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const organizationId = requireOrganizationId(req);
 
     return this.seoProjectsService.update(id, organizationId, {
       name: body.name,
@@ -84,8 +103,8 @@ export class SeoProjectsController {
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string, @Req() req: any): Promise<any> {
-    const organizationId = req.user?.organizationId || 'default-org';
+  async delete(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    const organizationId = requireOrganizationId(req);
     return this.seoProjectsService.delete(id, organizationId);
   }
 }

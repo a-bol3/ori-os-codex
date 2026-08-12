@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { getErrorMessage } from "@/lib/api-client";
 
 export interface Activity {
     id: string;
@@ -10,6 +11,15 @@ export interface Activity {
     time: string;
     status: 'unread' | 'read';
     createdAt: string;
+}
+
+interface ActivityApiItem {
+    id: string;
+    type?: Activity['type'] | string;
+    title?: string;
+    description?: string;
+    status?: Activity['status'];
+    createdAt?: string;
 }
 
 function formatRelativeTime(date: string | Date) {
@@ -30,19 +40,31 @@ export function useActivity() {
     const fetchActivity = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/activities`);
-            if (!response.ok) throw new Error("Failed to fetch activity");
-            const data = await response.json();
+            const response = await fetch("/api/workspace/activities", {
+                credentials: "same-origin",
+                cache: "no-store",
+            });
+            if (!response.ok) {
+                throw new Error("Unable to load workspace activity");
+            }
+            const data: ActivityApiItem[] = await response.json();
 
-            const normalized = data.map((a: any) => ({
-                ...a,
+            const normalized: Activity[] = data.map((a) => ({
+                id: a.id,
+                title: a.title || 'Activity logged',
+                description: a.description || 'No description provided.',
                 time: a.createdAt ? formatRelativeTime(a.createdAt) : 'just now',
-                status: a.status || 'read'
+                status: a.status || 'read',
+                type: a.type === 'lead' || a.type === 'deal' || a.type === 'sequence' || a.type === 'task' || a.type === 'system'
+                    ? a.type
+                    : 'system',
+                createdAt: a.createdAt || new Date().toISOString(),
             }));
 
             setActivities(normalized);
         } catch (err) {
             console.error('Fetch activity failed:', err);
+            setActivities([]);
         } finally {
             setIsLoading(false);
         }
@@ -57,10 +79,16 @@ export function useActivity() {
 
     const markAsRead = async (id: string) => {
         try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/activities/${id}/read`, { method: 'PUT' });
+            const response = await fetch(`/api/workspace/activities/${id}/read`, {
+                method: 'PUT',
+                credentials: "same-origin",
+            });
+            if (!response.ok) {
+                throw new Error("Unable to update activity status");
+            }
             setActivities(prev => prev.map(a => a.id === id ? { ...a, status: 'read' } : a));
         } catch (err) {
-            console.error('Failed to mark as read:', err);
+            console.error('Failed to mark as read:', getErrorMessage(err, 'Failed to mark as read'));
         }
     };
 

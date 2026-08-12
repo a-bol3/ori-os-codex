@@ -1,0 +1,12 @@
+services:
+  api:
+    ports:
+      - "127.0.0.1:4100:4000"
+
+  web:
+    ports:
+      - "127.0.0.1:3100:3000"
+
+  caddy:
+    profiles:
+      - disabled

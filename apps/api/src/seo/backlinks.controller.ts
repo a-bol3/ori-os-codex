@@ -8,10 +8,13 @@ import {
   Param,
   Query,
   Request,
-  UseGuards,
-} from '@nestjs/common';
+  UseGuards, Inject } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { BacklinksService } from './backlinks.service';
+import {
+  AuthenticatedRequest,
+  requireOrganizationId,
+} from '../common/request-context';
 import {
   CreateBacklinkDto,
   UpdateBacklinkDto,
@@ -21,62 +24,77 @@ import {
 @Controller('seo/projects/:projectId/backlinks')
 @UseGuards(JwtAuthGuard)
 export class BacklinksController {
-  constructor(private readonly backlinksService: BacklinksService) {}
+  constructor(@Inject(BacklinksService) private readonly backlinksService: BacklinksService) {}
 
   @Post()
   async createBacklink(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('projectId') projectId: string,
     @Body() dto: CreateBacklinkDto,
   ) {
-    const orgId = req.user?.organizationId || 'mock-org-id';
-    return this.backlinksService.createBacklink(projectId, orgId, dto);
+    return this.backlinksService.createBacklink(
+      projectId,
+      requireOrganizationId(req),
+      dto,
+    );
   }
 
   @Get()
   async getBacklinks(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('projectId') projectId: string,
     @Query() query: GetBacklinksDto,
   ) {
-    const orgId = req.user?.organizationId || 'mock-org-id';
-    return this.backlinksService.getBacklinks(projectId, orgId, query);
+    return this.backlinksService.getBacklinks(
+      projectId,
+      requireOrganizationId(req),
+      query,
+    );
   }
 
   @Get('summary')
   async getBacklinkSummary(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('projectId') projectId: string,
   ) {
-    const orgId = req.user?.organizationId || 'mock-org-id';
-    return this.backlinksService.getBacklinkSummary(projectId, orgId);
+    return this.backlinksService.getBacklinkSummary(
+      projectId,
+      requireOrganizationId(req),
+    );
   }
 
   @Put(':backlinkId')
   async updateBacklink(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('backlinkId') backlinkId: string,
     @Body() dto: UpdateBacklinkDto,
   ) {
-    const orgId = req.user?.organizationId || 'mock-org-id';
-    return this.backlinksService.updateBacklink(backlinkId, orgId, dto);
+    return this.backlinksService.updateBacklink(
+      backlinkId,
+      requireOrganizationId(req),
+      dto,
+    );
   }
 
   @Post(':backlinkId/verify')
   async verifyBacklink(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('backlinkId') backlinkId: string,
   ) {
-    const orgId = req.user?.organizationId || 'mock-org-id';
-    return this.backlinksService.verifyBacklink(backlinkId, orgId);
+    return this.backlinksService.verifyBacklink(
+      backlinkId,
+      requireOrganizationId(req),
+    );
   }
 
   @Delete(':backlinkId')
   async deleteBacklink(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('backlinkId') backlinkId: string,
   ) {
-    const orgId = req.user?.organizationId || 'mock-org-id';
-    return this.backlinksService.deleteBacklink(backlinkId, orgId);
+    return this.backlinksService.deleteBacklink(
+      backlinkId,
+      requireOrganizationId(req),
+    );
   }
 }

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
+import { fixtureMode, ProviderConfigurationError } from '@ori-os/core';
 
 @Injectable()
 export class ApolloProvider {
@@ -8,7 +9,10 @@ export class ApolloProvider {
 
     async enrichContact(email: string) {
         if (!this.apiKey || this.apiKey === 'your_apollo_key') {
-            this.logger.warn('Apollo.io API key not set, returning mock data');
+            if (!fixtureMode('ENABLE_AI_SIMULATION')) {
+                throw new ProviderConfigurationError('Apollo.io');
+            }
+            this.logger.warn('Apollo.io API key not set; explicit development fixtures are enabled');
             return {
                 name: email.split('@')[0].replace('.', ' '),
                 title: 'Decision Maker',

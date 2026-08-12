@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { getErrorMessage } from "@/lib/api-client"
 
 export interface Campaign {
     id: string
@@ -8,6 +9,7 @@ export interface Campaign {
     status: 'DRAFT' | 'SCHEDULED' | 'RUNNING' | 'PAUSED' | 'COMPLETED' | 'ARCHIVED'
     recipients: number
     sent: number
+    opened: number
     replies: number
     openRate: string
     objective?: string
@@ -23,10 +25,42 @@ export interface InboxMessage {
     unread: boolean
 }
 
+interface CampaignApiItem {
+    id: string
+    name: string
+    status: Campaign['status']
+    recipients?: number
+    sent?: number
+    opened?: number
+    replies?: number
+    objective?: string
+    createdAt?: string
+    _count?: {
+        recipients?: number
+    }
+}
+
+interface InboxApiItem {
+    id: string
+    createdAt: string
+    contact?: {
+        firstName?: string | null
+        lastName?: string | null
+        email?: string | null
+    } | null
+    campaign?: {
+        name?: string | null
+    } | null
+    rawPayloadJson?: {
+        text?: string | null
+        subject?: string | null
+    } | null
+}
+
 const MOCK_CAMPAIGNS: Campaign[] = [
-    { id: 'm1', name: 'Q1 SaaS Outreach — VP Engineering', status: 'RUNNING', recipients: 142, sent: 97, replies: 14, openRate: '38%', objective: 'Book demo calls', createdAt: new Date(Date.now() - 7 * 86400000).toISOString() },
-    { id: 'm2', name: 'Enterprise Finance — CFO Sequence', status: 'PAUSED', recipients: 55, sent: 31, replies: 4, openRate: '22%', objective: 'Drive enterprise deals', createdAt: new Date(Date.now() - 14 * 86400000).toISOString() },
-    { id: 'm3', name: 'Cold Outreach APAC — Winter 2026', status: 'DRAFT', recipients: 0, sent: 0, replies: 0, openRate: '0%', objective: 'Expand into APAC', createdAt: new Date(Date.now() - 2 * 86400000).toISOString() },
+    { id: 'm1', name: 'Q1 SaaS Outreach — VP Engineering', status: 'RUNNING', recipients: 142, sent: 97, opened: 37, replies: 14, openRate: '38%', objective: 'Book demo calls', createdAt: new Date(Date.now() - 7 * 86400000).toISOString() },
+    { id: 'm2', name: 'Enterprise Finance — CFO Sequence', status: 'PAUSED', recipients: 55, sent: 31, opened: 7, replies: 4, openRate: '22%', objective: 'Drive enterprise deals', createdAt: new Date(Date.now() - 14 * 86400000).toISOString() },
+    { id: 'm3', name: 'Cold Outreach APAC — Winter 2026', status: 'DRAFT', recipients: 0, sent: 0, opened: 0, replies: 0, openRate: '0%', objective: 'Expand into APAC', createdAt: new Date(Date.now() - 2 * 86400000).toISOString() },
 ]
 
 const MOCK_MESSAGES: InboxMessage[] = [
@@ -44,31 +78,65 @@ export function useEngagement() {
     const fetchData = useCallback(async () => {
         setIsLoading(true)
         try {
-            const [campaignsRes, inboxRes] = await Promise.all([
-                fetch(`${process.env.NEXT_PUBLIC_API_URL}/engagement/campaigns`),
-                fetch(`${process.env.NEXT_PUBLIC_API_URL}/engagement/inbox`),
+            const [campaignsResult, inboxResult] = await Promise.allSettled([
+                fetch("/api/workspace/engagement/campaigns", {
+                    credentials: "same-origin",
+                    cache: "no-store",
+                }),
+                fetch("/api/workspace/engagement/inbox", {
+                    credentials: "same-origin",
+                    cache: "no-store",
+                }),
             ])
 
-            const campaignsData = campaignsRes.ok ? await campaignsRes.json() : null
-            const inboxData = inboxRes.ok ? await inboxRes.json() : []
+            if (campaignsResult.status !== "fulfilled") {
+                throw campaignsResult.reason
+            }
 
-            // If both requests failed (API not reachable), use mock data
-            if (!campaignsRes.ok && !inboxRes.ok) throw new Error('API unreachable')
+            const campaignsRes = campaignsResult.value
 
-            const normalizedCampaigns = (campaignsData || []).map((c: any) => ({
-                ...c,
-                recipients: c._count?.recipients ?? 0,
-                sent: c.sent ?? 0,
-                replies: c.replies ?? 0,
-                openRate: c.sent > 0 ? `${Math.round((c.sent / Math.max(c.recipients, 1)) * 15)}%` : '0%',
-            }))
+            if (!campaignsRes.ok) {
+                const payload = await campaignsRes.json().catch(() => ({ message: null }))
+                throw new Error(typeof payload?.message === "string" ? payload.message : typeof payload?.error === "string" ? payload.error : "Failed to load campaigns")
+            }
 
-            const normalizedMessages = inboxData.map((m: any) => ({
-                id: m.id,
-                from: m.contact ? `${m.contact.firstName || ''} ${m.contact.lastName || ''}`.trim() || m.contact.email : 'Unknown',
-                subject: m.campaign?.name ? `Re: ${m.campaign.name}` : 'Reply',
-                preview: m.rawPayloadJson?.text || m.rawPayloadJson?.subject || 'View message',
-                time: new Date(m.createdAt).toLocaleString(),
+            const campaignsData: CampaignApiItem[] | null = await campaignsRes.json()
+            let inboxData: InboxApiItem[] = []
+
+            if (inboxResult.status === "fulfilled") {
+                const inboxRes = inboxResult.value
+
+                if (inboxRes.ok) {
+                    inboxData = await inboxRes.json()
+                } else {
+                    console.warn("[Engagement] Inbox endpoint returned an error. Continuing without inbox data.")
+                }
+            } else {
+                console.warn("[Engagement] Inbox endpoint is unavailable. Continuing without inbox data.")
+            }
+
+            const normalizedCampaigns: Campaign[] = (campaignsData || []).map((campaign) => {
+                const recipients = campaign._count?.recipients ?? campaign.recipients ?? 0
+                const sent = campaign.sent ?? 0
+                const opened = campaign.opened ?? 0
+                const replies = campaign.replies ?? 0
+
+                return {
+                    ...campaign,
+                    recipients,
+                    sent,
+                    opened,
+                    replies,
+                    openRate: sent > 0 ? `${Math.round((opened / Math.max(sent, 1)) * 100)}%` : '0%',
+                }
+            })
+
+            const normalizedMessages: InboxMessage[] = inboxData.map((message) => ({
+                id: message.id,
+                from: message.contact ? `${message.contact.firstName || ''} ${message.contact.lastName || ''}`.trim() || message.contact.email || 'Unknown' : 'Unknown',
+                subject: message.campaign?.name ? `Re: ${message.campaign.name}` : 'Reply',
+                preview: message.rawPayloadJson?.text || message.rawPayloadJson?.subject || 'View message',
+                time: new Date(message.createdAt).toLocaleString(),
                 unread: true,
             }))
 
@@ -76,10 +144,16 @@ export function useEngagement() {
             setMessages(normalizedMessages)
             setError(null)
         } catch (err) {
-            console.warn('[Engagement] API unavailable, using demo data')
-            setCampaigns(MOCK_CAMPAIGNS)
-            setMessages(MOCK_MESSAGES)
-            setError(null)
+            if (process.env.NODE_ENV === "development") {
+                console.warn('[Engagement] API unavailable, using demo data')
+                setCampaigns(MOCK_CAMPAIGNS)
+                setMessages(MOCK_MESSAGES)
+                setError(null)
+            } else {
+                setCampaigns([])
+                setMessages([])
+                setError(getErrorMessage(err, "Failed to fetch engagement data"))
+            }
         } finally {
             setIsLoading(false)
         }

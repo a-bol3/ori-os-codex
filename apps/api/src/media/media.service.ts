@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {  Injectable, NotFoundException, Logger, Inject } from '@nestjs/common';
 import { ConnectorsService } from '../connectors/connectors.service';
 import { StorageProviderFactory } from '../connectors/factories/storage-provider.factory';
 
@@ -6,7 +6,7 @@ import { StorageProviderFactory } from '../connectors/factories/storage-provider
 export class MediaService {
   private readonly logger = new Logger(MediaService.name);
 
-  constructor(private readonly connectorsService: ConnectorsService) {}
+  constructor(@Inject(ConnectorsService) private readonly connectorsService: ConnectorsService) {}
 
   async uploadFile(
     organizationId: string,
@@ -75,7 +75,7 @@ export class MediaService {
 
   private async getConnector(organizationId: string, connectorId?: string) {
     if (connectorId) {
-      return await this.connectorsService.findOne(connectorId, organizationId);
+      return await this.connectorsService.getForProvider(connectorId, organizationId);
     }
 
     // Default to first storage connector if not specified
@@ -91,7 +91,7 @@ export class MediaService {
     }
 
     // Need full connector with decrypted config
-    return await this.connectorsService.findOne(
+    return await this.connectorsService.getForProvider(
       storageConnector.id,
       organizationId,
     );
