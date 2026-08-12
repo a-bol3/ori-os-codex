@@ -16,4 +16,10 @@ export class AuthController {
     }
     return this.authService.login(user, body.organizationId);
   }
+
+  @Post('refresh')
+  async refresh(@Body() body: { refreshToken?: string }) {
+    if (!body.refreshToken) throw new UnauthorizedException();
+    return this.authService.refresh(body.refreshToken);
+  }
 }

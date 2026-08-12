@@ -2,6 +2,7 @@ import {  Injectable, UnauthorizedException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@ori-os/db/nestjs';
 import * as bcrypt from 'bcrypt';
+import { createHash, randomBytes } from 'node:crypto';
 
 type OrganizationRole = 'OWNER' | 'ADMIN' | 'MANAGER' | 'OPERATOR' | 'VIEWER';
 
@@ -71,8 +72,19 @@ export class AuthService {
       organizationId: membership.organizationId,
     };
 
+    const refreshToken = `${randomBytes(16).toString('hex')}.${randomBytes(32).toString('hex')}`;
+    const session = await this.prisma.session.create({
+      data: {
+        userId: user.id,
+        organizationId: membership.organizationId,
+        refreshToken: this.hashRefreshToken(refreshToken),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
+
     return {
       access_token: this.jwtService.sign(payload),
+      refresh_token: `${session.id}.${refreshToken.split('.')[1]}`,
       organizationId: membership.organizationId,
       user: {
         id: user.id,
@@ -81,6 +93,23 @@ export class AuthService {
         avatarUrl: user.avatarUrl,
       },
     };
+  }
+
+  async refresh(refreshToken: string) {
+    const [sessionId, secret] = refreshToken.split('.');
+    if (!sessionId || !secret) throw new UnauthorizedException('Invalid refresh token');
+    const session = await this.prisma.session.findUnique({ where: { id: sessionId }, include: { user: true } });
+    if (!session?.refreshToken || session.expiresAt < new Date() || session.refreshToken !== this.hashRefreshToken(refreshToken)) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+    const accessToken = this.jwtService.sign({ sub: session.userId, email: session.user.email, organizationId: session.organizationId });
+    const replacement = `${session.id}.${randomBytes(32).toString('hex')}`;
+    await this.prisma.session.update({ where: { id: session.id }, data: { refreshToken: this.hashRefreshToken(replacement) } });
+    return { access_token: accessToken, refresh_token: replacement, organizationId: session.organizationId };
+  }
+
+  private hashRefreshToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
   }
 
   private resolveMembership(
