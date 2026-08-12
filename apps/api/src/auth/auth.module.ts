@@ -20,12 +20,19 @@ function requireJwtSecret(): string {
   throw new Error('JWT_SECRET is required');
 }
 
+function jwtExpiresIn(): string {
+  return process.env.JWT_EXPIRES_IN || '24h';
+}
+
 @Module({
   imports: [
     PassportModule,
     JwtModule.register({
       secret: requireJwtSecret(),
-      signOptions: { expiresIn: '60m' },
+      // Keep the API token lifetime aligned with the browser session. The
+      // value remains configurable so a refresh-token flow can reduce it
+      // later without another code change.
+      signOptions: { expiresIn: jwtExpiresIn() },
     }),
     PrismaModule,
   ],
