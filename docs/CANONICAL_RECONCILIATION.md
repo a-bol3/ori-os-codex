@@ -2,14 +2,14 @@
 
 ## Decision
 
-As of 2026-08-12, `https://github.com/ib4d/ori-os-codex` is the canonical
+As of 2026-08-12, `https://github.com/a-bol3/ori-os-codex` is the canonical
 repository for ORI-OS. The previous repositories remain historical sources
 until the migration has been verified.
 
 ## Canonical deployment source
 
 - Local source: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0`
-- GitHub source: `ib4d/ori-os-codex`
+- GitHub source: `a-bol3/ori-os-codex`
 - VPS source: `/opt/orios-app`
 - Public web: `https://orios.ori-craftlabs.com`
 - Public API: `https://api.orios.ori-craftlabs.com`
