@@ -48,12 +48,32 @@ async function getAccessToken(): Promise<string | undefined> {
     throw new ApiError("Unable to read the current session", response.status);
 }
 
+async function refreshAccessToken(): Promise<string | undefined> {
+    const response = await fetch("/api/auth/access-token", { credentials: "same-origin", cache: "no-store" });
+    if (!response.ok) return undefined;
+    const session = await response.json() as BrowserSession & { refreshToken?: string };
+    if (!session.refreshToken) return undefined;
+    const refreshed = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken: session.refreshToken }),
+    });
+    if (!refreshed.ok) return undefined;
+    return (await refreshed.json() as { access_token?: string }).access_token;
+}
+
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
     const token = await getAccessToken();
     const headers = new Headers(init.headers);
     if (token) headers.set("Authorization", `Bearer ${token}`);
 
-    const response = await fetch(`${getApiBaseUrl()}${path}`, { ...init, headers });
+    let response = await fetch(`${getApiBaseUrl()}${path}`, { ...init, headers });
+    if (response.status === 401) {
+        const renewed = await refreshAccessToken();
+        if (renewed) {
+            headers.set("Authorization", `Bearer ${renewed}`);
+            response = await fetch(`${getApiBaseUrl()}${path}`, { ...init, headers });
+        }
+    }
     if (!response.ok) {
         const detail = response.status === 401
             ? "Your session is no longer authorized. Sign in again."

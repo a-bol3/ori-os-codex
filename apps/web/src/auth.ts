@@ -4,6 +4,7 @@ import { hasUsableSession } from "./lib/session-guards";
 
 type ApiLoginResult = {
     access_token: string;
+    refresh_token: string;
     organizationId: string;
     user: { id: string; name?: string | null; email: string };
 };
@@ -66,6 +67,7 @@ const nextAuth = NextAuth({
                         name: user.name ?? "Ori-OS User",
                         email: user.email,
                         accessToken: result.access_token,
+                        refreshToken: result.refresh_token,
                         organizationId: result.organizationId,
                     };
                 } catch (error) {
@@ -105,6 +107,7 @@ const nextAuth = NextAuth({
             if (token && session.user) {
                 const enrichedSession = session as typeof session & {
                     accessToken?: string;
+                    refreshToken?: string;
                     organizationId?: string;
                 };
 
@@ -112,6 +115,7 @@ const nextAuth = NextAuth({
                 session.user.name = typeof token.name === "string" ? token.name : undefined;
                 session.user.email = token.email as string;
                 enrichedSession.accessToken = typeof token.accessToken === "string" ? token.accessToken : undefined;
+                enrichedSession.refreshToken = typeof token.refreshToken === "string" ? token.refreshToken : undefined;
                 enrichedSession.organizationId = typeof token.organizationId === "string" ? token.organizationId : undefined;
             }
             return session;
@@ -120,6 +124,7 @@ const nextAuth = NextAuth({
             if (user) {
                 const enrichedUser = user as typeof user & {
                     accessToken?: string;
+                    refreshToken?: string;
                     organizationId?: string;
                 };
 
@@ -127,6 +132,7 @@ const nextAuth = NextAuth({
                 token.name = user.name;
                 token.email = user.email;
                 token.accessToken = enrichedUser.accessToken;
+                token.refreshToken = enrichedUser.refreshToken;
                 token.organizationId = enrichedUser.organizationId;
             }
             return token;

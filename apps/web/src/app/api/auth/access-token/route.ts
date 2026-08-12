@@ -11,6 +11,9 @@ export async function GET() {
         ? (session as { organizationId?: string }).organizationId
         : undefined;
     const email = typeof session?.user?.email === "string" ? session.user.email : undefined;
+    const refreshToken = typeof (session as { refreshToken?: unknown } | null)?.refreshToken === "string"
+        ? (session as { refreshToken?: string }).refreshToken
+        : undefined;
 
     console.log("[access-token] session check", {
         hasSession: !!session,
@@ -29,6 +32,7 @@ export async function GET() {
     return NextResponse.json(
         {
             accessToken,
+            refreshToken,
             organizationId,
         },
         { headers: { "Cache-Control": "no-store" } },
