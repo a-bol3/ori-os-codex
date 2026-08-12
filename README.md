@@ -25,10 +25,10 @@ Ori-OS uses the proprietary **Axion UI**, characterized by:
 ## 🛠 Technology Stack
 
 ### Monorepo Architecture
-Managed via **Turborepo** and **pnpm** for optimized build pipelines and shared package management.
+Managed via **Turborepo** and **npm workspaces** for reproducible build pipelines and shared package management.
 
 ### Apps
-- **Web (`apps/web`)**: Next.js 16 (App Router), React 19, Tailwind CSS 4, Framer Motion, Recharts, Zustand.
+- **Web (`apps/web`)**: Next.js 15 (App Router), React, Tailwind CSS, Framer Motion, Recharts, Zustand.
 - **API (`apps/api`)**: NestJS 10 (Centralized REST API), Prisma.
 - **Worker (`apps/worker`)**: NestJS background job processor for high-latency tasks.
 
@@ -46,13 +46,13 @@ Managed via **Turborepo** and **pnpm** for optimized build pipelines and shared 
 
 ### Prerequisites
 - **Node.js**: 20.x or higher
-- **pnpm**: 10.x or higher
+- **npm**: 10.x or higher
 - **Docker**: For running infrastructure services
 
 ### Setup Steps
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/ib4d/ori-os.git
+   git clone https://github.com/a-bol3/ori-os-codex.git
    cd ori-os
    ```
 
@@ -109,12 +109,12 @@ Managed via **Turborepo** and **pnpm** for optimized build pipelines and shared 
 ## 🌐 Production Readiness & Deployment
 
 ### Hostinger VPS Deployment
-Ori-OS is optimized for deployment on **Hostinger VPS** plans under the domain `ori-os-ori-craftlabs.com`.
+Ori-OS is deployed on the Hostinger VPS under `orios.ori-craftlabs.com`.
 
 **Key Requirements for Deployment:**
 - **OS**: Ubuntu 24.04 LTS (recommended).
 - **Docker & Compose**: For containerized deployment of services.
-- **Reverse Proxy**: Caddy (recommended for automatic SSL) or Nginx.
+- **Reverse Proxy**: Host nginx, shared with the ORI ecosystem.
 
 **Production Checklist:**
 - [ ] Set `ORI_AUTH_BYPASS=0` in `.env`.
