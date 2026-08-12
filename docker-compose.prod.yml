@@ -72,6 +72,7 @@ services:
     networks: [ ori_network ]
 
   api:
+    image: orios-codex-api:latest
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -93,6 +94,7 @@ services:
     networks: [ ori_network ]
 
   worker:
+    image: orios-codex-worker:latest
     build:
       context: .
       dockerfile: Dockerfile.worker
@@ -109,6 +111,7 @@ services:
     networks: [ ori_network ]
 
   web:
+    image: orios-codex-web:latest
     build:
       context: .
       dockerfile: Dockerfile.web
