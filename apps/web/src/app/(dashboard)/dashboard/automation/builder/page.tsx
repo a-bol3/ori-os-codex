@@ -36,6 +36,7 @@ import {
     Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { apiFetch } from '@/lib/api-client';
 
 interface WorkflowNode {
     id: string;
@@ -59,7 +60,7 @@ export default function AutomationBuilderPage() {
         const fetchWorkflow = async () => {
             try {
                 // For demo, we fetch the first available workflow if no ID in URL
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/automations/workflows`);
+                const res = await apiFetch('/automations/workflows');
                 const data = await res.json();
                 const workflow = data[0];
                 if (workflow) {
@@ -112,16 +113,27 @@ export default function AutomationBuilderPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            const workflowId = 'default-workflow-id'; // In a real app, this would come from the URL or state
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/automations/workflows/${workflowId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: workflowName,
-                    nodes: nodes, // Storing nodes as JSON field in DB
-                    description: `Modified on ${new Date().toLocaleString()}`,
-                }),
-            });
+            const definitionJson = {
+                triggers: nodes.filter((node) => node.type === 'trigger'),
+                nodes: nodes.filter((node) => node.type !== 'trigger'),
+            };
+            const payload = {
+                name: workflowName,
+                triggerType: nodes.find((node) => node.type === 'trigger')?.label || 'manual',
+                definitionJson,
+                description: `Modified on ${new Date().toLocaleString()}`,
+            };
+            const response = workflowId
+                ? await apiFetch(`/automations/workflows/${workflowId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                })
+                : await apiFetch('/automations/workflows', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
 
             if (!response.ok) throw new Error('Failed to save workflow');
 
@@ -144,7 +156,7 @@ export default function AutomationBuilderPage() {
     const handleRunPreview = async () => {
         if (!workflowId) return;
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/automations/workflows/${workflowId}/test`, {
+            const res = await apiFetch(`/automations/workflows/${workflowId}/test`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ payload: { test: true } }),
@@ -164,7 +176,7 @@ export default function AutomationBuilderPage() {
         if (!workflowId) return;
         const newStatus = isActive ? 'inactive' : 'active';
         try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/automations/workflows/${workflowId}`, {
+            await apiFetch(`/automations/workflows/${workflowId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus }),
