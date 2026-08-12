@@ -3,10 +3,16 @@ networks:
     driver: bridge
 
 volumes:
+  # Keep the production data volumes stable when the canonical repository
+  # changes its Compose project name.
   postgres_data:
+    name: orios-app_postgres_data
   redis_data:
+    name: orios-app_redis_data
   meilisearch_data:
+    name: orios-app_meilisearch_data
   minio_data:
+    name: orios-app_minio_data
   caddy_data:
   caddy_config:
 
