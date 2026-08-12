@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { PrismaModule } from '@ori-os/db/nestjs'; // Assuming PrismaModule is exported from @ori-os/db
+import type { SignOptions } from 'jsonwebtoken';
 
 function requireJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -20,8 +21,8 @@ function requireJwtSecret(): string {
   throw new Error('JWT_SECRET is required');
 }
 
-function jwtExpiresIn(): string {
-  return process.env.JWT_EXPIRES_IN || '24h';
+function jwtExpiresIn(): SignOptions['expiresIn'] {
+  return (process.env.JWT_EXPIRES_IN || '24h') as SignOptions['expiresIn'];
 }
 
 @Module({
