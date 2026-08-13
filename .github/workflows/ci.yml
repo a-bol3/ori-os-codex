@@ -33,6 +33,7 @@ jobs:
           --health-retries=20
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ori_os
+      AUTH_SECRET: ci-secret-placeholder-32-characters-long
       NEXTAUTH_SECRET: ci-secret-placeholder-32-characters-long
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       NEXT_PUBLIC_API_URL: http://localhost:4000

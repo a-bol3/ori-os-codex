@@ -36,3 +36,12 @@ Append one entry for every VPS, deployment, backup, rollback, or production conf
 - All six runs failed at `Build all workspaces`.
 - Run 10 (`31601187077`) passed checkout, dependency installation, and Prisma generation; lint and tests were skipped after the build failure.
 - This makes the remote build the primary CI blocker; the local clean-install build now passes and must be rechecked remotely on a new commit.
+
+## 2026-08-13 — CI root cause and fix
+
+- PR #1 run 11 (`31678856312`) failed in `apps/web` during Next.js page-data collection.
+- Root cause: `apps/web/src/auth.ts` requires `AUTH_SECRET` or `NEXTAUTH_SECRET`; the CI environment only declared `NEXTAUTH_SECRET`, but the effective web build environment did not expose a usable secret.
+- Evidence: `Error: AUTH_SECRET or NEXTAUTH_SECRET is required outside development` for `/api/auth/[...nextauth]`.
+- Fix: add the same non-production placeholder as explicit `AUTH_SECRET` in `.github/workflows/ci.yml`.
+- Local web build with CI variables: passed.
+- Next action: push the workflow fix and verify the new PR run.

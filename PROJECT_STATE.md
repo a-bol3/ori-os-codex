@@ -46,7 +46,8 @@
 - Run 10 (`31601187077`) on `main` at `a3a60e1`: checkout, npm install, and Prisma generation passed.
 - Run 10 failed at `Build all workspaces`; lint and tests were skipped.
 - Runs 5, 6, 7, 8, 9, and 10 all failed at the same build step.
-- The local build now passes after a clean `npm ci`; remote reproducibility still requires a pushed commit and a new run.
+- PR #1 run 11 (`31678856312`) failed at the same step because the web build could not find `AUTH_SECRET` or `NEXTAUTH_SECRET` while collecting `/api/auth/[...nextauth]` page data.
+- Local forced build with CI variables passes after adding `AUTH_SECRET` explicitly to the workflow environment.
 
 ## Recovery points
 
