@@ -47,7 +47,9 @@
 - Run 10 failed at `Build all workspaces`; lint and tests were skipped.
 - Runs 5, 6, 7, 8, 9, and 10 all failed at the same build step.
 - PR #1 run 11 (`31678856312`) failed at the same step because the web build could not find `AUTH_SECRET` or `NEXTAUTH_SECRET` while collecting `/api/auth/[...nextauth]` page data.
-- Local forced build with CI variables passes after adding `AUTH_SECRET` explicitly to the workflow environment.
+- PR #1 run 12 (`31680963127`) reproduced the same missing-secret failure despite the workflow env entry.
+- The web auth module now uses a build-only fallback when `NODE_ENV=test` or `CI=true`; production still requires a real secret.
+- Local web build with secrets unset and `CI=true`: passed.
 
 ## Recovery points
 

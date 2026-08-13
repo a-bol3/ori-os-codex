@@ -12,7 +12,11 @@ type ApiLoginResult = {
 const authSecret =
     process.env.AUTH_SECRET ||
     process.env.NEXTAUTH_SECRET ||
-    (process.env.NODE_ENV === "development" ? "generate-a-random-secret" : undefined);
+    (process.env.NODE_ENV === "development" ||
+        process.env.NODE_ENV === "test" ||
+        process.env.CI === "true"
+        ? "ci-build-only-secret"
+        : undefined);
 
 if (!authSecret) {
     throw new Error("AUTH_SECRET or NEXTAUTH_SECRET is required outside development");

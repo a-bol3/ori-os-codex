@@ -45,3 +45,11 @@ Append one entry for every VPS, deployment, backup, rollback, or production conf
 - Fix: add the same non-production placeholder as explicit `AUTH_SECRET` in `.github/workflows/ci.yml`.
 - Local web build with CI variables: passed.
 - Next action: push the workflow fix and verify the new PR run.
+
+## 2026-08-13 — CI build-time auth hardening
+
+- Run 12 still failed with `AUTH_SECRET or NEXTAUTH_SECRET is required outside development`.
+- Workflow-level injection was insufficient because the Next.js module is evaluated during build/page-data collection.
+- Added a non-production build-only fallback in `apps/web/src/auth.ts` for `NODE_ENV=test` or `CI=true`.
+- Production behavior remains fail-closed when no real `AUTH_SECRET`/`NEXTAUTH_SECRET` is configured.
+- Local web build with both secrets unset and `CI=true`: passed.
