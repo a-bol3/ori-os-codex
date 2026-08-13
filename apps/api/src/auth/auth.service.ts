@@ -1,4 +1,4 @@
-import {  Injectable, UnauthorizedException, Inject } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@ori-os/db/nestjs';
 import * as bcrypt from 'bcrypt';

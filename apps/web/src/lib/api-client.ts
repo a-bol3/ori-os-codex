@@ -49,16 +49,20 @@ async function getAccessToken(): Promise<string | undefined> {
 }
 
 async function refreshAccessToken(): Promise<string | undefined> {
-    const response = await fetch("/api/auth/access-token", { credentials: "same-origin", cache: "no-store" });
-    if (!response.ok) return undefined;
-    const session = await response.json() as BrowserSession & { refreshToken?: string };
-    if (!session.refreshToken) return undefined;
-    const refreshed = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken: session.refreshToken }),
-    });
-    if (!refreshed.ok) return undefined;
-    return (await refreshed.json() as { access_token?: string }).access_token;
+    try {
+        const response = await fetch("/api/auth/access-token", { credentials: "same-origin", cache: "no-store" });
+        if (!response.ok) return undefined;
+        const session = await response.json() as BrowserSession & { refreshToken?: string };
+        if (!session.refreshToken) return undefined;
+        const refreshed = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refreshToken: session.refreshToken }),
+        });
+        if (!refreshed.ok) return undefined;
+        return (await refreshed.json() as { access_token?: string }).access_token;
+    } catch {
+        return undefined;
+    }
 }
 
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {

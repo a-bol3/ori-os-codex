@@ -21,6 +21,9 @@ describe('AuthService', () => {
     user: {
       findUnique: jest.fn(),
     } satisfies PrismaUserFindUnique,
+    session: {
+      create: jest.fn(),
+    },
   };
   const service = new AuthService(
     prisma as unknown as any,
@@ -70,9 +73,11 @@ describe('AuthService', () => {
         { organizationId: 'org-2', role: OrganizationRole.VIEWER },
       ],
     };
+    prisma.session.create.mockResolvedValue({ id: 'session-1' });
 
     await expect(service.login(user)).resolves.toEqual({
       access_token: 'signed-token',
+      refresh_token: expect.stringMatching(/^session-1\./),
       organizationId: 'org-1',
       user: {
         id: 'user-1',

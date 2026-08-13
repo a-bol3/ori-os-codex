@@ -125,6 +125,10 @@ Ori-OS is deployed on the Hostinger VPS under `orios.ori-craftlabs.com`.
 
 ## 📄 Documentation
 For more detailed information, see the `docs/` folder:
+- `PROJECT_STATE.md`: Recovery entrypoint and current verified status.
+- `OPERATIONS_LEDGER.md`: Append-only record of deployment and infrastructure actions.
+- `docs/RELEASE_PROCESS.md`: Canonical release and Hostinger deployment process.
+- `docs/PRODUCTION_READINESS_CHECKLIST.md`: Current beta and production gates.
 - `DEPLOY_HOSTINGER.md`: Detailed VPS setup guide.
 - `project_audit_report.md`: Technical debt and roadmap analysis.
 - `worklog.md`: History of implementation phases.
