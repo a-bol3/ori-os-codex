@@ -133,7 +133,7 @@ export class ActivitiesController {
       where: { id },
       data: {
         metadataJson: {
-          ...(this.readMetadataObject((activity as any).metadataJson) ?? {}),
+          ...(this.readMetadataObject(activity.metadataJson) ?? {}),
           read: true,
         },
       },
