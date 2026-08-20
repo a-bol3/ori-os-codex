@@ -4,12 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Button,
     ScrollArea,
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-    Separator,
     cn,
 } from '@ori-os/ui';
 import { UserAccount } from './user-account';
@@ -21,7 +19,6 @@ import {
     HelpCircle,
     ChevronLeft,
     X,
-    Sparkles,
 } from 'lucide-react';
 
 const mainNavItems = [
@@ -105,11 +102,6 @@ export function Sidebar({
                         </motion.span>
                     )}
                 </AnimatePresence>
-                {'badge' in item && item.badge && !collapsed && (
-                    <span className="ml-auto px-1.5 py-0.5 text-2xs font-medium bg-tangerine/10 text-tangerine rounded-none">
-                        {item.badge}
-                    </span>
-                )}
                 {isActive && (
                     <motion.div
                         layoutId="sidebar-active"
