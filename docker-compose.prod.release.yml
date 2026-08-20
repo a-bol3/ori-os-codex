@@ -1,0 +1,16 @@
+# Production release overlay.
+#
+# This file intentionally removes local builds from the release path. Images
+# must be published by CI and selected explicitly by immutable tag or digest.
+services:
+  api:
+    image: ${ORI_OS_API_IMAGE:?Set ORI_OS_API_IMAGE to a tagged or digest-pinned image}
+    build: null
+
+  worker:
+    image: ${ORI_OS_WORKER_IMAGE:?Set ORI_OS_WORKER_IMAGE to a tagged or digest-pinned image}
+    build: null
+
+  web:
+    image: ${ORI_OS_WEB_IMAGE:?Set ORI_OS_WEB_IMAGE to a tagged or digest-pinned image}
+    build: null

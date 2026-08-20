@@ -8,7 +8,7 @@
 - Local repository: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0`
 - Canonical remote: `https://github.com/a-bol3/ori-os-codex.git`
 - Local branch: `codex/foundation-canonicalization`
-- Local and `origin/main` at last inspection: `a3a60e1`
+- Local and `origin/main` at last inspection: `af9e1f8`
 - Public web: `https://orios.ori-craftlabs.com`
 - Public API: `https://api.orios.ori-craftlabs.com`
 
@@ -20,25 +20,29 @@
 | Web availability | Passing | `/dashboard` redirects to `/login` |
 | API health | Passing | `/health` returned HTTP 200 |
 | API readiness | Passing | `/ready` returned DB and Redis `ok` |
-| GitHub Actions | Needs remote confirmation | Local Worker/Jest baseline fixed; the next PR run must validate the canonical clean checkout |
+| GitHub Actions | Green baseline | PR #1 merged; main run #21 passed install, Prisma, build, lint, and tests |
+| Release images | Prepared, not published | GHCR workflow and release Compose overlay added; publish and digest promotion still pending |
 | VPS identity | Unknown | Confirm deployed commit and compose state |
 | Backups | Not accepted | Perform a real restore drill |
 | Production certification | Blocked | See `docs/PRODUCTION_READINESS_CHECKLIST.md` |
 
 ## Active blockers
 
-1. Confirm the next PR run passes remotely; current local lint emits warnings but no errors.
-2. Confirm the commit actually deployed at `/opt/orios-app` on the VPS.
+1. Publish the first GHCR image set from a tagged commit and record its digests.
+2. Promote the same image digests through staging before production.
 3. Verify PostgreSQL backup storage and restore into an isolated database.
 4. Review firewall, SSH, CPU limitation, monitoring, and external backup posture.
 5. Reconcile historical “ready” documents with the canonical beta-readiness documents.
-6. Do not deploy this uncommitted recovery work until CI is green and the VPS snapshot/dump evidence has been captured.
+6. Do not deploy until the release manifest, backup, migration check, and rollback target are recorded.
 
-## Recovery update — 2026-08-20 (uncommitted)
+## Recovery update — 2026-08-20
 
 - Product posture changed to invitation-only private beta: self-service registration is disabled by default, Test Bench is unavailable outside development, incomplete navigation is hidden, and pricing/marketing/security/legal copy no longer asserts unverified availability, compliance, customers, trials, or SLA claims.
 - CI baseline: API and Worker now pin Jest `30.4.2`, `@types/jest` `30.0.0`, and `ts-jest` `29.4.11`; Worker invokes its workspace Jest executable; CI uses supported Node 24 and Actions v5.
 - Session posture: refresh-token creation now persists the hash of exactly the credential issued to the client; browser API calls use a same-origin server proxy; `/api/auth/access-token` and the browser token bridge were removed so access/refresh tokens are not returned through the Auth.js session.
+- Production identity: VPS checkout `/opt/orios-codex` was fast-forwarded to `af9e1f8`; running containers were not restarted.
+- VPS evidence: ORI-OS services are healthy where healthchecks exist; PostgreSQL dump `/root/ori-os-prod-20260820.dump` was validated with `pg_restore --list`; the snapshot was created on 2026-08-20.
+- Release path: GHCR image publication and the no-local-build release overlay are now versioned; no production image rollout has occurred.
 - Local proof: focused API auth tests passed (4), Worker tests passed (4 suites / 18), and web tests passed (5 files / 12). Full build/lint must still be confirmed by clean CI because this desktop runner truncates long jobs.
 
 ## Local verification on 2026-08-13
