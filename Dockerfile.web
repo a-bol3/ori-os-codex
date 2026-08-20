@@ -1,6 +1,10 @@
 FROM node:20-alpine AS build
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
+# Next.js evaluates the Auth.js module while collecting page data. The build
+# path uses the existing CI-only fallback; runtime still requires a real
+# secret from .env.prod.
+ENV CI=true
 
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_APP_URL
