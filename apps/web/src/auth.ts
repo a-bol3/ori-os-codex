@@ -110,16 +110,12 @@ const nextAuth = NextAuth({
         async session({ session, token }) {
             if (token && session.user) {
                 const enrichedSession = session as typeof session & {
-                    accessToken?: string;
-                    refreshToken?: string;
                     organizationId?: string;
                 };
 
                 session.user.id = token.sub as string;
                 session.user.name = typeof token.name === "string" ? token.name : undefined;
                 session.user.email = token.email as string;
-                enrichedSession.accessToken = typeof token.accessToken === "string" ? token.accessToken : undefined;
-                enrichedSession.refreshToken = typeof token.refreshToken === "string" ? token.refreshToken : undefined;
                 enrichedSession.organizationId = typeof token.organizationId === "string" ? token.organizationId : undefined;
             }
             return session;

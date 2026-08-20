@@ -2,7 +2,7 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@ori-os/db/nestjs';
 import * as bcrypt from 'bcrypt';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 
 type OrganizationRole = 'OWNER' | 'ADMIN' | 'MANAGER' | 'OPERATOR' | 'VIEWER';
 
@@ -72,9 +72,15 @@ export class AuthService {
       organizationId: membership.organizationId,
     };
 
-    const refreshToken = `${randomBytes(16).toString('hex')}.${randomBytes(32).toString('hex')}`;
+    // The database id must be the same id returned in the refresh token.  The
+    // previous implementation persisted a hash of one token and returned a
+    // second token prefixed with Prisma's generated id, so every refresh was
+    // rejected even when the client held the newly-issued credential.
+    const sessionId = randomUUID();
+    const refreshToken = `${sessionId}.${randomBytes(32).toString('hex')}`;
     const session = await this.prisma.session.create({
       data: {
+        id: sessionId,
         userId: user.id,
         organizationId: membership.organizationId,
         refreshToken: this.hashRefreshToken(refreshToken),
@@ -84,7 +90,7 @@ export class AuthService {
 
     return {
       access_token: this.jwtService.sign(payload),
-      refresh_token: `${session.id}.${refreshToken.split('.')[1]}`,
+      refresh_token: refreshToken,
       organizationId: membership.organizationId,
       user: {
         id: user.id,

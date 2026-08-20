@@ -15,16 +15,9 @@ import {
 import { UserAccount } from './user-account';
 import {
     LayoutDashboard,
-    Search,
     Users,
     Building2,
     DollarSign,
-    CreditCard,
-    GitBranch,
-    Mail,
-    BarChart3,
-    FileText,
-    Settings,
     HelpCircle,
     ChevronLeft,
     X,
@@ -36,12 +29,6 @@ const mainNavItems = [
         title: 'Dashboard',
         href: '/dashboard',
         icon: LayoutDashboard,
-    },
-    {
-        title: 'Intelligence',
-        href: '/dashboard/intelligence',
-        icon: Search,
-        badge: 'AI',
     },
     {
         title: 'Contacts',
@@ -58,46 +45,9 @@ const mainNavItems = [
         href: '/dashboard/crm/deals',
         icon: DollarSign,
     },
-    {
-        title: 'Billing',
-        href: '/dashboard/billing',
-        icon: CreditCard,
-        badge: 'New',
-    },
-    {
-        title: 'Automation',
-        href: '/dashboard/automation',
-        icon: GitBranch,
-    },
-    {
-        title: 'Engagement',
-        href: '/dashboard/engagement',
-        icon: Mail,
-    },
-    {
-        title: 'Analytics',
-        href: '/dashboard/analytics',
-        icon: BarChart3,
-    },
-    {
-        title: 'SEO Studio',
-        href: '/dashboard/seo',
-        icon: Search,
-        badge: 'New',
-    },
-    {
-        title: 'Content',
-        href: '/dashboard/content',
-        icon: FileText,
-    },
 ];
 
 const bottomNavItems = [
-    {
-        title: 'Settings',
-        href: '/dashboard/settings',
-        icon: Settings,
-    },
     {
         title: 'Help',
         href: '/dashboard/help',

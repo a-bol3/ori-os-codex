@@ -13,12 +13,9 @@ export default async function DashboardLayout({
         redirect("/login");
     }
 
-    const enrichedSession = session as typeof session & {
-        accessToken?: string;
-        organizationId?: string;
-    };
+    const enrichedSession = session as typeof session & { organizationId?: string };
 
-    if (!enrichedSession.accessToken || !enrichedSession.organizationId) {
+    if (!enrichedSession.organizationId) {
         redirect("/login?reason=missing-session");
     }
 

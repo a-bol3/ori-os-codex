@@ -35,6 +35,10 @@ export async function loginAction(formData: FormData) {
 
 export async function registerAction(formData: FormData) {
     try {
+        if (process.env.NODE_ENV === "production" || process.env.ORI_ALLOW_SELF_SERVICE_REGISTRATION !== "true") {
+            return "ORI-OS is currently invite-only. Ask your workspace administrator for an invitation.";
+        }
+
         const firstName = (formData.get("firstName") as string | null)?.trim() ?? "";
         const lastName = (formData.get("lastName") as string | null)?.trim() ?? "";
         const company = (formData.get("company") as string | null)?.trim() ?? "";

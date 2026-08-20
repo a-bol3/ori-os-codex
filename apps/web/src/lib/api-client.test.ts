@@ -7,23 +7,21 @@ describe("apiFetch", () => {
         vi.restoreAllMocks();
     });
 
-    it("forwards the API token stored in the Auth.js session", async () => {
+    it("uses the same-origin BFF without putting API tokens in browser headers", async () => {
         const fetchMock = vi.fn()
-            .mockResolvedValueOnce(new Response(JSON.stringify({ accessToken: "jwt-token" }), { status: 200 }))
             .mockResolvedValueOnce(new Response(JSON.stringify({ contacts: [] }), { status: 200 }));
         vi.stubGlobal("fetch", fetchMock);
 
         await apiFetch("/dashboard");
 
-        expect(fetchMock).toHaveBeenCalledTimes(2);
-        const [, apiRequest] = fetchMock.mock.calls;
-        expect(apiRequest[0]).toBe("/api/dashboard");
-        expect((apiRequest[1].headers as Headers).get("Authorization")).toBe("Bearer jwt-token");
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [apiRequest] = fetchMock.mock.calls;
+        expect(apiRequest[0]).toBe("/api/workspace-proxy/dashboard");
+        expect(apiRequest[1].headers).toBeUndefined();
     });
 
     it("turns an unauthorized API response into a visible session error", async () => {
         const fetchMock = vi.fn()
-            .mockResolvedValueOnce(new Response(JSON.stringify({ accessToken: "expired" }), { status: 200 }))
             .mockResolvedValueOnce(new Response(null, { status: 401 }));
         vi.stubGlobal("fetch", fetchMock);
 

@@ -4,7 +4,7 @@
 
 ## Last verified
 
-- Date: 2026-08-13
+- Date: 2026-08-20
 - Local repository: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0`
 - Canonical remote: `https://github.com/a-bol3/ori-os-codex.git`
 - Local branch: `codex/foundation-canonicalization`
@@ -20,7 +20,7 @@
 | Web availability | Passing | `/dashboard` redirects to `/login` |
 | API health | Passing | `/health` returned HTTP 200 |
 | API readiness | Passing | `/ready` returned DB and Redis `ok` |
-| GitHub Actions | Re-running after fix | Run `31682253026` proved build passes; lint was blocked by legacy API rules; local lint now exits 0 |
+| GitHub Actions | Needs remote confirmation | Local Worker/Jest baseline fixed; the next PR run must validate the canonical clean checkout |
 | VPS identity | Unknown | Confirm deployed commit and compose state |
 | Backups | Not accepted | Perform a real restore drill |
 | Production certification | Blocked | See `docs/PRODUCTION_READINESS_CHECKLIST.md` |
@@ -32,6 +32,14 @@
 3. Verify PostgreSQL backup storage and restore into an isolated database.
 4. Review firewall, SSH, CPU limitation, monitoring, and external backup posture.
 5. Reconcile historical “ready” documents with the canonical beta-readiness documents.
+6. Do not deploy this uncommitted recovery work until CI is green and the VPS snapshot/dump evidence has been captured.
+
+## Recovery update — 2026-08-20 (uncommitted)
+
+- Product posture changed to invitation-only private beta: self-service registration is disabled by default, Test Bench is unavailable outside development, incomplete navigation is hidden, and pricing/marketing/security/legal copy no longer asserts unverified availability, compliance, customers, trials, or SLA claims.
+- CI baseline: API and Worker now pin Jest `30.4.2`, `@types/jest` `30.0.0`, and `ts-jest` `29.4.11`; Worker invokes its workspace Jest executable; CI uses supported Node 24 and Actions v5.
+- Session posture: refresh-token creation now persists the hash of exactly the credential issued to the client; browser API calls use a same-origin server proxy; `/api/auth/access-token` and the browser token bridge were removed so access/refresh tokens are not returned through the Auth.js session.
+- Local proof: focused API auth tests passed (4), Worker tests passed (4 suites / 18), and web tests passed (5 files / 12). Full build/lint must still be confirmed by clean CI because this desktop runner truncates long jobs.
 
 ## Local verification on 2026-08-13
 

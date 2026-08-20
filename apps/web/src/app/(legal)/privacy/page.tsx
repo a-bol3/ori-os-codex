@@ -68,7 +68,7 @@ export default function PrivacyPage() {
                             <li><strong>Restriction:</strong> Limit how we use your data</li>
                         </ul>
                         <p className="mt-4">
-                            To exercise these rights, contact us at <a href="mailto:privacy@ori-os.com" className="text-primary hover:underline">privacy@ori-os.com</a>
+                            Private-beta participants receive a signed data-processing agreement with the applicable contact and rights-request process.
                         </p>
                     </section>
 
@@ -125,8 +125,7 @@ export default function PrivacyPage() {
                             For privacy-related questions or to exercise your rights, contact us at:
                         </p>
                         <p className="mt-2">
-                            Email: <a href="mailto:privacy@ori-os.com" className="text-primary hover:underline">privacy@ori-os.com</a><br />
-                            Address: ORI-OS, Inc., [Your Address]
+                            Private-beta participants should use the contact details in their signed beta agreement.
                         </p>
                     </section>
                 </div>

@@ -2,6 +2,14 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-08-20 — recovery worktree, no deployment
+
+- Operator: Codex with project owner
+- Scope: local canonical worktree only; no VPS, database, Hostinger, secret, firewall, backup, deployment, staging, commit, push, or merge action performed.
+- Implemented: invitation-only private-beta posture, removal of unverified public claims, Worker/Jest 30 alignment, CI Node/Actions update, refresh-token persistence correction, and BFF-based browser API access that no longer exposes tokens in the Auth.js session.
+- Local verification: API auth test 4/4, Worker test 4 suites/18, web test 5 files/12 passed; type check completed without reported diagnostics.
+- Release state: `NOT_DEPLOYABLE_YET` until a clean CI run is green and a pre-deployment VPS snapshot plus PostgreSQL dump are captured and verified.
+
 ## 2026-08-13 — baseline verification
 
 - Operator: Codex with project owner
