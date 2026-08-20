@@ -2,13 +2,21 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
-## 2026-08-20 — recovery worktree, no deployment
+## 2026-08-20 — release image path prepared
 
 - Operator: Codex with project owner
-- Scope: local canonical worktree only; no VPS, database, Hostinger, secret, firewall, backup, deployment, staging, commit, push, or merge action performed.
+- Scope: repository only; no ORI-OS container restart or production image rollout.
+- Implemented: GHCR publication workflow for API, Worker, and Web images; release Compose overlay requiring explicit image references; removed application secrets from Web build arguments.
+- Verification: Compose release overlay parsed successfully with placeholder digest references; `git diff --check` passed.
+- Result: `RELEASE_PATH_PREPARED`; image publication, staging promotion, and production rollout remain pending.
+
+## 2026-08-20 — recovery worktree and VPS evidence
+
+- Operator: Codex with project owner
+- Scope: recovery worktree plus read-only VPS verification, PostgreSQL logical backup, snapshot evidence, and authorized Folga cron-secret rotation. No ORI-OS container restart or image rollout.
 - Implemented: invitation-only private-beta posture, removal of unverified public claims, Worker/Jest 30 alignment, CI Node/Actions update, refresh-token persistence correction, and BFF-based browser API access that no longer exposes tokens in the Auth.js session.
 - Local verification: API auth test 4/4, Worker test 4 suites/18, web test 5 files/12 passed; type check completed without reported diagnostics.
-- Release state: `NOT_DEPLOYABLE_YET` until a clean CI run is green and a pre-deployment VPS snapshot plus PostgreSQL dump are captured and verified.
+- Release state: `NOT_DEPLOYED`; CI is green and pre-deployment snapshot/dump evidence exists, but release images, restore drill, staging promotion, and production rollout remain pending.
 
 ## 2026-08-13 — baseline verification
 
