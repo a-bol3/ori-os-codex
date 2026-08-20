@@ -2,6 +2,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { OrganizationRole } from '@prisma/client';
+import { createHash } from 'node:crypto';
 import { AuthService } from './auth.service';
 
 jest.mock('bcrypt', () => ({
@@ -21,6 +22,9 @@ describe('AuthService', () => {
     user: {
       findUnique: jest.fn(),
     } satisfies PrismaUserFindUnique,
+    session: {
+      create: jest.fn(),
+    },
   };
   const service = new AuthService(
     prisma as unknown as any,
@@ -70,9 +74,13 @@ describe('AuthService', () => {
         { organizationId: 'org-2', role: OrganizationRole.VIEWER },
       ],
     };
+    prisma.session.create.mockImplementation(async ({ data }) => ({ id: data.id }));
 
-    await expect(service.login(user)).resolves.toEqual({
+    const result = await service.login(user);
+
+    expect(result).toEqual({
       access_token: 'signed-token',
+      refresh_token: expect.stringMatching(/^[0-9a-f-]{36}\.[0-9a-f]{64}$/),
       organizationId: 'org-1',
       user: {
         id: 'user-1',
@@ -87,6 +95,16 @@ describe('AuthService', () => {
       sub: 'user-1',
       organizationId: 'org-1',
     });
+
+    const createdSession = prisma.session.create.mock.calls[0][0].data;
+    expect(createdSession.id).toBe(
+      result.refresh_token.split('.')[0],
+    );
+    expect(createdSession.refreshToken).toBe(
+      createHash('sha256')
+        .update(result.refresh_token)
+        .digest('hex'),
+    );
   });
 
   it('rejects organization switching outside memberships', async () => {

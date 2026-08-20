@@ -4,31 +4,21 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Button,
     ScrollArea,
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-    Separator,
     cn,
 } from '@ori-os/ui';
 import { UserAccount } from './user-account';
 import {
     LayoutDashboard,
-    Search,
     Users,
     Building2,
     DollarSign,
-    CreditCard,
-    GitBranch,
-    Mail,
-    BarChart3,
-    FileText,
-    Settings,
     HelpCircle,
     ChevronLeft,
     X,
-    Sparkles,
 } from 'lucide-react';
 
 const mainNavItems = [
@@ -36,12 +26,6 @@ const mainNavItems = [
         title: 'Dashboard',
         href: '/dashboard',
         icon: LayoutDashboard,
-    },
-    {
-        title: 'Intelligence',
-        href: '/dashboard/intelligence',
-        icon: Search,
-        badge: 'AI',
     },
     {
         title: 'Contacts',
@@ -58,46 +42,9 @@ const mainNavItems = [
         href: '/dashboard/crm/deals',
         icon: DollarSign,
     },
-    {
-        title: 'Billing',
-        href: '/dashboard/billing',
-        icon: CreditCard,
-        badge: 'New',
-    },
-    {
-        title: 'Automation',
-        href: '/dashboard/automation',
-        icon: GitBranch,
-    },
-    {
-        title: 'Engagement',
-        href: '/dashboard/engagement',
-        icon: Mail,
-    },
-    {
-        title: 'Analytics',
-        href: '/dashboard/analytics',
-        icon: BarChart3,
-    },
-    {
-        title: 'SEO Studio',
-        href: '/dashboard/seo',
-        icon: Search,
-        badge: 'New',
-    },
-    {
-        title: 'Content',
-        href: '/dashboard/content',
-        icon: FileText,
-    },
 ];
 
 const bottomNavItems = [
-    {
-        title: 'Settings',
-        href: '/dashboard/settings',
-        icon: Settings,
-    },
     {
         title: 'Help',
         href: '/dashboard/help',
@@ -155,11 +102,6 @@ export function Sidebar({
                         </motion.span>
                     )}
                 </AnimatePresence>
-                {'badge' in item && item.badge && !collapsed && (
-                    <span className="ml-auto px-1.5 py-0.5 text-2xs font-medium bg-tangerine/10 text-tangerine rounded-none">
-                        {item.badge}
-                    </span>
-                )}
                 {isActive && (
                     <motion.div
                         layoutId="sidebar-active"

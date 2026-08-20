@@ -3,28 +3,28 @@
 import { MarketingHeader } from '@/components/marketing/marketing-header';
 import { MarketingFooter } from '@/components/marketing/marketing-footer';
 import { motion } from 'framer-motion';
-import { Card, CardContent, Button, Badge } from '@ori-os/ui';
-import { Shield, Lock, Server, Users, CheckCircle2, Eye, ShieldCheck } from 'lucide-react';
+import { Card, CardContent, Badge } from '@ori-os/ui';
+import { Shield, ShieldCheck, Lock, Server, Users } from 'lucide-react';
 
 const coreSecurity = [
     {
         title: 'Data Encryption',
-        description: 'All data is encrypted at rest using AES-256 and in transit using TLS 1.3.',
+        description: 'The beta is served over HTTPS. Encryption and key-management controls remain under active validation.',
         icon: Lock,
     },
     {
-        title: 'SOC 2 Type II',
-        description: 'We are SOC 2 compliant, ensuring the highest standards of security and availability.',
+        title: 'Private-beta controls',
+        description: 'Authentication, tenant isolation, recovery and audit controls are being implemented before public certification.',
         icon: ShieldCheck,
     },
     {
-        title: 'Global Infrastructure',
-        description: 'Built on world-class infrastructure providers with multi-region redundancy.',
+        title: 'Current hosting',
+        description: 'The beta currently runs in a single managed VPS environment and is not a multi-region service.',
         icon: Server,
     },
     {
-        title: 'RBAC & SSO',
-        description: 'Granular access controls and SAML-based single sign-on for enterprise security.',
+        title: 'Access management',
+        description: 'Tenant-scoped authentication is active; role enforcement and enterprise SSO are not yet public capabilities.',
         icon: Users,
     },
 ];
@@ -36,7 +36,7 @@ export default function SecurityPage() {
             <main className="flex-1 bg-background pt-24">
                 <section className="py-24 bg-gunmetal text-white text-center">
                     <div className="container mx-auto px-4 max-w-4xl">
-                        <Badge variant="accent" className="mb-6">Enterprise Grade</Badge>
+                        <Badge variant="accent" className="mb-6">Private beta</Badge>
                         <h1 className="text-4xl md:text-6xl font-bold mb-6">Built with <span className="text-tangerine">security</span> at the core</h1>
                         <p className="text-xl text-white/70">
                             We understand that your data is your most valuable asset. We protect it like it's our own.
@@ -66,12 +66,12 @@ export default function SecurityPage() {
 
                 <section className="py-24 bg-muted/20">
                     <div className="container mx-auto px-4 max-w-4xl">
-                        <h2 className="text-3xl font-bold text-center mb-12">Security Certifications & Compliance</h2>
+                        <h2 className="text-3xl font-bold text-center mb-12">Security roadmap</h2>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                            {['SOC 2 Type II', 'GDPR Compliant', 'HIPAA Ready', 'CCPA Compliant'].map((item) => (
+                            {['Access controls', 'Recovery testing', 'Dependency patching', 'Audit evidence'].map((item) => (
                                 <div key={item} className="flex flex-col items-center gap-4 text-center">
                                     <div className="h-20 w-20 rounded-none bg-background flex items-center justify-center border border-tangerine/20 border-dashed">
-                                        <CheckCircle2 className="h-8 w-8 text-tangerine" />
+                                        <Shield className="h-8 w-8 text-tangerine" />
                                     </div>
                                     <span className="font-semibold text-sm">{item}</span>
                                 </div>
@@ -82,11 +82,10 @@ export default function SecurityPage() {
 
                 <section className="py-24">
                     <div className="container mx-auto px-4 max-w-4xl text-center">
-                        <h2 className="text-3xl font-bold mb-6">Found a security issue?</h2>
+                        <h2 className="text-3xl font-bold mb-6">Security contact</h2>
                         <p className="text-lg text-muted-foreground mb-8">
-                            We take security concerns seriously. If you've found a vulnerability, please report it to our security team.
+                            Security reporting and the public compliance package will be published before the public launch.
                         </p>
-                        <Button variant="accent" size="lg">Report Vulnerability</Button>
                     </div>
                 </section>
             </main>

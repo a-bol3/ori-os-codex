@@ -63,6 +63,11 @@ prompt
 # Skills directory
 /skills/
 
+# Historical nested repositories are kept locally as archive material, never
+# treated as submodules or part of the canonical checkout.
+/ori-os/
+/ori-os-chatzai/
+
 # Local deployment bundles and operator scratch files
 *.tar.gz
 *.sql

@@ -13,38 +13,38 @@ import {
 
 const bentoItems = [
     {
-        title: 'Lightning Fast',
-        description: 'Built for speed with modern architecture. Sub-second response times across all operations.',
+        title: 'Focused beta scope',
+        description: 'Private-beta organizations use the CRM workflow while broader modules complete validation.',
         icon: Zap,
         className: 'md:col-span-2 md:row-span-1',
     },
     {
-        title: 'Enterprise Security',
-        description: 'SOC 2 compliant with end-to-end encryption, RBAC, and audit logs.',
+        title: 'Security in progress',
+        description: 'Authentication, tenant isolation, auditability and recovery are being hardened before public launch.',
         icon: Shield,
         className: 'md:col-span-1 md:row-span-2',
     },
     {
-        title: 'Native Integrations',
-        description: 'Connect your existing tools seamlessly.',
+        title: 'Controlled integrations',
+        description: 'Integrations are enabled only when their provider, consent and operational status are verified.',
         icon: Puzzle,
         className: 'md:col-span-1 md:row-span-1',
     },
     {
-        title: 'Global Scale',
-        description: 'Deploy worldwide with edge locations for minimal latency.',
+        title: 'Measured rollout',
+        description: 'Capacity is validated through staged beta cohorts before broader availability.',
         icon: Globe,
         className: 'md:col-span-1 md:row-span-1',
     },
     {
-        title: 'Real-Time Sync',
-        description: 'All data syncs instantly across your entire organization.',
+        title: 'Visible system state',
+        description: 'Unavailable dependencies are surfaced instead of being replaced with simulated success.',
         icon: Clock,
         className: 'md:col-span-1 md:row-span-1',
     },
     {
-        title: 'AI-Powered',
-        description: 'Smart suggestions, automated workflows, and intelligent insights.',
+        title: 'Capability-led delivery',
+        description: 'New automation and intelligence features ship only after end-to-end acceptance testing.',
         icon: Sparkles,
         className: 'md:col-span-2 md:row-span-1',
     },
@@ -86,8 +86,7 @@ export function BentoSection() {
                         Engineered for <span className="text-tangerine">Performance</span>
                     </h2>
                     <p className="text-xl text-muted-foreground max-w-2xl leading-relaxed">
-                        The foundation of your go-to-market architecture.
-                        Reliable, secure, and infinitely scalable.
+                        A controlled foundation for validating dependable go-to-market workflows.
                     </p>
                 </motion.div>
 

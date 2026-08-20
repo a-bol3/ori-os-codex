@@ -28,7 +28,7 @@ export function HeroSection() {
                                 className="mb-8 px-4 py-2 text-sm font-medium inline-flex items-center gap-2 rounded-none border border-tangerine/20"
                             >
                                 <Sparkles className="h-4 w-4 text-tangerine" />
-                                <span>AI-Powered Intelligence Platform</span>
+                                <span>Private beta</span>
                             </Badge>
                         </motion.div>
 
@@ -65,8 +65,8 @@ export function HeroSection() {
                             transition={{ duration: 0.5, delay: 0.2 }}
                             className="mt-10 text-xl lg:text-2xl text-muted-foreground leading-relaxed max-w-xl"
                         >
-                            Consolidate your entire GTM stack into one unified AI platform.
-                            Find, Enrich, Analyze, and Engage at scale.
+                            A focused CRM and go-to-market workspace for private-beta organizations.
+                            Capabilities are enabled only after they have passed operational validation.
                         </motion.p>
 
                         {/* CTA Buttons */}
@@ -77,8 +77,8 @@ export function HeroSection() {
                             className="mt-12 flex flex-col sm:flex-row items-center gap-6"
                         >
                             <Button variant="accent" size="lg" className="w-full sm:w-auto h-14 px-10 text-lg rounded-none group" asChild>
-                                <Link href="/register">
-                                    Start Free Trial
+                                <Link href="/login">
+                                    Access private beta
                                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                                 </Link>
                             </Button>
@@ -90,27 +90,6 @@ export function HeroSection() {
                             </Button>
                         </motion.div>
 
-                        {/* Social Proof */}
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.5, delay: 0.6 }}
-                            className="mt-20 pt-10 border-t border-border/40"
-                        >
-                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground/60 mb-8">
-                                Trusted by technical teams at
-                            </p>
-                            <div className="flex flex-wrap items-center gap-x-12 gap-y-8 opacity-40 grayscale contrast-125">
-                                {['Acme Corp', 'TechStart', 'InnovateCo', 'GrowthLabs'].map((company) => (
-                                    <div
-                                        key={company}
-                                        className="text-xl font-black text-foreground tracking-tight"
-                                    >
-                                        {company}
-                                    </div>
-                                ))}
-                            </div>
-                        </motion.div>
                     </div>
 
                     {/* Dashboard Mockup - Axion Style */}

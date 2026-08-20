@@ -24,17 +24,15 @@ export function CTASection() {
                 >
                     <div className="inline-flex items-center gap-2 px-6 py-2 border border-tangerine/30 bg-tangerine/5 text-tangerine text-xs font-bold uppercase tracking-[0.2em] mb-10">
                         <Sparkles className="h-4 w-4" />
-                        Start your 14-day free trial
+                        Invitation-only private beta
                     </div>
 
                     <h2 className="text-4xl sm:text-6xl lg:text-7xl font-black text-white mb-10 tracking-tight leading-tight">
-                        Ready to <span className="text-tangerine">Accelerate</span> <br />
-                        your Growth?
+                        Building a dependable <span className="text-tangerine">GTM foundation</span>
                     </h2>
 
                     <p className="text-xl lg:text-2xl text-white/60 mb-14 max-w-2xl mx-auto leading-relaxed">
-                        Join the high-performance teams using Ori-OS
-                        to unify their intelligence and execution.
+                        Access is limited while core CRM, security and operational controls are validated.
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
@@ -44,28 +42,13 @@ export function CTASection() {
                             className="w-full sm:w-auto h-16 px-12 text-lg font-bold rounded-none group"
                             asChild
                         >
-                            <Link href="/register">
-                                Get Started Free
+                            <Link href="/login">
+                                Access beta
                                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                             </Link>
                         </Button>
-                        <Button
-                            variant="outline"
-                            size="xl"
-                            className="w-full sm:w-auto h-16 px-12 text-lg font-bold rounded-none border-white/20 text-white hover:bg-white/5"
-                            asChild
-                        >
-                            <Link href="/contact">Talk to Sales</Link>
-                        </Button>
                     </div>
 
-                    <div className="mt-10 flex items-center justify-center gap-8 text-[10px] font-bold uppercase tracking-widest text-white/30">
-                        <span>No credit card required</span>
-                        <div className="w-1 h-1 bg-tangerine/40" />
-                        <span>Cancel anytime</span>
-                        <div className="w-1 h-1 bg-tangerine/40" />
-                        <span>Instant access</span>
-                    </div>
                 </motion.div>
             </div>
         </section>
