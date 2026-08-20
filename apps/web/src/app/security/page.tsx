@@ -4,7 +4,7 @@ import { MarketingHeader } from '@/components/marketing/marketing-header';
 import { MarketingFooter } from '@/components/marketing/marketing-footer';
 import { motion } from 'framer-motion';
 import { Card, CardContent, Badge } from '@ori-os/ui';
-import { Shield, Lock, Server, Users } from 'lucide-react';
+import { Shield, ShieldCheck, Lock, Server, Users } from 'lucide-react';
 
 const coreSecurity = [
     {
