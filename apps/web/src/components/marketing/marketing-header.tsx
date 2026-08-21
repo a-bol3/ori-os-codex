@@ -7,7 +7,7 @@ import { Button, cn } from '@ori-os/ui';
 import { Menu, X } from 'lucide-react';
 
 const navItems = [
-    { label: 'Private beta', href: '/register' },
+    { label: 'Private beta', href: '/#cta' },
     { label: 'Security posture', href: '/security' },
 ];
 
@@ -37,7 +37,9 @@ export function MarketingHeader() {
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-none bg-gradient-to-br from-tangerine to-tangerine/80 flex items-center justify-center">
-                            <span className="text-white font-bold text-lg">O</span>
+                            <span className="text-white font-bold text-lg">
+                                O
+                            </span>
                         </div>
                         <span className="font-semibold text-xl text-foreground">
                             Ori-OS
@@ -104,10 +106,18 @@ export function MarketingHeader() {
                                 </Link>
                             ))}
                             <div className="flex flex-col gap-2 px-4 pt-4 border-t border-border mt-2">
-                                <Button variant="outline" className="w-full" asChild>
+                                <Button
+                                    variant="outline"
+                                    className="w-full"
+                                    asChild
+                                >
                                     <Link href="/login">Log in</Link>
                                 </Button>
-                                <Button variant="accent" className="w-full" asChild>
+                                <Button
+                                    variant="accent"
+                                    className="w-full"
+                                    asChild
+                                >
                                     <Link href="/login">Access beta</Link>
                                 </Button>
                             </div>
