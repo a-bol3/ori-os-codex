@@ -5,7 +5,14 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Button, Input, Label, Checkbox, Separator, useToast } from '@ori-os/ui';
+import {
+    Button,
+    Input,
+    Label,
+    Checkbox,
+    Separator,
+    useToast,
+} from '@ori-os/ui';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
@@ -19,7 +26,9 @@ export default function LoginPage() {
         setIsLoading(true);
 
         const formData = new FormData(e.currentTarget);
-        const email = String(formData.get('email') ?? '').trim().toLowerCase();
+        const email = String(formData.get('email') ?? '')
+            .trim()
+            .toLowerCase();
         const password = String(formData.get('password') ?? '');
 
         const result = await signIn('credentials', {
@@ -30,9 +39,9 @@ export default function LoginPage() {
 
         if (result?.error) {
             toast({
-                title: "Error",
-                description: "Invalid credentials.",
-                variant: "destructive",
+                title: 'Error',
+                description: 'Invalid credentials.',
+                variant: 'destructive',
             });
             setIsLoading(false);
         } else {
@@ -53,12 +62,16 @@ export default function LoginPage() {
                     <div className="h-8 w-8 rounded-none bg-gradient-to-br from-tangerine to-tangerine/80 flex items-center justify-center">
                         <span className="text-white font-bold text-lg">O</span>
                     </div>
-                    <span className="font-semibold text-xl text-foreground">Ori-OS</span>
+                    <span className="font-semibold text-xl text-foreground">
+                        Ori-OS
+                    </span>
                 </Link>
             </div>
 
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-foreground mb-2">Welcome back</h1>
+                <h1 className="text-2xl font-bold text-foreground mb-2">
+                    Welcome back
+                </h1>
                 <p className="text-muted-foreground">
                     Enter your credentials to access your account
                 </p>
@@ -88,7 +101,11 @@ export default function LoginPage() {
                     Google
                 </Button>
                 <Button variant="outline" className="w-full">
-                    <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                    <svg
+                        className="h-5 w-5 mr-2"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                    >
                         <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
                     </svg>
                     GitHub
@@ -119,12 +136,10 @@ export default function LoginPage() {
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
                         <Label htmlFor="password">Password</Label>
-                        <Link
-                            href="/forgot-password"
-                            className="text-sm text-tangerine hover:underline"
-                        >
-                            Forgot password?
-                        </Link>
+                        <span className="text-right text-xs text-muted-foreground">
+                            Password recovery is unavailable during the private
+                            beta.
+                        </span>
                     </div>
                     <div className="relative">
                         <Input
@@ -195,10 +210,7 @@ export default function LoginPage() {
             </form>
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
-                Don&apos;t have an account?{' '}
-                <Link href="/register" className="text-tangerine hover:underline font-medium">
-                    Sign up for free
-                </Link>
+                Access is invitation-only during the private beta.
             </p>
         </motion.div>
     );
