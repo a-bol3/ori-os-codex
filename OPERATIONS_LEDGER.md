@@ -2,6 +2,20 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-08-21 — immutable private-beta rollout and smoke verification
+
+- Operator: Codex with project owner
+- Scope: ORI-OS production rollout from the canonical `main` release line; no data migration or destructive operation.
+- Source: `main` release commit `e1b729d`; GitHub Actions workflow `Publish release images #4` (`32457755540`) completed successfully with API, Worker, and Web jobs green.
+- Image digests promoted:
+    - API: `ghcr.io/a-bol3/ori-os-api@sha256:446a27be085a21da2896d92517682b3ce80c049a68746280adf248cb0e0e450c`
+    - Worker: `ghcr.io/a-bol3/ori-os-worker@sha256:12204ed19ce5fb929e0a62b96fd0d33fe37def8e694a07d42c461b76554fd3db`
+    - Web: `ghcr.io/a-bol3/ori-os-web@sha256:9df8899201b7dca23184d3aa51e17cc87506be287ae9ff94f1b6e1df06bb4e00`
+- Pre-deployment evidence: PostgreSQL dump `/root/ori-os-prod-20260821T034554Z.dump` created and validated with `pg_restore --list`; Hostinger snapshot and auto-backup existed before rollout.
+- Deployment: release Compose configuration parsed successfully; images were pulled from GHCR; API, Worker, and Web were started with `--no-build --pull never`; PostgreSQL and Redis reported healthy.
+- Verification: public login, dashboard after authentication, logout-to-marketing, invitation-only messaging, and removal of unverified trial/testimonial claims were checked in the browser. Incomplete dashboard capability summaries were hidden and social login controls were marked unavailable.
+- Result: `PRIVATE_BETA_OPERATIONAL`; production is on immutable digests, but public-launch certification is still blocked by restore testing, security/RBAC hardening, dependency remediation, and observability work.
+
 ## 2026-08-20 — release image path prepared
 
 - Operator: Codex with project owner
