@@ -1,12 +1,15 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { PrismaService } from '@ori-os/db/nestjs';
 
 type JwtPayload = {
   sub?: unknown;
   email?: unknown;
   organizationId?: unknown;
 };
+
+type OrganizationRole = 'OWNER' | 'ADMIN' | 'MANAGER' | 'OPERATOR' | 'VIEWER';
 
 function requireJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
@@ -24,7 +27,7 @@ function requireJwtSecret(): string {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -46,10 +49,27 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       );
     }
 
+    const membership = await this.prisma.organizationMembership.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: payload.organizationId,
+          userId: payload.sub,
+        },
+      },
+      select: { role: true },
+    });
+
+    if (!membership) {
+      throw new UnauthorizedException(
+        'User is not a member of this organization',
+      );
+    }
+
     return {
       userId: payload.sub,
       email: typeof payload.email === 'string' ? payload.email : undefined,
       organizationId: payload.organizationId,
+      role: membership.role as OrganizationRole,
     };
   }
 }

@@ -4,6 +4,7 @@ export interface AuthenticatedUser {
   userId: string;
   email?: string;
   organizationId: string;
+  role: 'OWNER' | 'ADMIN' | 'MANAGER' | 'OPERATOR' | 'VIEWER';
 }
 
 export interface AuthenticatedRequest {
@@ -30,7 +31,9 @@ export function requireUserId(req: AuthenticatedRequest): string {
   return userId;
 }
 
-export function getOptionalUserId(req: AuthenticatedRequest): string | undefined {
+export function getOptionalUserId(
+  req: AuthenticatedRequest,
+): string | undefined {
   const userId = req.user?.userId ?? req.user?.id;
   return typeof userId === 'string' && userId.length > 0 ? userId : undefined;
 }

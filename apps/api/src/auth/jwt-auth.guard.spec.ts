@@ -64,6 +64,7 @@ describe('JwtAuthGuard', () => {
       userId: 'developer-1',
       organizationId: 'organization-1',
       email: undefined,
+      role: 'OWNER',
     });
   });
 });
