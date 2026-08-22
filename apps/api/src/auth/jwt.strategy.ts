@@ -2,14 +2,13 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
+import { OrganizationRole } from './roles.decorator';
 
 type JwtPayload = {
   sub?: unknown;
   email?: unknown;
   organizationId?: unknown;
 };
-
-type OrganizationRole = 'OWNER' | 'ADMIN' | 'MANAGER' | 'OPERATOR' | 'VIEWER';
 
 function requireJwtSecret(): string {
   const secret = process.env.JWT_SECRET;

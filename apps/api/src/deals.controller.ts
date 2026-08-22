@@ -14,6 +14,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { Roles } from './auth/roles.decorator';
+import { RolesGuard } from './auth/roles.guard';
 import { WorkflowTriggerService } from './automation/workflow-trigger.service';
 import { AuditLogService } from './common/audit-log.service';
 import { ensureDefaultPipeline } from './common/default-pipeline';
@@ -84,6 +86,8 @@ export class DealsController {
   }
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER', 'OPERATOR')
   async create(
     @Request() req: AuthenticatedRequest,
     @Body() data: CreateDealDto,
@@ -212,6 +216,8 @@ export class DealsController {
   }
 
   @Post('bulk-delete')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER')
   async bulkDelete(
     @Request() req: AuthenticatedRequest,
     @Body() body: BulkDeleteDto,
@@ -250,6 +256,8 @@ export class DealsController {
   }
 
   @Put(':id')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER', 'OPERATOR')
   async update(
     @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
@@ -307,6 +315,8 @@ export class DealsController {
   }
 
   @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER')
   async remove(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
     const orgId = requireOrganizationId(req);
     const existing = await this.prisma.deal.findFirst({
