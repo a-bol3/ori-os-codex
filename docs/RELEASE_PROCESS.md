@@ -7,7 +7,7 @@ ORI-OS must never bind its own proxy to ports 80 or 443.
 ## Source of truth
 
 - Canonical repository: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0` locally and
-  `/opt/orios-app` on the VPS.
+  `/opt/orios-codex` on the VPS.
 - Public web: `https://orios.ori-craftlabs.com`.
 - Public API: `https://api.orios.ori-craftlabs.com`.
 - Compose files: `docker-compose.prod.yml` plus
@@ -48,15 +48,23 @@ does not have a reproducible lockfile.
 
 ## VPS deployment
 
-From `/opt/orios-app` on the VPS, after confirming the reviewed commit is
-checked out and a database backup exists:
+Install the delegated command once from the VPS root console as documented in
+[RESTRICTED_DEPLOY.md](./RESTRICTED_DEPLOY.md). From the authorized workstation,
+invoke it only with a full `main` commit SHA and exact GHCR image digests:
 
-```bash
-./scripts/deploy-host-nginx.sh
+```powershell
+$source = (gh api repos/a-bol3/ori-os-codex/commits/main --jq .sha)
+ssh orios-vps "sudo -n /usr/local/sbin/orios-deploy-release --source $source --api <API_IMAGE@DIGEST> --worker <WORKER_IMAGE@DIGEST> --web <WEB_IMAGE@DIGEST>"
 ```
 
-The script starts the stack with both Compose files, applies migrations and
-checks local and public endpoints. Verify at minimum:
+The restricted command does not build images, run migrations, alter firewall/SSH,
+reboot, create snapshots, or touch Folga. It backs up `.env`, downloads the
+three pinned images before changing `.env`, restarts only `api`, `worker` and
+`web`, performs public health/readiness checks, restores the previous `.env`
+and restarts those three services if activation/checks fail, and writes a
+release manifest. Record evidence in `OPERATIONS_LEDGER.md`.
+
+Verify at minimum:
 
 ```bash
 curl -fsS https://api.orios.ori-craftlabs.com/health
@@ -64,21 +72,24 @@ curl -fsS https://api.orios.ori-craftlabs.com/ready
 curl -fsSI https://orios.ori-craftlabs.com/login
 ```
 
-Check the service state and recent logs before declaring success:
+Then inspect only the ORI-OS services:
 
 ```bash
-docker compose -f docker-compose.prod.yml -f docker-compose.host-nginx.yml ps
-docker compose -f docker-compose.prod.yml -f docker-compose.host-nginx.yml logs --tail=100 api web worker
+docker compose -p orios-app \
+  -f docker-compose.prod.yml \
+  -f docker-compose.prod.release.yml \
+  -f docker-compose.host-nginx.yml ps api worker web
 ```
 
 ## Rollback
 
-Rollback is currently a controlled operator procedure, not an automated
-`deploy-prod.sh --version` command. Keep the previous reviewed commit and
-database backup available. Stop and restore only after recording the failure,
-then redeploy the previous commit using the same host-nginx command and run
-the smoke checks again. Database migrations must be backward-compatible; a
-destructive schema rollback is not authorized without a tested restore.
+Rollback is currently a controlled operator procedure, not an automatic
+command. Keep the previous reviewed commit, exact image digests, `.env` backup,
+and database backup available. Restore only after recording failure, then
+invoke the restricted command with the previous verified commit and image
+digests and run smoke checks again. Database migrations are not performed by
+the restricted command; destructive schema rollback remains unauthorized
+without a tested restore.
 
 See [ROLLBACK_PLAN.md](./ROLLBACK_PLAN.md) for the evidence required before a
 rollback is considered complete.
