@@ -4,11 +4,11 @@
 
 ## Last verified
 
-- Date: 2026-08-21
+- Date: 2026-08-22
 - Local repository: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0`
 - Canonical remote: `https://github.com/a-bol3/ori-os-codex.git`
 - Canonical production line: `main` at the merged private-beta release line
-- Latest release workflow: `Publish release images #4` (`32457755540`), commit `e1b729d`
+- Latest release workflow: `Publish release images #5` (`32461311990`), commit `64a3353`
 - Public web: `https://orios.ori-craftlabs.com`
 - Public API: `https://api.orios.ori-craftlabs.com`
 
@@ -21,7 +21,7 @@
 | API health               | Passing                          | `/health` returned HTTP 200                                                                            |
 | API readiness            | Passing                          | `/ready` returned DB and Redis `ok`                                                                    |
 | GitHub Actions           | Green baseline                   | PR #1 merged; main run #21 passed install, Prisma, build, lint, and tests                              |
-| Release images           | Published and promoted           | Workflow #4 published API, Worker, and Web images; the same digests were pulled and started on the VPS |
+| Release images           | Published and promoted           | Workflow #5 published API, Worker, and Web images; the same digests were pulled and started on the VPS |
 | VPS identity             | Confirmed operational            | `/opt/orios-codex`; release Compose overlay active; API, Worker, Web, PostgreSQL, and Redis running    |
 | Backups                  | Pre-deployment evidence captured | PostgreSQL dump and Hostinger snapshot exist; restore drill is still pending                           |
 | Production certification | Blocked                          | See `docs/PRODUCTION_READINESS_CHECKLIST.md`                                                           |
@@ -52,6 +52,18 @@
 - PostgreSQL dump `/root/ori-os-prod-20260821T034554Z.dump` was created and validated with `pg_restore --list`; a Hostinger snapshot and auto-backup were also present before rollout.
 - Browser smoke verification passed: `/login` shows invitation-only private-beta messaging, `/dashboard` loads after login, logout returns to marketing, and unverified trial/testimonial claims are absent.
 - Dashboard capability surface now exposes the certified CRM summary only; incomplete Engagement, Automation, and SEO Studio summaries are hidden. Google/GitHub login controls are visibly marked “coming soon” and disabled.
+- Release remains `PRIVATE_BETA_OPERATIONAL`, not public-launch certified. Restore testing, security hardening, RBAC proof, dependency remediation, and observability remain open.
+
+## Recovery update — 2026-08-22
+
+- Release workflow #5 (`32461311990`) completed successfully on `main` at `64a3353`; API, Worker, and Web image jobs were green.
+- Promoted immutable image digests to the VPS:
+  - API `sha256:beb483a58e53ab7fd0f09cbc1fbaea5c52f6d937b8626bd5d1ea9b77cede1a14`
+  - Worker `sha256:de74aaaec5553812c29a3d89b9def4379705d0aa65487ee539f700926e7840d1`
+  - Web `sha256:c442caf1451f87f660deda9054d67db485b36d02e8df000fb8faf86bdc330662`
+- Pre-deployment evidence: Hostinger snapshot created at `2026-08-22 08:52`; PostgreSQL dump `/root/ori-os-prod-20260822T065539Z.dump` validated with `pg_restore --list`, database `ori_os`, 294 TOC entries.
+- VPS deployment completed without a local build. API, Worker, and Web are running; PostgreSQL and Redis are healthy. `/health` returned `ok` and `/ready` returned database and Redis `ok`.
+- Browser smoke verification passed: private-beta login messaging, disabled social-login controls, authenticated dashboard, CRM-only module overview, logout-to-marketing, and public marketing page.
 - Release remains `PRIVATE_BETA_OPERATIONAL`, not public-launch certified. Restore testing, security hardening, RBAC proof, dependency remediation, and observability remain open.
 
 ## Local verification on 2026-08-13
