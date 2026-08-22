@@ -16,6 +16,17 @@ Append one entry for every VPS, deployment, backup, rollback, or production conf
 - Verification: public login, dashboard after authentication, logout-to-marketing, invitation-only messaging, and removal of unverified trial/testimonial claims were checked in the browser. Incomplete dashboard capability summaries were hidden and social login controls were marked unavailable.
 - Result: `PRIVATE_BETA_OPERATIONAL`; production is on immutable digests, but public-launch certification is still blocked by restore testing, security/RBAC hardening, dependency remediation, and observability work.
 
+## 2026-08-22 — PostgreSQL restore drill passed
+
+- Operator: Codex with project owner
+- Scope: isolated recovery verification only; production services and production database were not modified.
+- Source: `/root/ori-os-prod-20260822T065539Z.dump`, previously validated with `pg_restore --list`.
+- Target: temporary PostgreSQL 16 container `ori-os-restore-drill-20260822`, database `restore_check`, with no published port.
+- Verification: `pg_restore --no-owner --no-privileges --exit-on-error` completed successfully; 53 public tables were present; target database reported `restore_check`.
+- Timing: logical PostgreSQL restore completed in 1 second. This measures database restore only, not full application RTO.
+- Cleanup: temporary container removed; `docker ps -a --filter name=ori-os-restore-drill-20260822` returned no containers.
+- Result: `RESTORE_DRILL_PASSED`; full-stack rollback timing, monitoring, security/RBAC hardening, and dependency remediation remain open.
+
 ## 2026-08-22 — release #5 promotion and browser smoke verification
 
 - Operator: Codex with project owner
