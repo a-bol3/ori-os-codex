@@ -15,6 +15,8 @@ import {
 import { PrismaService } from '@ori-os/db/nestjs';
 import { Prisma } from '@prisma/client';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { Roles } from './auth/roles.decorator';
+import { RolesGuard } from './auth/roles.guard';
 import { AuditLogService } from './common/audit-log.service';
 import { normalizePagination } from './common/pagination';
 import {
@@ -86,6 +88,8 @@ export class CompaniesController {
   }
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER', 'OPERATOR')
   async create(
     @Request() req: AuthenticatedRequest,
     @Body() data: CreateCompanyDto,
@@ -117,6 +121,8 @@ export class CompaniesController {
   }
 
   @Post('import')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER', 'OPERATOR')
   async importCompanies(
     @Request() req: AuthenticatedRequest,
     @Body() body: ImportCompaniesDto,
@@ -211,6 +217,8 @@ export class CompaniesController {
   }
 
   @Post('bulk-delete')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER')
   async bulkDelete(
     @Request() req: AuthenticatedRequest,
     @Body() body: BulkDeleteDto,
@@ -282,6 +290,8 @@ export class CompaniesController {
   }
 
   @Put(':id')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER', 'OPERATOR')
   async update(
     @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
@@ -317,6 +327,8 @@ export class CompaniesController {
   }
 
   @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER')
   async remove(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
     const orgId = requireOrganizationId(req);
     const existing = await this.prisma.company.findFirst({

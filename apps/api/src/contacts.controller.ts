@@ -15,6 +15,8 @@ import {
 import { PrismaService } from '@ori-os/db/nestjs';
 import { Prisma } from '@prisma/client';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { Roles } from './auth/roles.decorator';
+import { RolesGuard } from './auth/roles.guard';
 import { WorkflowTriggerService } from './automation/workflow-trigger.service';
 import { AuditLogService } from './common/audit-log.service';
 import { normalizePagination } from './common/pagination';
@@ -91,6 +93,8 @@ export class ContactsController {
   }
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER', 'OPERATOR')
   async create(
     @Request() req: AuthenticatedRequest,
     @Body() data: CreateContactDto,
@@ -144,6 +148,8 @@ export class ContactsController {
   }
 
   @Post('import')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER', 'OPERATOR')
   async importContacts(
     @Request() req: AuthenticatedRequest,
     @Body() body: ImportContactsDto,
@@ -253,6 +259,8 @@ export class ContactsController {
   }
 
   @Post('bulk-delete')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER')
   async bulkDelete(
     @Request() req: AuthenticatedRequest,
     @Body() body: BulkDeleteDto,
@@ -331,6 +339,8 @@ export class ContactsController {
   }
 
   @Put(':id')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER', 'OPERATOR')
   async update(
     @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
@@ -368,6 +378,8 @@ export class ContactsController {
   }
 
   @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER')
   async remove(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
     const orgId = requireOrganizationId(req);
 
