@@ -2,6 +2,20 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-08-22 — release #6 promotion and browser smoke verification
+
+- Operator: Codex with project owner
+- Scope: ORI-OS production rollout from the canonical `main` line; no data migration or destructive operation.
+- Source: `main` commit `9323d6e`; GitHub Actions workflow `Publish release images #6` (`32563355253`) completed successfully with API, Worker, and Web jobs green.
+- Image digests promoted:
+  - API: `ghcr.io/a-bol3/ori-os-api@sha256:eeabc589c5b84e3cd813f1b090c4427288f45373da3f8f3912b4571e152cf513`
+  - Worker: `ghcr.io/a-bol3/ori-os-worker@sha256:47ea179188cc2a30504479ee34b3cf234a2fc691730dfd699709740abdb7cd5d`
+  - Web: `ghcr.io/a-bol3/ori-os-web@sha256:8f81df4fd5bce99e4d17fd5013db22d8ee67d21bae288c9ae9a9a69c5c2bfb65`
+- Backup evidence: Hostinger snapshot created `2026-08-22 08:52`; PostgreSQL dump `/root/ori-os-prod-20260822T065539Z.dump` was validated with `pg_restore --list`.
+- Deployment: release Compose configuration parsed successfully; images were pulled by digest; API, Worker, and Web were started with `--no-build --pull never`; PostgreSQL and Redis reported healthy.
+- Verification: `/health` returned `ok` at `2026-08-22T09:20:59.004Z`; `/ready` returned database and Redis `ok` at `2026-08-22T09:21:08.163Z`; browser smoke passed for login, dashboard, logout-to-marketing, private-beta messaging, and marketing page.
+- Result: `PRIVATE_BETA_OPERATIONAL`; production is on immutable release digests, while full RolesGuard/RBAC enforcement, dependency remediation, monitoring, firewall/SSH hardening, and full-stack rollback timing remain open.
+
 ## 2026-08-21 — immutable private-beta rollout and smoke verification
 
 - Operator: Codex with project owner
