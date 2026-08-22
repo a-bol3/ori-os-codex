@@ -16,6 +16,20 @@ Append one entry for every VPS, deployment, backup, rollback, or production conf
 - Verification: public login, dashboard after authentication, logout-to-marketing, invitation-only messaging, and removal of unverified trial/testimonial claims were checked in the browser. Incomplete dashboard capability summaries were hidden and social login controls were marked unavailable.
 - Result: `PRIVATE_BETA_OPERATIONAL`; production is on immutable digests, but public-launch certification is still blocked by restore testing, security/RBAC hardening, dependency remediation, and observability work.
 
+## 2026-08-22 — release #5 promotion and browser smoke verification
+
+- Operator: Codex with project owner
+- Scope: ORI-OS production rollout from the canonical `main` line; no data migration or destructive operation.
+- Source: `main` commit `64a3353`; GitHub Actions workflow `Publish release images #5` (`32461311990`) completed successfully with API, Worker, and Web jobs green.
+- Image digests promoted:
+  - API: `ghcr.io/a-bol3/ori-os-api@sha256:beb483a58e53ab7fd0f09cbc1fbaea5c52f6d937b8626bd5d1ea9b77cede1a14`
+  - Worker: `ghcr.io/a-bol3/ori-os-worker@sha256:de74aaaec5553812c29a3d89b9def4379705d0aa65487ee539f700926e7840d1`
+  - Web: `ghcr.io/a-bol3/ori-os-web@sha256:c442caf1451f87f660deda9054d67db485b36d02e8df000fb8faf86bdc330662`
+- Backup evidence: Hostinger snapshot created `2026-08-22 08:52`; PostgreSQL dump `/root/ori-os-prod-20260822T065539Z.dump` created and validated with `pg_restore --list` (database `ori_os`, 294 TOC entries).
+- Deployment: release Compose configuration parsed successfully; images were pulled by digest; API, Worker, and Web were started with `--no-build --pull never`; PostgreSQL and Redis reported healthy.
+- Verification: `/health` returned `ok`; `/ready` returned database and Redis `ok`; browser smoke passed for private-beta login messaging, disabled Google/GitHub controls, authenticated dashboard, CRM-only module summary, logout-to-marketing, and public marketing page.
+- Result: `PRIVATE_BETA_OPERATIONAL`; immutable release is live, while restore testing, security/RBAC hardening, dependency remediation, and observability remain open.
+
 ## 2026-08-20 — release image path prepared
 
 - Operator: Codex with project owner
