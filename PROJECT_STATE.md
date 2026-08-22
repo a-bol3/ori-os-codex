@@ -54,6 +54,14 @@
 - Dashboard capability surface now exposes the certified CRM summary only; incomplete Engagement, Automation, and SEO Studio summaries are hidden. Google/GitHub login controls are visibly marked “coming soon” and disabled.
 - Release remains `PRIVATE_BETA_OPERATIONAL`, not public-launch certified. Restore testing, security hardening, RBAC proof, dependency remediation, and observability remain open.
 
+## Recovery update — 2026-08-22 restore drill
+
+- PostgreSQL logical restore drill passed in an isolated temporary container `ori-os-restore-drill-20260822`.
+- Source dump: `/root/ori-os-prod-20260822T065539Z.dump`; target database: `restore_check`; restored tables: 53.
+- Measured PostgreSQL dump restore time: 1 second. This is database-only evidence and must not be treated as the full application RTO.
+- The temporary container was removed and verified absent. Production database and application containers were not modified by the drill.
+- Recovery state: `RESTORE_DRILL_PASSED`; next recovery work is full-stack rollback timing, monitoring/alerting, and security/RBAC hardening.
+
 ## Recovery update — 2026-08-22
 
 - Release workflow #5 (`32461311990`) completed successfully on `main` at `64a3353`; API, Worker, and Web image jobs were green.
