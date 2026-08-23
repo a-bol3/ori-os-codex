@@ -1,0 +1,91 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Full 40-character main commit SHA
+        required: true
+        type: string
+      api_image:
+        description: Full GHCR API image reference including @sha256 digest
+        required: true
+        type: string
+      worker_image:
+        description: Full GHCR worker image reference including @sha256 digest
+        required: true
+        type: string
+      web_image:
+        description: Full GHCR web image reference including @sha256 digest
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy pinned release
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://orios.ori-craftlabs.com/
+    env:
+      INPUT_SOURCE: ${{ inputs.source }}
+      INPUT_API_IMAGE: ${{ inputs.api_image }}
+      INPUT_WORKER_IMAGE: ${{ inputs.worker_image }}
+      INPUT_WEB_IMAGE: ${{ inputs.web_image }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_PORT: ${{ secrets.VPS_PORT }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+    steps:
+      - name: Validate pinned release
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$INPUT_SOURCE" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::source must be a full 40-character SHA"; exit 1; }
+          for image in "$INPUT_API_IMAGE" "$INPUT_WORKER_IMAGE" "$INPUT_WEB_IMAGE"; do
+            [[ "$image" =~ ^ghcr\.io/a-bol3/ori-os-(api|worker|web)@sha256:[0-9a-f]{64}$ ]] || { echo "::error::image refs must use exact ORI-OS GHCR digests"; exit 1; }
+          done
+          [[ -n "$VPS_HOST" ]] || { echo "::error::VPS_HOST is not configured"; exit 1; }
+          [[ -n "$VPS_USER" ]] || { echo "::error::VPS_USER is not configured"; exit 1; }
+          echo "Validated commit ${INPUT_SOURCE} and three pinned image references."
+      - name: Configure SSH
+        shell: bash
+        env:
+          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          VPS_SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          [[ -n "$VPS_SSH_PRIVATE_KEY" ]] || { echo "::error::VPS_SSH_PRIVATE_KEY is not configured"; exit 1; }
+          [[ -n "$VPS_SSH_KNOWN_HOSTS" ]] || { echo "::error::VPS_SSH_KNOWN_HOSTS is not configured"; exit 1; }
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$VPS_SSH_PRIVATE_KEY" > "$HOME/.ssh/orios_vps"
+          printf '%s\n' "$VPS_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/orios_vps" "$HOME/.ssh/known_hosts"
+      - name: Deploy pinned release
+        shell: bash
+        run: |
+          set -euo pipefail
+          port="${VPS_PORT:-22}"
+          ssh -i "$HOME/.ssh/orios_vps" \
+            -p "$port" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o IdentitiesOnly=yes \
+            "${VPS_USER}@${VPS_HOST}" \
+            sudo -n /usr/local/sbin/orios-deploy-release \
+              --source "$INPUT_SOURCE" \
+              --api "$INPUT_API_IMAGE" \
+              --worker "$INPUT_WORKER_IMAGE" \
+              --web "$INPUT_WEB_IMAGE"
+      - name: Remove SSH material
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          rm -f "$HOME/.ssh/orios_vps" "$HOME/.ssh/known_hosts"
+
