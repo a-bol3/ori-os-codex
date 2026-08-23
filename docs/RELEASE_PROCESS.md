@@ -107,3 +107,17 @@ git push origin v0.1.0-beta.1
 Production distribution remains blocked until the beta acceptance criteria,
 backup restore drill, tenant isolation checks and credential-rotation gate
 are all complete.
+
+## Protected production automation
+
+The normal production path is the manually-triggered `Deploy production`
+workflow (`.github/workflows/deploy-production.yml`) from `main`. It accepts
+one full source SHA and three exact GHCR image digests, targets the protected
+`production` environment, and invokes the restricted VPS command over SSH.
+The environment approval is mandatory before the deploy job can access its
+secrets.
+
+Direct SSH remains a break-glass/operator path only. Do not add private keys
+or `.env` values to the repository or workflow logs. The detailed setup and
+first-run procedure is in
+[PRODUCTION_DEPLOY_WORKFLOW.md](./PRODUCTION_DEPLOY_WORKFLOW.md).
