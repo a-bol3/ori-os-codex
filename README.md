@@ -14,6 +14,7 @@ Ori-OS integrates the following core pillars into a single "Axion" design experi
 - **Knowledge Hub**: Notion-like collaborative workspace for internal documentation.
 - **SEO Studio**: Content analysis, backlink monitoring, and competitor tracking.
 - **Compliance Center**: GDPR-first architecture with audit logs and automated suppression.
+- **Operations Core**: Feature-flagged incident, commitment, risk, approval and workload control center.
 
 ## 🎨 Aesthetics: The Axion Design System
 
@@ -129,6 +130,7 @@ For more detailed information, see the `docs/` folder:
 - `OPERATIONS_LEDGER.md`: Append-only record of deployment and infrastructure actions.
 - `docs/RELEASE_PROCESS.md`: Canonical release and Hostinger deployment process.
 - `docs/PRODUCTION_READINESS_CHECKLIST.md`: Current beta and production gates.
+- `docs/OPERATIONS_CORE.md`: Phase 1 model, API, worker, safety and rollback guide.
 - `DEPLOY_HOSTINGER.md`: Detailed VPS setup guide.
 - `project_audit_report.md`: Technical debt and roadmap analysis.
 - `worklog.md`: History of implementation phases.

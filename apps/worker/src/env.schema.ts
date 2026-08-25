@@ -13,6 +13,7 @@ const baseEnvSchema = z.object({
     .enum(["development", "production", "test"])
     .default("development"),
   ENABLE_EMAIL_FIXTURES: z.enum(["true", "false"]).default("false"),
+  ENABLE_OPERATIONS_CORE: z.enum(["true", "false"]).default("false"),
 });
 
 export const envSchema = baseEnvSchema.superRefine((data, ctx) => {

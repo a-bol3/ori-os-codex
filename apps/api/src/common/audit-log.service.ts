@@ -2,7 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 import { Prisma } from '@prisma/client';
 
-type AuditEntityType = 'contact' | 'company' | 'deal' | 'task' | 'activity';
+type AuditEntityType =
+  | 'contact'
+  | 'company'
+  | 'deal'
+  | 'task'
+  | 'activity'
+  | 'operation_incident'
+  | 'commitment'
+  | 'approval_request'
+  | 'panic_protocol_run'
+  | 'work_log';
 
 @Injectable()
 export class AuditLogService {

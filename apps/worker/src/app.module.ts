@@ -6,6 +6,7 @@ import { CampaignProcessor } from './processors/campaign.processor';
 import { SeoProcessor } from './processors/seo.processor';
 import { IntelligenceProcessor } from './processors/intelligence.processor';
 import { WorkflowProcessor } from './processors/workflow.processor';
+import { OperationsProcessor } from './processors/operations.processor';
 import { HunterProvider } from './providers/hunter.provider';
 import { ApolloProvider } from './providers/apollo.provider';
 import { WebsiteScraperProvider } from './providers/website-scraper.provider';
@@ -26,6 +27,7 @@ const redisConnection = {
             { name: 'workflow-run', connection: redisConnection },
             { name: 'seo-crawl', connection: redisConnection },
             { name: 'intelligence-job', connection: redisConnection },
+            { name: 'operations-core', connection: redisConnection },
         ),
     ],
     providers: [
@@ -34,6 +36,7 @@ const redisConnection = {
         SeoProcessor,
         IntelligenceProcessor,
         WorkflowProcessor,
+        OperationsProcessor,
         CampaignRecoveryService,
         HunterProvider,
         ApolloProvider,

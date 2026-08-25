@@ -39,6 +39,7 @@ const baseEnvSchema = z.object({
   ENABLE_SEO_FIXTURES: z.enum(['true', 'false']).default('false'),
   ENABLE_EXTERNAL_AI_PII: z.enum(['true', 'false']).default('false'),
   ENABLE_TEST_BENCH: z.enum(['true', 'false']).default('false'),
+  ENABLE_OPERATIONS_CORE: z.enum(['true', 'false']).default('false'),
 });
 
 export const envSchema = baseEnvSchema.superRefine((data, ctx) => {
