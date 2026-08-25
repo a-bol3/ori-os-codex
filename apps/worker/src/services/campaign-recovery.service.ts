@@ -51,6 +51,13 @@ export class CampaignRecoveryService implements OnModuleInit, OnModuleDestroy {
         this.isReconciling = true;
 
         try {
+            // A worker can start while the shared Prisma provider is still being
+            // initialized. Skip this pass and let the next interval retry.
+            if (!this.prisma?.campaign) {
+                this.logger.warn(`[RECOVERY:${reason}] Prisma campaign client is not ready; retrying later`);
+                return;
+            }
+
             const runningCampaigns = await this.prisma.campaign.findMany({
                 where: { status: 'RUNNING' },
                 select: {

@@ -71,6 +71,7 @@ prompt
 # Local deployment bundles and operator scratch files
 *.tar.gz
 *.sql
+!packages/db/prisma/migrations/20260825090000_add_operations_core/migration.sql
 temp_*
 build.err
 *.dump

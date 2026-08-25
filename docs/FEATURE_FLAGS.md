@@ -15,6 +15,8 @@ Feature flags allow us to:
 | `ENABLE_SEO_STUDIO` | Enables the SEO Studio dashboard module. | `OFF` | `OFF` |
 | `ENABLE_AI_ENRICH` | Enables the AI-powered lead enrichment feature. | `ON` | `OFF` |
 | `ENABLE_WEBHOOKS` | Enables outbound webhook notifications. | `ON` | `OFF` |
+| `ENABLE_OPERATIONS_CORE` | Enables the tenant-scoped Operations Core API, scheduler and worker. | `OFF` | `OFF` |
+| `NEXT_PUBLIC_ENABLE_OPERATIONS_CORE` | Builds and displays the Operations Center route and navigation. | `OFF` | `OFF` |
 
 ## 3. Implementation Strategy
 Feature flags are currently managed via environment variables and checked in the code.

@@ -16,9 +16,9 @@ RUN turbo prune --scope=@ori-os/web --docker
 FROM base AS installer
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
+ENV CI=true
 
 # First install dependencies (as they change less often)
-COPY .gitignore .gitignore
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/package-lock.json ./package-lock.json
 RUN npm ci
@@ -26,9 +26,13 @@ RUN npm ci
 # Build the project and its dependencies
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
+COPY tsconfig.base.json tsconfig.base.json
+
+ARG NEXT_PUBLIC_ENABLE_OPERATIONS_CORE=false
+ENV NEXT_PUBLIC_ENABLE_OPERATIONS_CORE=${NEXT_PUBLIC_ENABLE_OPERATIONS_CORE}
 
 # Generate Prisma Client
-RUN npx turbo run db:generate
+RUN npx prisma generate --schema=packages/db/prisma/schema.prisma
 
 # Build the project
 RUN npx turbo run build --filter=@ori-os/web...
@@ -42,8 +46,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
-
-COPY --from=installer /app/apps/web/public ./apps/web/public
 
 # Set the correct permission for prerender cache
 RUN mkdir .next

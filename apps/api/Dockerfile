@@ -18,7 +18,6 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # First install dependencies (as they change less often)
-COPY .gitignore .gitignore
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/package-lock.json ./package-lock.json
 RUN npm ci
@@ -28,7 +27,7 @@ COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
 
 # Generate Prisma Client
-RUN npx turbo run db:generate
+RUN npx prisma generate --schema=packages/db/prisma/schema.prisma
 
 # Build the project
 RUN npx turbo run build --filter=@ori-os/api...
@@ -49,9 +48,10 @@ COPY --from=installer --chown=nestjs:nodejs /app/apps/api/package.json ./package
 COPY --from=installer --chown=nestjs:nodejs /app/node_modules ./node_modules
 # Copy DB package for Prisma Client
 COPY --from=installer --chown=nestjs:nodejs /app/packages/db ./packages/db
+COPY --from=installer --chown=nestjs:nodejs /app/packages/core ./packages/core
 
 USER nestjs
 
 EXPOSE 4000
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/apps/api/src/main.js"]

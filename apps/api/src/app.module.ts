@@ -43,6 +43,7 @@ import { DashboardController } from './dashboard.controller';
 import { AuditLogService } from './common/audit-log.service';
 import { ComplianceModule } from './compliance/compliance.module';
 import { TrackingController } from './tracking.controller';
+import { OperationsModule } from './operations/operations.module';
 
 // Do not mount test-bench routes in production (or when the opt-in flag is
 // absent). The controller also checks this at runtime as defense in depth.
@@ -79,6 +80,7 @@ const testBenchControllers = isTestBenchEnabled()
     ConnectorsModule,
     MediaModule,
     AIModule,
+    OperationsModule,
     BullModule.registerQueue(
       { name: 'campaign-queue' },
       { name: 'email-queue' },

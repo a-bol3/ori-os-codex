@@ -17,6 +17,7 @@ import {
     Building2,
     DollarSign,
     HelpCircle,
+    ShieldAlert,
     ChevronLeft,
     X,
 } from 'lucide-react';
@@ -42,6 +43,15 @@ const mainNavItems = [
         href: '/dashboard/crm/deals',
         icon: DollarSign,
     },
+    ...(process.env.NEXT_PUBLIC_ENABLE_OPERATIONS_CORE === 'true'
+        ? [
+              {
+                  title: 'Operations',
+                  href: '/dashboard/operations',
+                  icon: ShieldAlert,
+              },
+          ]
+        : []),
 ];
 
 const bottomNavItems = [
