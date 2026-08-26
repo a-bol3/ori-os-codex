@@ -1,0 +1,7 @@
+CREATE TABLE "gmail_sync_states" ("id" TEXT NOT NULL, "integrationId" TEXT NOT NULL, "historyId" TEXT, "pageToken" TEXT, "lastSyncedAt" TIMESTAMP(3), "status" TEXT NOT NULL DEFAULT 'idle', "errorCode" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "gmail_sync_states_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "gmail_messages" ("id" TEXT NOT NULL, "integrationId" TEXT NOT NULL, "providerId" TEXT NOT NULL, "threadId" TEXT, "internalDate" TIMESTAMP(3), "subject" TEXT, "sender" TEXT, "recipient" TEXT, "snippet" TEXT, "labelSummary" TEXT, "receivedAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "gmail_messages_pkey" PRIMARY KEY ("id"));
+CREATE UNIQUE INDEX "gmail_sync_states_integrationId_key" ON "gmail_sync_states"("integrationId");
+CREATE UNIQUE INDEX "gmail_messages_integrationId_providerId_key" ON "gmail_messages"("integrationId", "providerId");
+CREATE INDEX "gmail_messages_integrationId_receivedAt_idx" ON "gmail_messages"("integrationId", "receivedAt");
+ALTER TABLE "gmail_sync_states" ADD CONSTRAINT "gmail_sync_states_integrationId_fkey" FOREIGN KEY ("integrationId") REFERENCES "integrations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "gmail_messages" ADD CONSTRAINT "gmail_messages_integrationId_fkey" FOREIGN KEY ("integrationId") REFERENCES "integrations"("id") ON DELETE CASCADE ON UPDATE CASCADE;

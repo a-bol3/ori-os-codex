@@ -1086,7 +1086,10 @@ model Integration {
 
   organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   tokens       IntegrationToken[]
+  gmailSyncState GmailSyncState?
+  gmailMessages GmailMessage[]
 
+  @@unique([organizationId, type])
   @@map("integrations")
 }
 
@@ -1102,7 +1105,42 @@ model IntegrationToken {
 
   integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
 
+  @@unique([integrationId])
   @@map("integration_tokens")
+}
+
+model GmailSyncState {
+  id            String      @id @default(cuid())
+  integrationId String      @unique
+  historyId     String?
+  pageToken     String?
+  lastSyncedAt  DateTime?
+  status        String      @default("idle")
+  errorCode     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  @@map("gmail_sync_states")
+}
+
+model GmailMessage {
+  id            String      @id @default(cuid())
+  integrationId String
+  providerId    String
+  threadId      String?
+  internalDate  DateTime?
+  subject       String?
+  sender        String?
+  recipient     String?
+  snippet       String?
+  labelSummary  String?
+  receivedAt    DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  @@unique([integrationId, providerId])
+  @@index([integrationId, receivedAt])
+  @@map("gmail_messages")
 }
 
 // =================================================================================================

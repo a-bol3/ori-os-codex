@@ -7,6 +7,7 @@ import { SeoProcessor } from './processors/seo.processor';
 import { IntelligenceProcessor } from './processors/intelligence.processor';
 import { WorkflowProcessor } from './processors/workflow.processor';
 import { OperationsProcessor } from './processors/operations.processor';
+import { GmailProcessor } from './processors/gmail.processor';
 import { HunterProvider } from './providers/hunter.provider';
 import { ApolloProvider } from './providers/apollo.provider';
 import { WebsiteScraperProvider } from './providers/website-scraper.provider';
@@ -28,6 +29,7 @@ const redisConnection = {
             { name: 'seo-crawl', connection: redisConnection },
             { name: 'intelligence-job', connection: redisConnection },
             { name: 'operations-core', connection: redisConnection },
+            { name: 'gmail-sync', connection: redisConnection },
         ),
     ],
     providers: [
@@ -37,6 +39,7 @@ const redisConnection = {
         IntelligenceProcessor,
         WorkflowProcessor,
         OperationsProcessor,
+        GmailProcessor,
         CampaignRecoveryService,
         HunterProvider,
         ApolloProvider,

@@ -44,6 +44,7 @@ import { AuditLogService } from './common/audit-log.service';
 import { ComplianceModule } from './compliance/compliance.module';
 import { TrackingController } from './tracking.controller';
 import { OperationsModule } from './operations/operations.module';
+import { GmailModule } from './gmail/gmail.module';
 
 // Do not mount test-bench routes in production (or when the opt-in flag is
 // absent). The controller also checks this at runtime as defense in depth.
@@ -81,6 +82,7 @@ const testBenchControllers = isTestBenchEnabled()
     MediaModule,
     AIModule,
     OperationsModule,
+    GmailModule,
     BullModule.registerQueue(
       { name: 'campaign-queue' },
       { name: 'email-queue' },
@@ -88,6 +90,7 @@ const testBenchControllers = isTestBenchEnabled()
       { name: 'workflow-run' },
       { name: 'seo-queue' },
       { name: 'intelligence-job' },
+      { name: 'gmail-sync' },
     ),
   ],
   controllers: [
