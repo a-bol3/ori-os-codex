@@ -4,14 +4,15 @@ import { AuthenticatedRequest, requireOrganizationId, requireUserId } from '../c
 import { GmailService } from './gmail.service';
 
 @Controller('integrations/gmail')
-@UseGuards(JwtAuthGuard)
 export class GmailController {
   constructor(private readonly gmail: GmailService) {}
 
   @Get('status')
+  @UseGuards(JwtAuthGuard)
   status(@Req() req: AuthenticatedRequest) { return this.gmail.status(requireOrganizationId(req)); }
 
   @Get('connect')
+  @UseGuards(JwtAuthGuard)
   connect(@Req() req: AuthenticatedRequest) { return this.gmail.createAuthUrl(requireOrganizationId(req), requireUserId(req)); }
 
   @Get('callback')
