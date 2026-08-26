@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Puzzle, CheckCircle2, XCircle, Plus, Zap, Globe, BarChart3, Mail, Database, Slack } from 'lucide-react';
+import { Plus, Zap, Globe, BarChart3, Mail, Database, Slack } from 'lucide-react';
 import {
     Card,
     CardContent,
@@ -12,7 +12,7 @@ import {
     Badge,
     useToast,
 } from '@ori-os/ui';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Integration {
     id: string;
@@ -28,6 +28,7 @@ const INTEGRATIONS: Integration[] = [
     { id: 'google-analytics', name: 'Google Analytics', description: 'Track website traffic and user behavior', icon: BarChart3, category: 'Analytics', connected: false },
     { id: 'google-search-console', name: 'Google Search Console', description: 'Monitor search performance and indexing', icon: Globe, category: 'SEO', connected: false },
     { id: 'slack', name: 'Slack', description: 'Get real-time notifications in your Slack workspace', icon: Slack, category: 'Communication', connected: false },
+    { id: 'gmail', name: 'Gmail', description: 'Read email metadata for controlled operational signals', icon: Mail, category: 'Email', connected: false },
     { id: 'mailchimp', name: 'Mailchimp', description: 'Sync contacts and campaigns with Mailchimp', icon: Mail, category: 'Email', connected: false },
     { id: 'hubspot', name: 'HubSpot', description: 'Bi-directional CRM sync with HubSpot', icon: Database, category: 'CRM', connected: false, comingSoon: true },
     { id: 'zapier', name: 'Zapier', description: 'Connect Ori-OS to 5000+ apps via Zapier', icon: Zap, category: 'Automation', connected: false, comingSoon: true },
@@ -37,9 +38,35 @@ export default function IntegrationsPage() {
     const [integrations, setIntegrations] = useState(INTEGRATIONS);
     const { toast } = useToast();
 
+    useEffect(() => {
+        let active = true;
+        fetch('/api/workspace-proxy/integrations/gmail/status', { cache: 'no-store' })
+            .then(async (response) => response.ok ? response.json() : null)
+            .then((status) => {
+                if (!active || !status) return;
+                setIntegrations(prev => prev.map(i => i.id === 'gmail'
+                    ? { ...i, connected: status.connected === true || status.status === 'active' }
+                    : i));
+            })
+            .catch(() => undefined);
+        return () => { active = false; };
+    }, []);
+
     const toggleConnection = async (id: string) => {
         const integration = integrations.find(i => i.id === id);
         if (!integration || integration.comingSoon) return;
+
+        if (id === 'gmail' && !integration.connected) {
+            try {
+                const response = await fetch('/api/workspace-proxy/integrations/gmail/connect', { cache: 'no-store' });
+                const result = await response.json() as { url?: string };
+                if (!response.ok || !result.url) throw new Error('Could not start Gmail authorization');
+                window.location.assign(result.url);
+            } catch {
+                toast({ title: 'Unable to connect Gmail', description: 'Please try again or contact an administrator.' });
+            }
+            return;
+        }
 
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings/integrations/${id}`, {
