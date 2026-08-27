@@ -45,7 +45,7 @@ export default function IntegrationsPage() {
             .then((status) => {
                 if (!active || !status) return;
                 setIntegrations(prev => prev.map(i => i.id === 'gmail'
-                    ? { ...i, connected: status.connected === true || status.status === 'active' }
+                    ? { ...i, connected: status.integration?.status === 'active' }
                     : i));
             })
             .catch(() => undefined);
@@ -59,9 +59,9 @@ export default function IntegrationsPage() {
         if (id === 'gmail' && !integration.connected) {
             try {
                 const response = await fetch('/api/workspace-proxy/integrations/gmail/connect', { cache: 'no-store' });
-                const result = await response.json() as { url?: string };
-                if (!response.ok || !result.url) throw new Error('Could not start Gmail authorization');
-                window.location.assign(result.url);
+                const result = await response.json() as { authUrl?: string };
+                if (!response.ok || !result.authUrl) throw new Error('Could not start Gmail authorization');
+                window.location.assign(result.authUrl);
             } catch {
                 toast({ title: 'Unable to connect Gmail', description: 'Please try again or contact an administrator.' });
             }
