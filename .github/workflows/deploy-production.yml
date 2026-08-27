@@ -67,6 +67,20 @@ jobs:
           printf '%s\n' "$VPS_SSH_PRIVATE_KEY" > "$HOME/.ssh/orios_vps"
           printf '%s\n' "$VPS_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/orios_vps" "$HOME/.ssh/known_hosts"
+      - name: Synchronize VPS checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          port="${VPS_PORT:-22}"
+          ssh -i "$HOME/.ssh/orios_vps" \
+            -p "$port" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o IdentitiesOnly=yes \
+            "${VPS_USER}@${VPS_HOST}" \
+            "sudo -n git -C /opt/orios-codex fetch --quiet origin main && \
+             sudo -n git -C /opt/orios-codex checkout main && \
+             sudo -n git -C /opt/orios-codex merge --ff-only ${INPUT_SOURCE}"
       - name: Deploy pinned release
         shell: bash
         run: |
@@ -88,4 +102,3 @@ jobs:
         shell: bash
         run: |
           rm -f "$HOME/.ssh/orios_vps" "$HOME/.ssh/known_hosts"
-
