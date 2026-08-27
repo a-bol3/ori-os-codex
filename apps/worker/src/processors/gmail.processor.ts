@@ -42,11 +42,24 @@ export class GmailProcessor extends WorkerHost {
       for (const message of page.messages ?? []) {
         const full = await provider.getMessage(message.id);
         const headers = new Map((full.payload?.headers ?? []).map((h) => [h.name.toLowerCase(), h.value]));
+        const labelSummary = (full.payload?.labelIds ?? []).join(',');
         await (this.prisma as any).gmailMessage.upsert({
           where: { integrationId_providerId: { integrationId: integration.id, providerId: full.id } },
-          create: { integrationId: integration.id, providerId: full.id, threadId: full.threadId, internalDate: full.internalDate ? new Date(Number(full.internalDate)) : null, subject: headers.get('subject') ?? null, sender: headers.get('from') ?? null, recipient: headers.get('to') ?? null, snippet: full.snippet ?? null, labelSummary: (full.payload?.labelIds ?? []).join(','), receivedAt: headers.get('date') ? new Date(headers.get('date')!) : null },
-          update: { threadId: full.threadId, snippet: full.snippet ?? null, labelSummary: (full.payload?.labelIds ?? []).join(','), updatedAt: new Date() },
+          create: { integrationId: integration.id, providerId: full.id, threadId: full.threadId, internalDate: full.internalDate ? new Date(Number(full.internalDate)) : null, subject: headers.get('subject') ?? null, sender: headers.get('from') ?? null, recipient: headers.get('to') ?? null, snippet: full.snippet ?? null, labelSummary, receivedAt: headers.get('date') ? new Date(headers.get('date')!) : null },
+          update: { threadId: full.threadId, snippet: full.snippet ?? null, labelSummary, updatedAt: new Date() },
         });
+        const subject = headers.get('subject') ?? '';
+        const riskMatch = subject.match(/urgent|critical|deadline|overdue|asap|emergency/i);
+        if (riskMatch) {
+          const sender = headers.get('from') ?? '';
+          const senderDomain = sender.match(/@([^>\s]+)/)?.[1]?.toLowerCase() ?? null;
+          const idempotencyKey = `gmail:${integration.id}:${full.id}`;
+          await (this.prisma as any).riskSignal.upsert({
+            where: { organizationId_idempotencyKey: { organizationId: job.data.organizationId, idempotencyKey } },
+            create: { organizationId: job.data.organizationId, title: 'Gmail message requires review', description: 'Gmail metadata matched a configured risk keyword.', severity: /critical|deadline|overdue|emergency/i.test(subject) ? 'critical' : 'high', status: 'pending', source: 'gmail', idempotencyKey, detectedAt: new Date(), metadataJson: { providerId: full.id, threadId: full.threadId ?? null, senderDomain, labels: labelSummary } },
+            update: { updatedAt: new Date() },
+          });
+        }
         stored += 1;
       }
       await (this.prisma as any).gmailSyncState.update({ where: { id: state.id }, data: { status: page.nextPageToken ? 'running' : 'idle', pageToken: page.nextPageToken ?? null, historyId: page.historyId ?? state.historyId, lastSyncedAt: page.nextPageToken ? undefined : new Date() } });

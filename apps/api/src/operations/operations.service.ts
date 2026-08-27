@@ -430,6 +430,7 @@ export class OperationsService {
       workAggregate,
       criticalIncidents,
       overdueCommitments,
+      gmailIntegration,
     ] =
       await Promise.all([
         this.prisma.operationIncident.findMany({
@@ -481,6 +482,10 @@ export class OperationsService {
             dueAt: { lt: now },
           },
         }),
+        this.prisma.integration.findFirst({
+          where: { organizationId, type: 'gmail' },
+          select: { status: true, updatedAt: true },
+        }),
       ]);
 
     const outsideHours = await this.prisma.workLog.aggregate({
@@ -501,7 +506,7 @@ export class OperationsService {
     return {
       generatedAt: now.toISOString(),
       integrationHealth: [
-        this.disabledIntegration('Gmail', 'email', now),
+        this.gmailIntegrationHealth(gmailIntegration, now),
         this.disabledIntegration('Calendar', 'other', now),
         this.disabledIntegration('WhatsApp', 'other', now),
       ],
@@ -578,6 +583,32 @@ export class OperationsService {
       status: 'disabled',
       checkedAt: checkedAt.toISOString(),
       message: 'Phase 1 has no real account connection or external action path.',
+    };
+  }
+
+  private gmailIntegrationHealth(
+    integration: { status: string; updatedAt: Date } | null,
+    checkedAt: Date,
+  ): IntegrationHealth {
+    if (!integration) {
+      return {
+        provider: 'Gmail',
+        kind: 'email',
+        status: 'not_configured',
+        checkedAt: checkedAt.toISOString(),
+        message: 'Gmail is not connected for this organization.',
+      };
+    }
+    const healthy = integration.status === 'active';
+    return {
+      provider: 'Gmail',
+      kind: 'email',
+      status: healthy ? 'healthy' : 'unhealthy',
+      checkedAt: checkedAt.toISOString(),
+      lastVerifiedAt: integration.updatedAt.toISOString(),
+      message: healthy
+        ? 'Gmail read-only integration is connected.'
+        : `Gmail integration status: ${integration.status}.`,
     };
   }
 
