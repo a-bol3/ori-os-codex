@@ -55,6 +55,66 @@ describe('OperationsService', () => {
     expect(prisma.operationIncident.update).not.toHaveBeenCalled();
   });
 
+  it('creates a task scoped to the organization and audits it', async () => {
+    const task = { id: 'task-1', organizationId: 'org-a', priority: 'high' };
+    prisma.task.findFirst.mockResolvedValue(null);
+    prisma.task.create.mockResolvedValue(task);
+
+    await expect(service.createTask('org-a', 'user-1', {
+      title: 'Review blocker', priority: 'high', idempotencyKey: 'task-request-1',
+    })).resolves.toBe(task);
+    expect(prisma.task.create).toHaveBeenCalledWith({ data: expect.objectContaining({
+      organizationId: 'org-a', title: 'Review blocker', priority: 'high', source: 'operations',
+    }) });
+    expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'OPERATION_TASK_CREATED' }));
+  });
+
+  it('creates a commitment with a normalized due date', async () => {
+    const commitment = { id: 'commitment-1', organizationId: 'org-a', dueAt: new Date('2026-09-01T10:00:00.000Z') };
+    prisma.commitment.findFirst.mockResolvedValue(null);
+    prisma.commitment.create.mockResolvedValue(commitment);
+
+    await expect(service.createCommitment('org-a', 'user-1', {
+      title: 'Send proposal', dueAt: '2026-09-01T10:00:00.000Z', idempotencyKey: 'commitment-1',
+    })).resolves.toBe(commitment);
+    expect(prisma.commitment.create).toHaveBeenCalledWith({ data: expect.objectContaining({
+      organizationId: 'org-a', title: 'Send proposal', ownerUserId: 'user-1', dueAt: expect.any(Date),
+    }) });
+    expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'COMMITMENT_CREATED' }));
+  });
+
+  it('creates a pending approval request without executing an external action', async () => {
+    const request = { id: 'approval-1', organizationId: 'org-a', status: 'pending' };
+    prisma.approvalRequest.findFirst.mockResolvedValue(null);
+    prisma.approvalRequest.create.mockResolvedValue(request);
+
+    await expect(service.createApprovalRequest('org-a', 'user-1', {
+      actionType: 'send_message', summary: 'Draft response', payload: { channel: 'whatsapp' },
+      idempotencyKey: 'approval-1',
+    })).resolves.toBe(request);
+    expect(prisma.approvalRequest.create).toHaveBeenCalledWith({ data: expect.objectContaining({
+      organizationId: 'org-a', actionType: 'send_message', requestedBy: 'user-1', payloadJson: { channel: 'whatsapp' },
+    }) });
+    expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'APPROVAL_REQUEST_CREATED' }));
+  });
+
+  it('creates a work log and rejects reversed time ranges', async () => {
+    const workLog = { id: 'log-1', organizationId: 'org-a', minutes: 60 };
+    prisma.workLog.findFirst.mockResolvedValue(null);
+    prisma.workLog.create.mockResolvedValue(workLog);
+
+    await expect(service.createWorkLog('org-a', 'user-1', {
+      startedAt: '2026-08-27T09:00:00.000Z', endedAt: '2026-08-27T10:00:00.000Z',
+      minutes: 60, travelMinutes: 10, idempotencyKey: 'log-1',
+    })).resolves.toBe(workLog);
+    expect(prisma.workLog.create).toHaveBeenCalledWith({ data: expect.objectContaining({
+      organizationId: 'org-a', minutes: 60, travelMinutes: 10, createdBy: 'user-1',
+    }) });
+    await expect(service.createWorkLog('org-a', 'user-1', {
+      startedAt: '2026-08-27T10:00:00.000Z', endedAt: '2026-08-27T09:00:00.000Z', minutes: 0,
+    })).rejects.toThrow('endedAt must be after startedAt');
+  });
+
   it('replays panic activation safely and does not run the transaction twice', async () => {
     const existing = { id: 'panic-1', incident: { id: 'incident-1' } };
     prisma.panicProtocolRun.findFirst.mockResolvedValue(existing);
