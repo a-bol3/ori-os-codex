@@ -14,6 +14,7 @@ describe('OperationsService', () => {
     commitment: { findFirst: jest.fn(), create: jest.fn() },
     approvalRequest: { findFirst: jest.fn(), create: jest.fn() },
     workLog: { findFirst: jest.fn(), create: jest.fn() },
+    integration: { findFirst: jest.fn() },
     $transaction: jest.fn(),
   };
   let service: OperationsService;
