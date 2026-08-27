@@ -72,31 +72,49 @@ jobs:
         run: |
           set -euo pipefail
           port="${VPS_PORT:-22}"
-          ssh -i "$HOME/.ssh/orios_vps" \
-            -p "$port" \
-            -o BatchMode=yes \
-            -o StrictHostKeyChecking=yes \
-            -o IdentitiesOnly=yes \
-            "${VPS_USER}@${VPS_HOST}" \
-            "sudo -n git -C /opt/orios-codex fetch --quiet origin main && \
-             sudo -n git -C /opt/orios-codex checkout main && \
-             sudo -n git -C /opt/orios-codex merge --ff-only ${INPUT_SOURCE}"
+          for attempt in 1 2 3; do
+            if ssh -i "$HOME/.ssh/orios_vps" \
+              -p "$port" \
+              -o BatchMode=yes \
+              -o ConnectTimeout=20 \
+              -o StrictHostKeyChecking=yes \
+              -o IdentitiesOnly=yes \
+              "${VPS_USER}@${VPS_HOST}" \
+              "sudo -n git -C /opt/orios-codex fetch --quiet origin main && \
+               sudo -n git -C /opt/orios-codex checkout main && \
+               sudo -n git -C /opt/orios-codex merge --ff-only ${INPUT_SOURCE}"; then
+              exit 0
+            fi
+            echo "SSH synchronization attempt ${attempt} failed; retrying..."
+            sleep 15
+          done
+          echo "::error::Unable to synchronize VPS checkout after three SSH attempts"
+          exit 1
       - name: Deploy pinned release
         shell: bash
         run: |
           set -euo pipefail
           port="${VPS_PORT:-22}"
-          ssh -i "$HOME/.ssh/orios_vps" \
-            -p "$port" \
-            -o BatchMode=yes \
-            -o StrictHostKeyChecking=yes \
-            -o IdentitiesOnly=yes \
-            "${VPS_USER}@${VPS_HOST}" \
-            sudo -n /usr/local/sbin/orios-deploy-release \
-              --source "$INPUT_SOURCE" \
-              --api "$INPUT_API_IMAGE" \
-              --worker "$INPUT_WORKER_IMAGE" \
-              --web "$INPUT_WEB_IMAGE"
+          for attempt in 1 2 3; do
+            if ssh -i "$HOME/.ssh/orios_vps" \
+              -p "$port" \
+              -o BatchMode=yes \
+              -o ConnectTimeout=20 \
+              -o StrictHostKeyChecking=yes \
+              -o IdentitiesOnly=yes \
+              "${VPS_USER}@${VPS_HOST}" \
+              sudo -n /usr/local/sbin/orios-deploy-release \
+                --source "$INPUT_SOURCE" \
+                --api "$INPUT_API_IMAGE" \
+                --worker "$INPUT_WORKER_IMAGE" \
+                --web "$INPUT_WEB_IMAGE"; then
+              exit 0
+            fi
+            echo "SSH deployment attempt ${attempt} failed; retrying..."
+            sleep 15
+          done
+          echo "::error::Deployment failed after three SSH attempts"
+          exit 1
       - name: Remove SSH material
         if: ${{ always() }}
         shell: bash
