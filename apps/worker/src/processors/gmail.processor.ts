@@ -1,14 +1,18 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
+import { Queue } from 'bullmq';
 import { PrismaService } from '@ori-os/db/nestjs';
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypto';
 import { GmailProvider } from '../providers/gmail.provider';
 
-type GmailSyncJob = { integrationId: string; organizationId: string };
+type GmailSyncJob = { integrationId: string; organizationId: string; pageToken?: string };
 
 @Processor('gmail-sync')
 export class GmailProcessor extends WorkerHost {
-  constructor(private readonly prisma: PrismaService) { super(); }
+  constructor(
+    private readonly prisma: PrismaService,
+    @InjectQueue('gmail-sync') private readonly syncQueue: Queue,
+  ) { super(); }
 
   async process(job: Job<GmailSyncJob>) {
     if (process.env.ENABLE_GMAIL_INTEGRATION !== 'true') return { skipped: true, reason: 'feature_disabled' };
@@ -33,7 +37,7 @@ export class GmailProcessor extends WorkerHost {
         await (this.prisma as any).integrationToken.update({ where: { integrationId: integration.id }, data: { encryptedAccessToken: this.encrypt(accessToken), expiresAt: refreshed.expires_in ? new Date(Date.now() + refreshed.expires_in * 1000) : null } });
       }
       const provider = new GmailProvider(accessToken);
-      const page = await provider.listMessageIds(state.pageToken ?? undefined);
+      const page = await provider.listMessageIds(job.data.pageToken ?? state.pageToken ?? undefined);
       let stored = 0;
       for (const message of page.messages ?? []) {
         const full = await provider.getMessage(message.id);
@@ -45,7 +49,15 @@ export class GmailProcessor extends WorkerHost {
         });
         stored += 1;
       }
-      await (this.prisma as any).gmailSyncState.update({ where: { id: state.id }, data: { status: 'idle', pageToken: page.nextPageToken ?? null, historyId: page.historyId ?? state.historyId, lastSyncedAt: new Date() } });
+      await (this.prisma as any).gmailSyncState.update({ where: { id: state.id }, data: { status: page.nextPageToken ? 'running' : 'idle', pageToken: page.nextPageToken ?? null, historyId: page.historyId ?? state.historyId, lastSyncedAt: page.nextPageToken ? undefined : new Date() } });
+      if (page.nextPageToken) {
+        const tokenKey = createHash('sha256').update(page.nextPageToken).digest('hex').slice(0, 32);
+        await this.syncQueue.add(
+          'gmail-page-sync',
+          { integrationId: integration.id, organizationId: job.data.organizationId, pageToken: page.nextPageToken },
+          { jobId: `gmail-page-${integration.id}-${tokenKey}`, attempts: 5, backoff: { type: 'exponential', delay: 5000 }, removeOnComplete: 100, removeOnFail: 100 },
+        );
+      }
       await (this.prisma as any).auditLog.create({ data: { organizationId: job.data.organizationId, action: 'gmail_sync_completed', entityType: 'activity', entityId: integration.id, metadataJson: { listed: page.messages?.length ?? 0, stored } } });
       return { skipped: false, integrationId: integration.id, listed: page.messages?.length ?? 0, stored, hasNextPage: Boolean(page.nextPageToken) };
     } catch (error) {

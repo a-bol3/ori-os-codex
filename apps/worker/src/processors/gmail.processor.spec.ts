@@ -4,8 +4,10 @@ describe('GmailProcessor', () => {
   const prisma = {
     integration: { findFirst: jest.fn() },
     gmailSyncState: { upsert: jest.fn(), update: jest.fn() },
+    auditLog: { create: jest.fn() },
   };
-  const processor = new GmailProcessor(prisma as never);
+  const syncQueue = { add: jest.fn() };
+  const processor = new GmailProcessor(prisma as never, syncQueue as never);
 
   afterEach(() => { jest.clearAllMocks(); });
 
@@ -21,5 +23,21 @@ describe('GmailProcessor', () => {
     await expect(processor.process({ data: { integrationId: 'i', organizationId: 'o' } } as never)).resolves.toEqual({ skipped: true, reason: 'token_unavailable' });
     expect(prisma.integration.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'i', organizationId: 'o', type: 'gmail', status: 'active' } }));
     expect(prisma.gmailSyncState.update).not.toHaveBeenCalled();
+  });
+
+  it('queues the next page with a deterministic id when Gmail returns a page token', async () => {
+    process.env.ENABLE_GMAIL_INTEGRATION = 'true';
+    process.env.ENCRYPTION_MASTER_KEY = 'test-secret';
+    const encrypted = (processor as any).encrypt('access-token');
+    prisma.integration.findFirst.mockResolvedValue({ id: 'i', tokens: [{ encryptedAccessToken: encrypted, encryptedRefreshToken: null, expiresAt: null }] });
+    prisma.gmailSyncState.upsert.mockResolvedValue({ id: 'state-1', pageToken: null, historyId: null });
+    prisma.gmailSyncState.update.mockResolvedValue({});
+    jest.spyOn(require('../providers/gmail.provider'), 'GmailProvider').mockImplementation(() => ({
+      listMessageIds: jest.fn().mockResolvedValue({ messages: [], nextPageToken: 'next-page-token', historyId: 'history-1' }),
+      getMessage: jest.fn(),
+    }) as never);
+
+    await expect(processor.process({ data: { integrationId: 'i', organizationId: 'o' } } as never)).resolves.toMatchObject({ hasNextPage: true });
+    expect(syncQueue.add).toHaveBeenCalledWith('gmail-page-sync', expect.objectContaining({ pageToken: 'next-page-token' }), expect.objectContaining({ jobId: expect.stringMatching(/^gmail-page-i-/), attempts: 5 }));
   });
 });
