@@ -11,7 +11,9 @@ describe('GmailService OAuth safety', () => {
   const config = { get: jest.fn((key: string) => values[key]) };
   const prisma = { integration: { findFirst: jest.fn() } };
   const encryption = {};
-  const service = new GmailService(config as never, prisma as never, encryption as never);
+  const audit = { record: jest.fn() };
+  const queue = { add: jest.fn() };
+  const service = new GmailService(config as never, prisma as never, encryption as never, audit as never, queue as never);
 
   beforeEach(() => jest.clearAllMocks());
 

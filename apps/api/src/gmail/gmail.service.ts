@@ -4,6 +4,9 @@ import { PrismaService } from '@ori-os/db/nestjs';
 import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import axios from 'axios';
 import { EncryptionService } from '../common/encryption.service';
+import { AuditLogService } from '../common/audit-log.service';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 const READONLY_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
 
@@ -13,6 +16,8 @@ export class GmailService {
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly encryption: EncryptionService,
+    private readonly auditLog: AuditLogService,
+    @InjectQueue('gmail-sync') private readonly syncQueue: Queue,
   ) {}
 
   private enabled() {
@@ -77,6 +82,8 @@ export class GmailService {
         create: { integrationId: integration.id, encryptedAccessToken: this.encryption.encrypt(response.data.access_token), encryptedRefreshToken: response.data.refresh_token ? this.encryption.encrypt(response.data.refresh_token) : null, expiresAt: response.data.expires_in ? new Date(Date.now() + response.data.expires_in * 1000) : null, scopes: READONLY_SCOPE },
         update: { encryptedAccessToken: this.encryption.encrypt(response.data.access_token), ...(response.data.refresh_token ? { encryptedRefreshToken: this.encryption.encrypt(response.data.refresh_token) } : {}), expiresAt: response.data.expires_in ? new Date(Date.now() + response.data.expires_in * 1000) : undefined, scopes: READONLY_SCOPE },
       });
+      await this.auditLog.record({ organizationId: context.organizationId, userId: context.userId, action: 'gmail_connected', entityType: 'activity', entityId: integration.id, metadata: { scope: READONLY_SCOPE } });
+      await this.syncQueue.add('gmail-initial-sync', { integrationId: integration.id, organizationId: context.organizationId }, { jobId: `gmail-initial-${integration.id}`, attempts: 5, backoff: { type: 'exponential', delay: 5000 }, removeOnComplete: 100, removeOnFail: 100 });
       return { success: true, integrationId: integration.id, scope: READONLY_SCOPE };
     } catch (error) {
       if (error instanceof ForbiddenException || error instanceof BadRequestException) throw error;
