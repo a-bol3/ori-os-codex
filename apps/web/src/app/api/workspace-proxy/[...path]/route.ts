@@ -12,6 +12,10 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
     const token = await getToken({
         req: request,
         secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+        // Auth.js prefixes the session cookie with __Secure- in production.
+        // Without this flag getToken() looks for the development cookie name
+        // and the proxy incorrectly returns 401 for authenticated users.
+        secureCookie: process.env.NODE_ENV === "production",
     });
     const accessToken = typeof token?.accessToken === "string" ? token.accessToken : undefined;
     if (!accessToken) {
