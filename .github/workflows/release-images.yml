@@ -75,5 +75,6 @@ jobs:
             NEXT_PUBLIC_APP_URL=${{ vars.ORI_OS_PUBLIC_APP_URL || 'https://orios.ori-craftlabs.com' }}
             NEXT_PUBLIC_SENTRY_DSN=${{ vars.ORI_OS_PUBLIC_SENTRY_DSN || '' }}
             NEXT_PUBLIC_AUTH_BYPASS=0
+            NEXT_PUBLIC_ENABLE_OPERATIONS_CORE=${{ vars.ORI_OS_ENABLE_OPERATIONS_CORE || 'true' }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
