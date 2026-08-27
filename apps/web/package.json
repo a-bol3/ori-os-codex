@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "dev": "cross-env DOTENV_CONFIG_PATH=../../.env node -r dotenv/config ../../node_modules/next/dist/bin/next dev --turbo",
-        "build": "cross-env DOTENV_CONFIG_PATH=../../.env node -r dotenv/config ../../node_modules/next/dist/bin/next build",
+        "build": "cross-env NODE_ENV=production DOTENV_CONFIG_PATH=../../.env node -r dotenv/config ../../node_modules/next/dist/bin/next build",
         "start": "cross-env DOTENV_CONFIG_PATH=../../.env node -r dotenv/config ../../node_modules/next/dist/bin/next start",
         "lint": "cross-env DOTENV_CONFIG_PATH=../../.env ESLINT_USE_FLAT_CONFIG=false node -r dotenv/config ../../node_modules/next/dist/bin/next lint",
         "test": "node ../../node_modules/vitest/vitest.mjs run",
