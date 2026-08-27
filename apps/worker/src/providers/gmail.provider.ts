@@ -30,4 +30,12 @@ export class GmailProvider {
     });
     return response.data;
   }
+
+  async refreshAccessToken(clientId: string, clientSecret: string, refreshToken: string) {
+    const response = await axios.post<{ access_token: string; expires_in?: number }>('https://oauth2.googleapis.com/token',
+      new URLSearchParams({ client_id: clientId, client_secret: clientSecret, refresh_token: refreshToken, grant_type: 'refresh_token' }).toString(),
+      { headers: { 'content-type': 'application/x-www-form-urlencoded' }, timeout: 10_000 });
+    if (!response.data.access_token) throw new Error('Google did not return a refreshed access token');
+    return response.data;
+  }
 }
