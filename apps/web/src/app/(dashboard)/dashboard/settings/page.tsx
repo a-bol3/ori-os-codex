@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { User, Bell, Shield, Database } from 'lucide-react';
+import { User, Bell, Shield, Database, Plug } from 'lucide-react';
 
 export default function SettingsPage() {
     return (
@@ -26,6 +26,7 @@ export default function SettingsPage() {
                     { icon: Bell, title: 'Notifications', description: 'Configure email and system notifications', href: '/dashboard/settings/notifications' },
                     { icon: Shield, title: 'Security', description: 'Manage password and two-factor authentication', href: '/dashboard/settings/security' },
                     { icon: Database, title: 'Data & Privacy', description: 'Control your data and privacy settings', href: '/dashboard/settings/privacy' },
+                    { icon: Plug, title: 'Integrations', description: 'Connect Gmail and other workspace services', href: '/dashboard/settings/integrations' },
                 ].map((item, i) => (
                     <Link key={item.title} href={item.href}>
                         <motion.div
