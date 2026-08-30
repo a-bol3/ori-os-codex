@@ -3,6 +3,10 @@
     "globalDependencies": [
         "**/.env.*local"
     ],
+    "globalEnv": [
+        "AUTH_SECRET",
+        "NEXTAUTH_SECRET"
+    ],
     "tasks": {
         "build": {
             "dependsOn": [
