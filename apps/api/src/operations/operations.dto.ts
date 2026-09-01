@@ -178,6 +178,29 @@ export class CreateApprovalRequestDto {
   idempotencyKey?: string;
 }
 
+export class ApprovalListQueryDto {
+  @IsOptional()
+  @IsIn(['pending', 'approved', 'rejected', 'expired'])
+  status?: 'pending' | 'approved' | 'rejected' | 'expired';
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit: number = 25;
+}
+
+export class DecideApprovalRequestDto {
+  @IsIn(['approved', 'rejected'])
+  decision!: 'approved' | 'rejected';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  reason?: string;
+}
+
 export class ActivatePanicProtocolDto {
   @IsString()
   @IsNotEmpty()

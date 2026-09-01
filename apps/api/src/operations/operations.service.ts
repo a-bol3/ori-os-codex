@@ -17,11 +17,13 @@ import {
 import { AuditLogService } from '../common/audit-log.service';
 import {
   ActivatePanicProtocolDto,
+  ApprovalListQueryDto,
   CreateApprovalRequestDto,
   CreateCommitmentDto,
   CreateIncidentDto,
   CreateOperationsTaskDto,
   CreateWorkLogDto,
+  DecideApprovalRequestDto,
   OperationsListQueryDto,
   UpdateIncidentDto,
 } from './operations.dto';
@@ -258,6 +260,74 @@ export class OperationsService {
       actionType: request.actionType,
       status: request.status,
     });
+    return request;
+  }
+
+  async listApprovalRequests(
+    organizationId: string,
+    query: ApprovalListQueryDto,
+  ) {
+    return this.prisma.approvalRequest.findMany({
+      where: {
+        organizationId,
+        ...(query.status ? { status: query.status } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: query.limit,
+    });
+  }
+
+  async decideApprovalRequest(
+    organizationId: string,
+    userId: string | undefined,
+    id: string,
+    data: DecideApprovalRequestDto,
+  ) {
+    const existing = await this.prisma.approvalRequest.findFirst({
+      where: { id, organizationId },
+    });
+    if (!existing) throw new NotFoundException('Approval request not found');
+    if (existing.status !== 'pending') {
+      throw new BadRequestException('Approval request has already been decided');
+    }
+    if (existing.expiresAt && existing.expiresAt <= new Date()) {
+      await this.prisma.approvalRequest.update({
+        where: { id },
+        data: { status: 'expired' },
+      });
+      throw new BadRequestException('Approval request has expired');
+    }
+
+    const decision = await this.prisma.approvalRequest.updateMany({
+      where: { id, organizationId, status: 'pending' },
+      data: {
+        status: data.decision,
+        reviewedBy: userId,
+        reviewedAt: new Date(),
+        rejectionReason:
+          data.decision === 'rejected' ? data.reason?.trim() || null : null,
+      },
+    });
+    if (decision.count !== 1) {
+      throw new BadRequestException('Approval request has already been decided');
+    }
+    const request = await this.prisma.approvalRequest.findFirst({
+      where: { id, organizationId },
+    });
+    if (!request) throw new NotFoundException('Approval request not found');
+    await this.recordAudit(
+      organizationId,
+      userId,
+      data.decision === 'approved'
+        ? 'APPROVAL_REQUEST_APPROVED'
+        : 'APPROVAL_REQUEST_REJECTED',
+      'approval_request',
+      request.id,
+      {
+        actionType: request.actionType,
+        externalActionExecuted: false,
+      },
+    );
     return request;
   }
 
