@@ -45,6 +45,7 @@ import { ComplianceModule } from './compliance/compliance.module';
 import { TrackingController } from './tracking.controller';
 import { OperationsModule } from './operations/operations.module';
 import { GmailModule } from './gmail/gmail.module';
+import { RequestObservabilityMiddleware } from './common/request-observability.middleware';
 
 // Do not mount test-bench routes in production (or when the opt-in flag is
 // absent). The controller also checks this at runtime as defense in depth.
@@ -126,6 +127,7 @@ const testBenchControllers = isTestBenchEnabled()
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestObservabilityMiddleware).forRoutes('*');
     consumer.apply(UsageLimitMiddleware).forRoutes('engagement/campaigns');
   }
 }

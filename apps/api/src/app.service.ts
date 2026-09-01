@@ -1,4 +1,4 @@
-import {  Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { PrismaService } from '@ori-os/db/nestjs';
 import { Socket } from 'net';
 
@@ -17,29 +17,38 @@ export class AppService {
     return 'Hello World!';
   }
 
-  getHealth() {
+  async getHealth() {
+    const dependencies = await this.checkDependencies();
     return {
-      status: 'ok',
+      status: this.isHealthy(dependencies) ? 'ok' : 'degraded',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       memory: process.memoryUsage(),
+      dependencies,
     };
   }
 
   async getReadiness() {
-    const database = await this.checkDatabase();
-    const redis = await this.checkRedis();
-    const dependencies: ReadinessDependencies = { database, redis };
-    const status =
-      database === 'ok' && (redis === 'ok' || redis === 'skipped')
-        ? 'ready'
-        : 'degraded';
+    const dependencies = await this.checkDependencies();
+    const status = this.isHealthy(dependencies) ? 'ready' : 'degraded';
 
     return {
       status,
       timestamp: new Date().toISOString(),
       dependencies,
     };
+  }
+
+  private async checkDependencies(): Promise<ReadinessDependencies> {
+    const [database, redis] = await Promise.all([
+      this.checkDatabase(),
+      this.checkRedis(),
+    ]);
+    return { database, redis };
+  }
+
+  private isHealthy(dependencies: ReadinessDependencies): boolean {
+    return dependencies.database === 'ok' && dependencies.redis === 'ok';
   }
 
   private async checkDatabase(): Promise<DependencyStatus> {

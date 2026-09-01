@@ -6,7 +6,7 @@ describe('AppController', () => {
   let appController: AppController;
   const appService = {
     getHello: jest.fn().mockReturnValue('Hello World!'),
-    getHealth: jest.fn().mockReturnValue({ status: 'ok' }),
+    getHealth: jest.fn().mockResolvedValue({ status: 'ok' }),
     getReadiness: jest.fn().mockResolvedValue({
       status: 'ready',
       dependencies: { database: 'ok', redis: 'skipped' },
@@ -32,8 +32,8 @@ describe('AppController', () => {
       expect(appController.getHello()).toBe('Hello World!');
     });
 
-    it('should return health information from the app service', () => {
-      expect(appController.getHealth()).toEqual({ status: 'ok' });
+    it('should return health information from the app service', async () => {
+      await expect(appController.getHealth()).resolves.toEqual({ status: 'ok' });
     });
 
     it('should return readiness information from the app service', async () => {
