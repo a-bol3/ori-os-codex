@@ -16,14 +16,19 @@ import {
     SelectTrigger,
     SelectValue,
     useToast,
-    Textarea,
 } from '@ori-os/ui';
+import { apiFetch, getErrorMessage } from '@/lib/api-client';
 
 interface SequenceModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
-    sequence?: any;
+    sequence?: {
+        id: string;
+        name?: string;
+        type?: string;
+        throttle?: string;
+    };
 }
 
 export function SequenceModal({ isOpen, onClose, onSuccess, sequence }: SequenceModalProps) {
@@ -39,27 +44,20 @@ export function SequenceModal({ isOpen, onClose, onSuccess, sequence }: Sequence
         const formData = new FormData(e.currentTarget);
         const data = {
             name: formData.get('name') as string,
-            status: sequence?.status || 'Active',
-            contacts: sequence?.contacts || 0,
-            sent: sequence?.sent || 0,
-            opened: sequence?.opened || 0,
-            replied: sequence?.replied || 0,
         };
 
         try {
             const url = isEditing
-                ? `${process.env.NEXT_PUBLIC_API_URL}/engagement/sequences/${sequence.id}`
-                : `${process.env.NEXT_PUBLIC_API_URL}/engagement/sequences`;
+                ? `/engagement/campaigns/${sequence.id}`
+                : '/engagement/campaigns';
 
             const method = isEditing ? 'PUT' : 'POST';
 
-            const response = await fetch(url, {
+            await apiFetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
-
-            if (!response.ok) throw new Error(`Failed to ${isEditing ? 'update' : 'create'} sequence`);
 
             toast({
                 title: isEditing ? 'Sequence Updated' : 'Sequence Created',
@@ -67,13 +65,11 @@ export function SequenceModal({ isOpen, onClose, onSuccess, sequence }: Sequence
             });
             onSuccess();
         } catch (error) {
-            console.error('Sequence operation failed:', error);
-            // Mock success for demo
             toast({
-                title: `${isEditing ? 'Updated' : 'Created'} (Simulated)`,
-                description: `"${data.name}" ${isEditing ? 'updated' : 'added'} in dashboard.`,
+                title: isEditing ? 'Could not update sequence' : 'Could not create sequence',
+                description: getErrorMessage(error, 'The sequence could not be saved.'),
+                variant: 'destructive',
             });
-            onSuccess();
         } finally {
             setIsSubmitting(false);
         }
