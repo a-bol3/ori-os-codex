@@ -1,0 +1,114 @@
+name: orios-staging
+
+networks:
+  ori_staging_network:
+    name: orios-staging-network
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: orios-staging-postgres-data
+  redis_data:
+    name: orios-staging-redis-data
+  meilisearch_data:
+    name: orios-staging-meilisearch-data
+  minio_data:
+    name: orios-staging-minio-data
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env.staging}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.staging}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env.staging}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [ori_staging_network]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks: [ori_staging_network]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.6
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?Set MEILI_MASTER_KEY in .env.staging}
+      MEILI_ENV: development
+    volumes:
+      - meilisearch_data:/meili_data
+    networks: [ori_staging_network]
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env.staging}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env.staging}
+    volumes:
+      - minio_data:/data
+    networks: [ori_staging_network]
+
+  api:
+    image: ${ORI_OS_API_IMAGE:?Set ORI_OS_API_IMAGE to a GHCR digest}
+    restart: always
+    env_file: ${ORIOS_STAGING_ENV_FILE:-.env.staging}
+    environment:
+      NODE_ENV: production
+      API_PORT: "4000"
+    ports:
+      - "127.0.0.1:4200:4000"
+    expose:
+      - "4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [ori_staging_network]
+
+  worker:
+    image: ${ORI_OS_WORKER_IMAGE:?Set ORI_OS_WORKER_IMAGE to a GHCR digest}
+    restart: always
+    env_file: ${ORIOS_STAGING_ENV_FILE:-.env.staging}
+    environment:
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [ori_staging_network]
+
+  web:
+    image: ${ORI_OS_WEB_IMAGE:?Set ORI_OS_WEB_IMAGE to a GHCR digest}
+    restart: always
+    env_file: ${ORIOS_STAGING_ENV_FILE:-.env.staging}
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      NEXT_TELEMETRY_DISABLED: "1"
+    ports:
+      - "127.0.0.1:3200:3000"
+    expose:
+      - "3000"
+    depends_on:
+      - api
+    networks: [ori_staging_network]
