@@ -19,16 +19,28 @@ describe('AppService', () => {
     process.env.REDIS_PORT = originalRedisPort;
   });
 
-  it('reports ready when database is available and redis is not configured', async () => {
+  it('reports degraded when redis is not configured', async () => {
     prisma.$queryRaw.mockResolvedValue([1]);
     const service = new AppService(prisma as never);
 
     await expect(service.getReadiness()).resolves.toMatchObject({
-      status: 'ready',
+      status: 'degraded',
       dependencies: {
         database: 'ok',
         redis: 'skipped',
       },
+    });
+  });
+
+  it('reports health as degraded when a configured dependency fails', async () => {
+    prisma.$queryRaw.mockResolvedValue([1]);
+    process.env.REDIS_HOST = '127.0.0.1';
+    process.env.REDIS_PORT = '1';
+    const service = new AppService(prisma as never);
+
+    await expect(service.getHealth()).resolves.toMatchObject({
+      status: 'degraded',
+      dependencies: { database: 'ok', redis: 'error' },
     });
   });
 

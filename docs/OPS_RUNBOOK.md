@@ -6,6 +6,15 @@ This document outlines common operational tasks for maintainers of the Ori-OS pr
 
 ## Monitoring & Logs
 
+Every API response includes an `x-request-id` header. Forward that value when
+reporting an incident; API logs emit one structured `http_request` record with
+the request ID, method, path, status code and duration. Query strings are not
+logged.
+
+`/health` reports process and dependency health. `/ready` is `ready` only when
+both PostgreSQL and Redis respond successfully; an unconfigured Redis is
+reported as `skipped` and intentionally produces `degraded`, not `ready`.
+
 ### View Application Logs
 ```bash
 # All logs
