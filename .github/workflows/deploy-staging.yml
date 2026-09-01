@@ -1,0 +1,92 @@
+name: Deploy staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Full 40-character main commit SHA
+        required: true
+        type: string
+      api_image:
+        description: Full GHCR API image reference including @sha256 digest
+        required: true
+        type: string
+      worker_image:
+        description: Full GHCR worker image reference including @sha256 digest
+        required: true
+        type: string
+      web_image:
+        description: Full GHCR web image reference including @sha256 digest
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy isolated staging release
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.orios.ori-craftlabs.com/
+    env:
+      INPUT_SOURCE: ${{ inputs.source }}
+      INPUT_API_IMAGE: ${{ inputs.api_image }}
+      INPUT_WORKER_IMAGE: ${{ inputs.worker_image }}
+      INPUT_WEB_IMAGE: ${{ inputs.web_image }}
+      STAGING_HOST: ${{ secrets.STAGING_VPS_HOST }}
+      STAGING_PORT: ${{ secrets.STAGING_VPS_PORT }}
+      STAGING_USER: ${{ secrets.STAGING_VPS_USER }}
+    steps:
+      - name: Validate pinned release
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$INPUT_SOURCE" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::source must be a full 40-character SHA"; exit 1; }
+          for image in "$INPUT_API_IMAGE" "$INPUT_WORKER_IMAGE" "$INPUT_WEB_IMAGE"; do
+            [[ "$image" =~ ^ghcr\.io/a-bol3/ori-os-(api|worker|web)@sha256:[0-9a-f]{64}$ ]] || { echo "::error::image refs must use exact ORI-OS GHCR digests"; exit 1; }
+          done
+          [[ -n "$STAGING_HOST" ]] || { echo "::error::STAGING_VPS_HOST is not configured"; exit 1; }
+          [[ -n "$STAGING_USER" ]] || { echo "::error::STAGING_VPS_USER is not configured"; exit 1; }
+      - name: Configure SSH
+        shell: bash
+        env:
+          STAGING_SSH_PRIVATE_KEY: ${{ secrets.STAGING_VPS_SSH_PRIVATE_KEY }}
+          STAGING_SSH_KNOWN_HOSTS: ${{ secrets.STAGING_VPS_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          [[ -n "$STAGING_SSH_PRIVATE_KEY" ]] || { echo "::error::STAGING_VPS_SSH_PRIVATE_KEY is not configured"; exit 1; }
+          [[ -n "$STAGING_SSH_KNOWN_HOSTS" ]] || { echo "::error::STAGING_VPS_SSH_KNOWN_HOSTS is not configured"; exit 1; }
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$STAGING_SSH_PRIVATE_KEY" > "$HOME/.ssh/orios_staging_vps"
+          printf '%s\n' "$STAGING_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/orios_staging_vps" "$HOME/.ssh/known_hosts"
+      - name: Synchronize staging checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          port="${STAGING_PORT:-22}"
+          ssh -i "$HOME/.ssh/orios_staging_vps" -p "$port" -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes \
+            "${STAGING_USER}@${STAGING_HOST}" \
+            "git -C /opt/orios-staging fetch --quiet origin main && git -C /opt/orios-staging checkout main && git -C /opt/orios-staging merge --ff-only ${INPUT_SOURCE}"
+      - name: Deploy isolated staging release
+        shell: bash
+        run: |
+          set -euo pipefail
+          port="${STAGING_PORT:-22}"
+          ssh -i "$HOME/.ssh/orios_staging_vps" -p "$port" -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes \
+            "${STAGING_USER}@${STAGING_HOST}" \
+            sudo -n /usr/local/sbin/orios-deploy-staging-release \
+              --source "$INPUT_SOURCE" \
+              --api "$INPUT_API_IMAGE" \
+              --worker "$INPUT_WORKER_IMAGE" \
+              --web "$INPUT_WEB_IMAGE"
+      - name: Remove SSH material
+        if: ${{ always() }}
+        shell: bash
+        run: rm -f "$HOME/.ssh/orios_staging_vps" "$HOME/.ssh/known_hosts"

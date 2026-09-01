@@ -30,6 +30,12 @@ production compose file by itself on the shared VPS.
 The repository currently has no supported `deploy-prod.sh` entrypoint. Any
 older document that references it is historical and must not be used.
 
+The supported staging topology is defined by `docker-compose.staging.yml` and
+`scripts/orios-deploy-staging-release.sh`. It uses the `orios-staging` project,
+staging-only volumes/network, and host-only ports 4200/3200. The staging
+workflow remains unavailable until a dedicated staging host, DNS/routing and
+GitHub `staging` environment are provisioned.
+
 ## Release checks
 
 Before creating a release tag:

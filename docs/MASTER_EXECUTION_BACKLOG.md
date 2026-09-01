@@ -106,7 +106,7 @@ Acceptance:
 ### P0.4 Release pipeline and production safety
 
 Owner lane: C
-Status: pending
+Status: complete
 
 Required:
 
@@ -260,10 +260,14 @@ Acceptance:
 
 - Operational issues can be diagnosed without guesswork.
 
+Evidence: merged commit `418c0f8460783040679569c16d1bb8a26f9c646c`, successful
+CI, immutable image publication, successful production deployment, and public
+health/readiness checks showing database and Redis as `ok`.
+
 ### P4.2 Environment separation
 
 Owner lane: C
-Status: pending
+Status: implementation ready; host activation pending
 
 Required:
 
@@ -273,6 +277,12 @@ Required:
 Acceptance:
 
 - `orios.ori-craftlabs.com` remains isolated from the other ORI applications operationally and at deploy time.
+
+Repository controls are defined in `docker-compose.staging.yml`,
+`.env.staging.example`, `scripts/orios-deploy-staging-release.sh`, and
+`.github/workflows/deploy-staging.yml`. Host activation is pending the
+dedicated staging VPS, DNS/reverse-proxy routing, staging secrets and GitHub
+`staging` environment; those resources do not currently exist in the account.
 
 ## Phase 5 - Remaining Modules
 
