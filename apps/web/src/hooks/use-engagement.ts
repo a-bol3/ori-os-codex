@@ -57,18 +57,6 @@ interface InboxApiItem {
     } | null
 }
 
-const MOCK_CAMPAIGNS: Campaign[] = [
-    { id: 'm1', name: 'Q1 SaaS Outreach — VP Engineering', status: 'RUNNING', recipients: 142, sent: 97, opened: 37, replies: 14, openRate: '38%', objective: 'Book demo calls', createdAt: new Date(Date.now() - 7 * 86400000).toISOString() },
-    { id: 'm2', name: 'Enterprise Finance — CFO Sequence', status: 'PAUSED', recipients: 55, sent: 31, opened: 7, replies: 4, openRate: '22%', objective: 'Drive enterprise deals', createdAt: new Date(Date.now() - 14 * 86400000).toISOString() },
-    { id: 'm3', name: 'Cold Outreach APAC — Winter 2026', status: 'DRAFT', recipients: 0, sent: 0, opened: 0, replies: 0, openRate: '0%', objective: 'Expand into APAC', createdAt: new Date(Date.now() - 2 * 86400000).toISOString() },
-]
-
-const MOCK_MESSAGES: InboxMessage[] = [
-    { id: 'm1', from: 'Marcus Rivera', subject: 'Re: Q1 SaaS Outreach — VP Engineering', preview: 'Hey, this is really timely. Would love to hop on a quick call this week...', time: '2m ago', unread: true },
-    { id: 'm2', from: 'Elena Volkov', subject: 'Re: Q1 SaaS Outreach — VP Engineering', preview: 'Thanks for reaching out! We are actually evaluating similar solutions right now...', time: '1h ago', unread: true },
-    { id: 'm3', from: 'James Okonkwo', subject: 'Re: Enterprise Finance — CFO Sequence', preview: 'Could you send over more info on pricing? We have budget allocated for Q2...', time: '3h ago', unread: false },
-]
-
 export function useEngagement() {
     const [campaigns, setCampaigns] = useState<Campaign[]>([])
     const [messages, setMessages] = useState<InboxMessage[]>([])
@@ -144,16 +132,9 @@ export function useEngagement() {
             setMessages(normalizedMessages)
             setError(null)
         } catch (err) {
-            if (process.env.NODE_ENV === "development") {
-                console.warn('[Engagement] API unavailable, using demo data')
-                setCampaigns(MOCK_CAMPAIGNS)
-                setMessages(MOCK_MESSAGES)
-                setError(null)
-            } else {
-                setCampaigns([])
-                setMessages([])
-                setError(getErrorMessage(err, "Failed to fetch engagement data"))
-            }
+            setCampaigns([])
+            setMessages([])
+            setError(getErrorMessage(err, "Failed to fetch engagement data"))
         } finally {
             setIsLoading(false)
         }
