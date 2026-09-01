@@ -20,7 +20,7 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator
 } from '@ori-os/ui';
-import { Plus, Mail, Play, Pause, BarChart3, Users, MoreVertical, Edit, Copy, Trash2, Eye, Loader } from 'lucide-react';
+import { Plus, Mail, Play, Pause, BarChart3, Users, MoreVertical, Edit, Copy, Trash2, Eye, Loader, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useEngagement } from '@/hooks/use-engagement';
 import { useToast } from '@ori-os/ui';
@@ -30,7 +30,7 @@ type CampaignAction = 'launch' | 'pause' | 'resume';
 type CampaignStatus = 'DRAFT' | 'SCHEDULED' | 'RUNNING' | 'PAUSED' | 'COMPLETED' | 'ARCHIVED';
 
 export default function EngagementDashboard() {
-    const { campaigns, isLoading, refresh } = useEngagement();
+    const { campaigns, isLoading, error, refresh } = useEngagement();
     const { toast } = useToast();
 
     const activeCampaigns = campaigns.filter(c => c.status === 'RUNNING');
@@ -122,6 +122,21 @@ export default function EngagementDashboard() {
         return (
             <div className="flex h-[400px] items-center justify-center">
                 <Loader className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="container py-8">
+                <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-20 text-center">
+                        <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
+                        <p className="mb-2 text-lg font-medium">Campaign data is unavailable</p>
+                        <p className="mb-6 max-w-md text-sm text-muted-foreground">{error}</p>
+                        <Button onClick={refresh}>Retry</Button>
+                    </CardContent>
+                </Card>
             </div>
         );
     }
