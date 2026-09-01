@@ -19,11 +19,13 @@ import {
 import { requireOperationsWriteAccess } from './operations-access';
 import {
   ActivatePanicProtocolDto,
+  ApprovalListQueryDto,
   CreateApprovalRequestDto,
   CreateCommitmentDto,
   CreateIncidentDto,
   CreateOperationsTaskDto,
   CreateWorkLogDto,
+  DecideApprovalRequestDto,
   OperationsListQueryDto,
   UpdateIncidentDto,
 } from './operations.dto';
@@ -118,6 +120,31 @@ export class OperationsController {
     return this.operations.createApprovalRequest(
       requireOrganizationId(req),
       getOptionalUserId(req),
+      data,
+    );
+  }
+
+  @Get('approvals')
+  listApprovalRequests(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: ApprovalListQueryDto,
+  ) {
+    requireOperationsCoreEnabled();
+    return this.operations.listApprovalRequests(requireOrganizationId(req), query);
+  }
+
+  @Patch('approvals/:id')
+  decideApprovalRequest(
+    @Request() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() data: DecideApprovalRequestDto,
+  ) {
+    requireOperationsCoreEnabled();
+    requireOperationsWriteAccess(req);
+    return this.operations.decideApprovalRequest(
+      requireOrganizationId(req),
+      getOptionalUserId(req),
+      id,
       data,
     );
   }

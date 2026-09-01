@@ -12,7 +12,13 @@ describe('OperationsService', () => {
     panicProtocolRun: { findFirst: jest.fn() },
     task: { findFirst: jest.fn(), create: jest.fn() },
     commitment: { findFirst: jest.fn(), create: jest.fn() },
-    approvalRequest: { findFirst: jest.fn(), create: jest.fn() },
+    approvalRequest: {
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+    },
     workLog: { findFirst: jest.fn(), create: jest.fn() },
     integration: { findFirst: jest.fn() },
     $transaction: jest.fn(),
@@ -96,6 +102,53 @@ describe('OperationsService', () => {
       organizationId: 'org-a', actionType: 'send_message', requestedBy: 'user-1', payloadJson: { channel: 'whatsapp' },
     }) });
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'APPROVAL_REQUEST_CREATED' }));
+  });
+
+  it('lists approvals only for the authenticated organization', async () => {
+    prisma.approvalRequest.findMany.mockResolvedValue([]);
+    await service.listApprovalRequests('org-a', { status: 'pending', limit: 10 });
+    expect(prisma.approvalRequest.findMany).toHaveBeenCalledWith({
+      where: { organizationId: 'org-a', status: 'pending' },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+  });
+
+  it('records an approval decision without executing the external action', async () => {
+    prisma.approvalRequest.findFirst.mockResolvedValue({
+      id: 'approval-1', organizationId: 'org-a', status: 'pending',
+      actionType: 'gmail_reply', expiresAt: null,
+    });
+    prisma.approvalRequest.updateMany.mockResolvedValue({ count: 1 });
+    prisma.approvalRequest.findFirst
+      .mockResolvedValueOnce({
+        id: 'approval-1', organizationId: 'org-a', status: 'pending',
+        actionType: 'gmail_reply', expiresAt: null,
+      })
+      .mockResolvedValueOnce({
+      id: 'approval-1', actionType: 'gmail_reply', status: 'approved',
+      });
+    await service.decideApprovalRequest('org-a', 'operator-1', 'approval-1', {
+      decision: 'approved',
+    });
+    expect(prisma.approvalRequest.updateMany).toHaveBeenCalledWith({
+      where: { id: 'approval-1', organizationId: 'org-a', status: 'pending' },
+      data: expect.objectContaining({
+        status: 'approved', reviewedBy: 'operator-1', reviewedAt: expect.any(Date),
+      }),
+    });
+    expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'APPROVAL_REQUEST_APPROVED',
+      metadata: expect.objectContaining({ externalActionExecuted: false }),
+    }));
+  });
+
+  it('cannot decide an approval from another organization', async () => {
+    prisma.approvalRequest.findFirst.mockResolvedValue(null);
+    await expect(service.decideApprovalRequest('org-a', 'operator-1', 'approval-b', {
+      decision: 'rejected', reason: 'Not authorized',
+    })).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.approvalRequest.update).not.toHaveBeenCalled();
   });
 
   it('creates a work log and rejects reversed time ranges', async () => {

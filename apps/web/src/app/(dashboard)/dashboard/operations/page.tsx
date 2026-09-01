@@ -28,6 +28,7 @@ import {
     Plus,
     RefreshCw,
     ShieldAlert,
+    XCircle,
 } from 'lucide-react';
 import { apiFetch, getErrorMessage } from '@/lib/api-client';
 
@@ -83,6 +84,15 @@ interface OperationsSummary {
     };
 }
 
+interface ApprovalRequest {
+    id: string;
+    actionType: string;
+    summary: string;
+    status: 'pending' | 'approved' | 'rejected' | 'expired';
+    expiresAt?: string | null;
+    createdAt: string;
+}
+
 type QuickCreateKind = 'incident' | 'task' | 'commitment';
 
 const operationsEnabled =
@@ -105,6 +115,7 @@ const dateTime = (value?: string | null) =>
 
 export default function OperationsCenterPage() {
     const [summary, setSummary] = useState<OperationsSummary | null>(null);
+    const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
     const [loading, setLoading] = useState(operationsEnabled);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -117,8 +128,12 @@ export default function OperationsCenterPage() {
         setLoading(true);
         setError(null);
         try {
-            const response = await apiFetch('/operations/summary');
-            setSummary((await response.json()) as OperationsSummary);
+            const [summaryResponse, approvalsResponse] = await Promise.all([
+                apiFetch('/operations/summary'),
+                apiFetch('/operations/approvals?status=pending&limit=25'),
+            ]);
+            setSummary((await summaryResponse.json()) as OperationsSummary);
+            setApprovals((await approvalsResponse.json()) as ApprovalRequest[]);
         } catch (loadError) {
             setError(getErrorMessage(loadError, 'Could not load Operations Core.'));
         } finally {
@@ -230,6 +245,29 @@ export default function OperationsCenterPage() {
         }
     }
 
+    async function decideApproval(
+        approvalId: string,
+        decision: 'approved' | 'rejected',
+    ) {
+        setSaving(true);
+        setError(null);
+        try {
+            await apiFetch(`/operations/approvals/${approvalId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ decision }),
+            });
+            setNotice(
+                `Request ${decision}. This recorded the human decision; no external Gmail action was executed.`,
+            );
+            await loadSummary();
+        } catch (saveError) {
+            setError(getErrorMessage(saveError, 'The approval could not be updated.'));
+        } finally {
+            setSaving(false);
+        }
+    }
+
     if (!operationsEnabled) {
         return (
             <Card className="rounded-none border-dashed">
@@ -327,6 +365,42 @@ export default function OperationsCenterPage() {
                     </div>
 
                     <div className="grid gap-5 xl:grid-cols-2">
+                        <OperationsList
+                            title="Pending approvals"
+                            description="Human decisions only. Approval does not execute a Gmail action."
+                            icon={<CheckCircle2 className="h-5 w-5" />}
+                            empty="No pending approvals."
+                        >
+                            {approvals.map((approval) => (
+                                <ListRow
+                                    key={approval.id}
+                                    title={approval.summary}
+                                    detail={`${approval.actionType.replaceAll('_', ' ')} · ${dateTime(approval.expiresAt ?? approval.createdAt)}`}
+                                >
+                                    <div className="flex gap-1">
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            disabled={saving}
+                                            onClick={() => void decideApproval(approval.id, 'approved')}
+                                            aria-label={`Approve ${approval.summary}`}
+                                        >
+                                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            disabled={saving}
+                                            onClick={() => void decideApproval(approval.id, 'rejected')}
+                                            aria-label={`Reject ${approval.summary}`}
+                                        >
+                                            <XCircle className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </div>
+                                </ListRow>
+                            ))}
+                        </OperationsList>
+
                         <OperationsList
                             title="Open incidents"
                             description="Items needing ownership and a safe next action."

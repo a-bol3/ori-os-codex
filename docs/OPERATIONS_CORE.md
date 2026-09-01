@@ -59,6 +59,8 @@ All routes require JWT authentication. `VIEWER` may read; `OWNER`, `ADMIN`,
 | `POST` | `/operations/tasks` | Create an operations task using the shared task system |
 | `POST` | `/operations/commitments` | Register a commitment |
 | `POST` | `/operations/approvals` | Register a human approval request |
+| `GET` | `/operations/approvals` | List tenant-scoped approval requests |
+| `PATCH` | `/operations/approvals/:id` | Approve or reject a pending request without executing it |
 | `POST` | `/operations/panic` | Create a critical incident, checklist, alert and review task |
 | `POST` | `/operations/work-logs` | Record hours and load inputs |
 
