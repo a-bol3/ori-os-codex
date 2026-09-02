@@ -2,6 +2,22 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-09-02 — PR #41 Engagement hardening, PR #42 disk cleanup, production promotion and smoke verification
+
+- Operator: Codex with project owner
+- Scope: ORI-OS production rollout from the canonical `main` line; no data migration or destructive volume operation.
+- Source: PR #41 merged at `b54b7d9513f52f794064696b2ce7dc5b1cbaeb3e`; PR #42 added pre-deploy Docker cleanup and merged into `main` at `976599777723fc72c2768128615a08dea1257c29`.
+- Change: campaign launch now rejects missing pending audience, invalid/inactive organization-owned mailbox, missing sender, missing first sequence step, or incomplete email content. Campaign list metrics now include `opened`. PR #42 prunes stale Docker images/build cache before pull while preserving volumes.
+- Verification: PR #41 CI `33593796471`, post-merge main CI `33594043988`, PR #42 CI `33595162565`, and post-merge main CI `33595413701` passed. Full local API test run passed: 50 suites / 143 tests.
+- Image publication: GitHub Actions run `33595798284` completed successfully for API, Worker, and Web at the current `main` commit.
+- Image digests promoted:
+  - API: `ghcr.io/a-bol3/ori-os-api@sha256:039eabd165addbfd68557dcaff4469fbeb44507670c0bbcbc38b71189885868e`
+  - Worker: `ghcr.io/a-bol3/ori-os-worker@sha256:8039bb2aee1b91ce2e8649b062ff8855084728841e1c002aeeb35021984fb4c8`
+  - Web: `ghcr.io/a-bol3/ori-os-web@sha256:ec74a357cb79611a3ef01467d8744c2795b2200a34635ae5da51a2a0e626e1d6`
+- Deployment: production deploy run `33596373756` completed successfully after environment approval. The run used `source=976599777723fc72c2768128615a08dea1257c29`, pulled the three immutable digests, and completed Docker storage cleanup before deployment.
+- External smoke: Web HTTP 200; `/api/health` and `/api/ready` HTTP 200 with database and Redis healthy; unauthenticated `/dashboard/operations` HTTP 307 to `/login`; request ID `ori-os-engagement-9765997-smoke` preserved by API health/readiness.
+- Result: Engagement launch preflight and aggregate opened metric correction are deployed. Release state remains `PRIVATE_BETA_OPERATIONAL`; live wait-step progression, event idempotency, staging activation, security/RBAC/GDPR acceptance, observability, and rollback timing remain open.
+
 ## 2026-09-02 — PR #39 SEO/Settings correction, production promotion and smoke verification
 
 - Operator: Codex with project owner
