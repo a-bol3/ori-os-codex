@@ -80,7 +80,10 @@ An item is only closed when all five conditions are true:
 
 - `[ ]` Session invalidation/versioning completed
 
-- `[ ]` Sensitive actions fully protected by RBAC
+- `[-]` Sensitive actions fully protected by RBAC
+  - GDPR list/export/delete endpoints now require `OWNER` or `ADMIN` via `JwtAuthGuard` and `RolesGuard`
+  - Evidence: PR #45, CI `33598057887`, main CI `33598267883`, production deploy `33600262585`
+  - Broader sensitive-action coverage and end-to-end tenant-isolation proof remain open
 
 - `[ ]` Multi-tenant write safety verified end-to-end
 

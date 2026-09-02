@@ -8,10 +8,10 @@
 - Local repository: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0`
 - Canonical remote: `https://github.com/a-bol3/ori-os-codex.git`
 - Canonical production line: `main` at the merged private-beta release line
-- Latest release line: `main` at commit `976599777723fc72c2768128615a08dea1257c29`
-- Latest CI: `33595413701` passed
-- Latest image publication: `33595798284` passed
-- Latest production deploy: `33596373756` passed
+- Latest release line: `main` at commit `88b6910c5d72a46386a25fba2f5c3bdbd15a61c6`
+- Latest CI: `33599534591` passed
+- Latest image publication: `33599809388` passed
+- Latest production deploy: `33600262585` passed
 - Public web: `https://orios.ori-craftlabs.com`
 - Public API: `https://api.orios.ori-craftlabs.com`
 
@@ -23,8 +23,8 @@
 | Web availability         | Passing                          | Login, dashboard, logout-to-marketing, and private-beta messaging verified in browser                  |
 | API health               | Passing                          | `/health` returned HTTP 200                                                                            |
 | API readiness            | Passing                          | `/ready` returned DB and Redis `ok`                                                                    |
-| GitHub Actions           | Green baseline                   | Main CI run `33595413701` passed on commit `9765997`; image publication and production deploy also passed |
-| Release images           | Published and promoted           | Run `33595798284` published API, Worker, and Web images at immutable digests recorded below           |
+| GitHub Actions           | Green baseline                   | Main CI run `33599534591` passed on commit `88b6910`; image publication and production deploy also passed |
+| Release images           | Published and promoted           | Run `33599809388` published API, Worker, and Web images at immutable digests recorded below           |
 | VPS identity             | Confirmed operational            | `/opt/orios-codex`; release Compose overlay active; API, Worker, Web, PostgreSQL, and Redis running    |
 | Backups                  | Verified                         | PostgreSQL dump and Hostinger snapshot exist; isolated restore drill passed                           |
 | Production certification | Private beta operational         | Production smoke passed; public distribution remains gated by `docs/PRODUCTION_READINESS_CHECKLIST.md` |
@@ -33,10 +33,24 @@
 
 1. Activate an actually isolated staging host, DNS/routing, secrets, and the GitHub `staging` environment.
 2. Complete live Engagement progression, wait-step, and event-idempotency proof; launch preflight validation is now enforced.
-3. Complete RBAC, tenant-isolation, GDPR, dependency, and credential-rotation acceptance evidence; the web production-secret fail-closed check is closed.
+3. Complete remaining RBAC, tenant-isolation, GDPR, dependency, and credential-rotation acceptance evidence; GDPR compliance endpoints now require OWNER/ADMIN roles, and the web production-secret fail-closed check is closed.
 4. Expand Engagement progression, event idempotency, and metric-contract tests before inviting additional beta organizations.
 5. Complete monitoring/alerting, firewall/SSH review, and full-stack rollback timing evidence.
 6. Keep production on immutable release digests; no `latest` or VPS-side builds.
+
+## Recovery update — 2026-09-02 GDPR RBAC hardening and deploy storage correction
+
+- PR #45 added `JwtAuthGuard` plus `RolesGuard` with `OWNER`/`ADMIN` authorization to organization-scoped GDPR list/export/delete endpoints, with regression coverage. It was merged into `main` at commit `39f982e499fd7f355797d235c339db75d477381e`.
+- PR #45 CI `33598057887` and post-merge main CI `33598267883` passed.
+- The first production attempt `33598977419` correctly failed during image pull because the VPS had no free disk space; it did not replace the running release.
+- PR #46 changed pre-deploy cleanup to reclaim all unused Docker objects and build cache while preserving volumes. It merged into `main` at `88b6910c5d72a46386a25fba2f5c3bdbd15a61c6`; PR CI `33599224606` and main CI `33599534591` passed.
+- Image publication `33599809388` passed for `main@88b6910c`. Immutable image digests:
+  - API `sha256:42cd6ba435853725550bddca8c503a6213d52d233f7709beeb42ec36a733a82b`
+  - Worker `sha256:25df7008f865de44e94fd1fa6f90b516040657f02eba6b0d663637b59edf6c1a`
+  - Web `sha256:360ed0e63387a58537711e336e5dc5daea3999ea95b548b1770fdfa5b35d0922`
+- Production deploy `33600262585` passed after environment approval using the exact source SHA and immutable digests above.
+- External smoke passed: Web HTTP 200; `/api/health` HTTP 200 with database and Redis `ok`; `/api/ready` HTTP 200 with database and Redis `ok`; unauthenticated `/dashboard/operations` returned HTTP 307 to `/login`; API request ID `ori-os-gdpr-rbac-88b6910-smoke` was preserved.
+- GDPR endpoint RBAC is partially closed; complete tenant-isolation, session invalidation, broader sensitive-action RBAC, DSAR end-to-end evidence, and public distribution gates remain open.
 
 ## Recovery update — 2026-09-02 Engagement hardening and production promotion
 
