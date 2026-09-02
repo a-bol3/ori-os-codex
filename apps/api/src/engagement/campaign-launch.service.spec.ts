@@ -69,6 +69,64 @@ describe('CampaignLaunchService', () => {
     await expect(service.launch('org-1', '1')).rejects.toThrow();
   });
 
+  it('should reject a launch without pending recipients', async () => {
+    prisma.campaign.findFirst = jest.fn().mockResolvedValue({
+      id: '1',
+      name: 'Test campaign',
+      status: 'DRAFT',
+      fromEmail: 'test@example.com',
+      sequenceSteps: [
+        { order: 1, stepType: 'EMAIL', configJson: { body: 'Hello' } },
+      ],
+      recipients: [],
+    });
+
+    await expect(service.launch('org-1', '1')).rejects.toThrow(
+      'at least one pending recipient',
+    );
+    expect(mockQueue.add).not.toHaveBeenCalled();
+  });
+
+  it('should reject a launch without a valid first email step', async () => {
+    prisma.campaign.findFirst = jest.fn().mockResolvedValue({
+      id: '1',
+      name: 'Test campaign',
+      status: 'DRAFT',
+      fromEmail: 'test@example.com',
+      sequenceSteps: [
+        { order: 2, stepType: 'EMAIL', configJson: { body: 'Hello' } },
+      ],
+      recipients: [{ id: 'r1' }],
+    });
+
+    await expect(service.launch('org-1', '1')).rejects.toThrow(
+      'first step with order 1',
+    );
+    expect(mockQueue.add).not.toHaveBeenCalled();
+  });
+
+  it('should reject a launch without a configured sender', async () => {
+    const previousFromEmail = process.env.FROM_EMAIL;
+    delete process.env.FROM_EMAIL;
+    prisma.campaign.findFirst = jest.fn().mockResolvedValue({
+      id: '1',
+      name: 'Test campaign',
+      status: 'DRAFT',
+      fromEmail: null,
+      sequenceSteps: [
+        { order: 1, stepType: 'EMAIL', configJson: { body: 'Hello' } },
+      ],
+      recipients: [{ id: 'r1' }],
+    });
+
+    await expect(service.launch('org-1', '1')).rejects.toThrow(
+      'sender is not configured',
+    );
+    expect(mockQueue.add).not.toHaveBeenCalled();
+    if (previousFromEmail === undefined) delete process.env.FROM_EMAIL;
+    else process.env.FROM_EMAIL = previousFromEmail;
+  });
+
   it('should enqueue one idempotent job per pending recipient and update status to RUNNING', async () => {
     prisma.campaign.findFirst = jest.fn().mockResolvedValue({
       id: '1',

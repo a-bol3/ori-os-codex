@@ -97,9 +97,12 @@ export class EngagementService {
     // For MVP, we'll fetch them per campaign or in a batch
     return Promise.all(
       campaigns.map(async (c) => {
-        const [sent, replies] = await Promise.all([
+        const [sent, opened, replies] = await Promise.all([
           this.models.emailEvent.count({
             where: { campaignId: c.id, eventType: 'SENT' },
+          }),
+          this.models.emailEvent.count({
+            where: { campaignId: c.id, eventType: 'OPENED' },
           }),
           this.models.emailEvent.count({
             where: { campaignId: c.id, eventType: 'REPLY' },
@@ -108,6 +111,7 @@ export class EngagementService {
         return {
           ...c,
           sent,
+          opened,
           replies,
         };
       }),
