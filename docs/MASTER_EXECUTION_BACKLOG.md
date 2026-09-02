@@ -82,6 +82,8 @@ Acceptance:
 - Sensitive routes reject unauthorized members.
 - Development bypass cannot be activated in production.
 
+Progress: PR #45 added `JwtAuthGuard` plus `RolesGuard` with `OWNER`/`ADMIN` authorization to the organization-scoped GDPR list/export/delete endpoints and added regression coverage. Broader sensitive-action RBAC, active membership checks on every protected operation, session invalidation, and end-to-end tenant isolation remain open.
+
 ### P0.3 Deliverability and engagement correctness
 
 Owner lane: B with A support

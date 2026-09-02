@@ -2,6 +2,21 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-09-02 — PR #45 GDPR RBAC hardening, PR #46 Docker storage correction, production promotion and smoke verification
+
+- Operator: Codex with project owner
+- Scope: Organization-scoped GDPR authorization and production deployment recovery; Docker volumes preserved and no application data migration performed.
+- Source: PR #45 merged at `39f982e499fd7f355797d235c339db75d477381e`; PR #46 corrected pre-deploy Docker cleanup and merged at `88b6910c5d72a46386a25fba2f5c3bdbd15a61c6`.
+- Change: GDPR list/export/delete endpoints now require `OWNER` or `ADMIN` through `JwtAuthGuard` and `RolesGuard`. The deploy workflow now removes unused Docker objects and build cache without pruning volumes.
+- Verification: PR #45 CI `33598057887`, main CI `33598267883`, PR #46 CI `33599224606`, and main CI `33599534591` passed. The first deploy attempt `33598977419` failed during image pull with `no space left on device`; no running release replacement occurred.
+- Image publication: run `33599809388` passed for API, Worker, and Web. Promoted digests:
+  - API: `ghcr.io/a-bol3/ori-os-api@sha256:42cd6ba435853725550bddca8c503a6213d52d233f7709beeb42ec36a733a82b`
+  - Worker: `ghcr.io/a-bol3/ori-os-worker@sha256:25df7008f865de44e94fd1fa6f90b516040657f02eba6b0d663637b59edf6c1a`
+  - Web: `ghcr.io/a-bol3/ori-os-web@sha256:360ed0e63387a58537711e336e5dc5daea3999ea95b548b1770fdfa5b35d0922`
+- Deployment: run `33600262585` passed after production environment approval, using source `88b6910c5d72a46386a25fba2f5c3bdbd15a61c6` and the pinned digests above.
+- External smoke: Web HTTP 200; `/api/health` and `/api/ready` HTTP 200 with database and Redis healthy; unauthenticated `/dashboard/operations` HTTP 307 to `/login`; request ID `ori-os-gdpr-rbac-88b6910-smoke` preserved by API health/readiness.
+- Result: GDPR compliance endpoints are RBAC-protected in production. Broader tenant isolation, session invalidation, sensitive-action RBAC, DSAR acceptance, observability, rollback timing, and distribution gates remain open.
+
 ## 2026-09-02 — PR #41 Engagement hardening, PR #42 disk cleanup, production promotion and smoke verification
 
 - Operator: Codex with project owner
