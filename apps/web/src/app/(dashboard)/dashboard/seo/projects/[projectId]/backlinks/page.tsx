@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Input, Label, Badge } from '@ori-os/ui';
-import { Plus, ExternalLink, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
+import { Plus, ExternalLink } from 'lucide-react';
 import { useParams } from 'next/navigation';
+import { apiFetch, getErrorMessage } from '@/lib/api-client';
+import { useToast } from '@ori-os/ui';
 
 interface Backlink {
     id: string;
@@ -17,13 +19,24 @@ interface Backlink {
     lastChecked: string;
 }
 
+interface BacklinkStats {
+    total: number;
+    active: number;
+    lost: number;
+    broken: number;
+    dofollow: number;
+    nofollow: number;
+    avgDomainAuthority: number;
+}
+
 export default function BacklinksPage() {
     const params = useParams();
     const projectId = params.projectId as string;
 
     const [backlinks, setBacklinks] = useState<Backlink[]>([]);
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<BacklinkStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [showAddModal, setShowAddModal] = useState(false);
     const [newBacklink, setNewBacklink] = useState({
         sourceUrl: '',
@@ -32,47 +45,48 @@ export default function BacklinksPage() {
         domainAuthority: 0,
         linkType: 'dofollow' as const,
     });
+    const { toast } = useToast();
 
-    useEffect(() => {
-        fetchBacklinks();
-    }, [projectId]);
-
-    const fetchBacklinks = async () => {
+    const fetchBacklinks = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
         try {
-            const response = await fetch(`/api/seo/projects/${projectId}/backlinks`);
-            if (response.ok) {
-                const data = await response.json();
-                setBacklinks(data.data || []);
-                setStats(data.stats || {});
-            }
-        } catch (error) {
-            console.error('Failed to fetch backlinks:', error);
+            const response = await apiFetch(`/seo/projects/${projectId}/backlinks`);
+            const data = await response.json();
+            setBacklinks(data.data || []);
+            setStats(data.stats || {});
+        } catch (err) {
+            setBacklinks([]);
+            setStats(null);
+            setError(getErrorMessage(err, 'Failed to load backlinks.'));
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [projectId]);
+
+    useEffect(() => {
+        void fetchBacklinks();
+    }, [fetchBacklinks]);
 
     const handleAddBacklink = async () => {
         try {
-            const response = await fetch(`/api/seo/projects/${projectId}/backlinks`, {
+            await apiFetch(`/seo/projects/${projectId}/backlinks`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...newBacklink, projectId }),
             });
 
-            if (response.ok) {
-                setShowAddModal(false);
-                setNewBacklink({
-                    sourceUrl: '',
-                    targetUrl: '',
-                    anchorText: '',
-                    domainAuthority: 0,
-                    linkType: 'dofollow',
-                });
-                fetchBacklinks();
-            }
-        } catch (error) {
-            console.error('Failed to add backlink:', error);
+            setShowAddModal(false);
+            setNewBacklink({
+                sourceUrl: '',
+                targetUrl: '',
+                anchorText: '',
+                domainAuthority: 0,
+                linkType: 'dofollow',
+            });
+            await fetchBacklinks();
+        } catch (err) {
+            toast({ title: 'Backlink creation failed', description: getErrorMessage(err, 'The backlink could not be created.'), variant: 'destructive' });
         }
     };
 
@@ -91,6 +105,10 @@ export default function BacklinksPage() {
                 </div>
             </div>
         );
+    }
+
+    if (error) {
+        return <div role="alert" className="p-6 text-destructive">Unable to load backlinks: {error}</div>;
     }
 
     return (

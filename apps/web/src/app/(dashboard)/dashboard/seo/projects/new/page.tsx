@@ -14,8 +14,9 @@ import {
     Label,
     useToast,
 } from '@ori-os/ui';
-import { ChevronLeft, Globe, Plus, Loader2 } from 'lucide-react';
+import { ChevronLeft, Globe, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { apiFetch, getErrorMessage } from '@/lib/api-client';
 
 export default function NewSEOProjectPage() {
     const router = useRouter();
@@ -31,8 +32,14 @@ export default function NewSEOProjectPage() {
         setLoading(true);
 
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            const response = await apiFetch('/seo/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            });
+            if (!response.ok) {
+                throw new Error('Failed to create SEO project');
+            }
 
             toast({
                 title: "Project Created",
@@ -43,7 +50,7 @@ export default function NewSEOProjectPage() {
         } catch (error) {
             toast({
                 title: "Error",
-                description: "Failed to create project. Please try again.",
+                description: getErrorMessage(error, "Failed to create project. Please try again."),
                 variant: "destructive"
             });
         } finally {
