@@ -77,7 +77,7 @@ export class EngagementService {
     });
 
     if (campaign.status === CampaignStatus.RUNNING) {
-      await this.startCampaignExecution(campaign.id);
+      await this.startCampaignExecution(orgId, campaign.id);
     }
 
     return campaign;
@@ -176,7 +176,7 @@ export class EngagementService {
       updatedCampaign.status === CampaignStatus.RUNNING &&
       oldCampaign.status !== CampaignStatus.RUNNING
     ) {
-      await this.startCampaignExecution(updatedCampaign.id);
+      await this.startCampaignExecution(orgId, updatedCampaign.id);
     }
 
     return updatedCampaign;
@@ -218,7 +218,7 @@ export class EngagementService {
     const campaign = await this.findOne(orgId, campaignId);
 
     if (campaign && campaign.status === CampaignStatus.RUNNING) {
-      await this.startCampaignExecution(campaignId);
+      await this.startCampaignExecution(orgId, campaignId);
     }
 
     return result;
@@ -255,11 +255,11 @@ export class EngagementService {
 
   // --- Execution Engine ---
 
-  async startCampaignExecution(campaignId: string) {
+  async startCampaignExecution(organizationId: string, campaignId: string) {
     console.log(`[CAMPAIGN] Starting execution for campaign ${campaignId}`);
 
-    const campaign = await this.prisma.campaign.findUnique({
-      where: { id: campaignId },
+    const campaign = await this.prisma.campaign.findFirst({
+      where: { id: campaignId, organizationId },
       select: {
         sequenceSteps: {
           orderBy: { order: 'asc' },
@@ -275,6 +275,7 @@ export class EngagementService {
     const recipients = await this.models.campaignRecipient.findMany({
       where: {
         campaignId,
+        campaign: { organizationId },
         status: 'PENDING',
       },
     });
@@ -310,6 +311,7 @@ export class EngagementService {
       await this.prisma.campaignRecipient.findMany({
         where: {
           campaignId,
+          campaign: { organizationId },
           status: 'SCHEDULED',
           OR: [{ nextStepOrder: null }, { nextStepAt: null }],
         },
@@ -374,13 +376,13 @@ export class EngagementService {
    * Manual trigger to ensure all running campaigns are actually being processed.
    * Useful if some jobs were lost or the system was down.
    */
-  async processRunningCampaigns() {
+  async processRunningCampaigns(organizationId: string) {
     const campaigns = await this.models.campaign.findMany({
-      where: { status: 'RUNNING' },
+      where: { organizationId, status: 'RUNNING' },
     });
 
     for (const campaign of campaigns) {
-      await this.startCampaignExecution(campaign.id);
+      await this.startCampaignExecution(organizationId, campaign.id);
     }
   }
 }
