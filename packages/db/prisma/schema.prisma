@@ -625,6 +625,7 @@ enum EmailEventType {
   CLICKED
   BOUNCED
   SPAM_COMPLAINT
+  UNSUBSCRIBED
   REPLY
 }
 
