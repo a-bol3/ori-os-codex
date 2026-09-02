@@ -2,6 +2,21 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-09-02 — PR #54 Resend delivery/bounce webhook, image publication, production deploy and smoke verification
+
+- Operator: Codex with project owner
+- Scope: Deploy verified Resend delivery/bounce webhook ingestion with provider-message correlation and replay-safe deduplication. No destructive volume operation.
+- Source: PR #54 merged into `main` at `db1261d213e38503d0d1255dc7f879778a86d5fc`.
+- Change: `POST /webhooks/resend` verifies the raw Svix-signed body, accepts `email.delivered` and `email.bounced`, correlates provider message IDs to sent events, and deduplicates by `resend-webhook:{svix-id}`. Other verified provider event types are acknowledged without mutation.
+- Verification: PR CI `33612139707` and post-merge main CI `33612509086` passed.
+- Image publication: run `33612873504` passed for API, Worker, and Web. Promoted digests:
+  - API: `ghcr.io/a-bol3/ori-os-api@sha256:c8ed193b16c4924a21e5ba0fb200842dd1e4f8514b9e9da77ff44b00014ac9b5`
+  - Worker: `ghcr.io/a-bol3/ori-os-worker@sha256:e49dffd7e583d205174a09b7429fe7d5e751af0f895758f336549705b38714ad`
+  - Web: `ghcr.io/a-bol3/ori-os-web@sha256:8a6ff30b56c962c5c144ec99fa80fe8302e6525d52cfe105192d3a35a506a458`
+- Deployment: run `33613469160` passed after production environment approval using the exact source SHA and immutable digests above.
+- External smoke: Web HTTP 200; API `/health` and `/ready` HTTP 200 with database and Redis healthy; unauthenticated `/dashboard/operations` HTTP 307 to `/login`; request ID `scope-db1261d-smoke` preserved by API health.
+- Result: Provider delivery/bounce handling is deployed. Runtime activation and live callback/replay evidence remain open until `RESEND_WEBHOOK_SECRET` is configured and the endpoint is registered in Resend. Unsubscribe ingestion, live wait-step progression, metric parity, provider failure visibility, and public distribution gates remain open.
+
 ## 2026-09-02 — PR #52 IMAP reply idempotency, image publication, production deploy and smoke verification
 
 - Operator: Codex with project owner

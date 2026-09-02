@@ -264,14 +264,15 @@ An item is only closed when all five conditions are true:
 - `[ ]` SMTP/auth configuration fully hardened and documented
 - `[x]` Resend webhook endpoint verifies the raw Svix-signed body and handles `email.delivered`/`email.bounced` idempotently in code
 - `[ ]` Configure `RESEND_WEBHOOK_SECRET` in the production runtime and register `https://api.orios.ori-craftlabs.com/webhooks/resend` in Resend
+  - Code deployed in production at `main@db1261d`; CI `33612509086`, image publication `33612873504`, deploy `33613469160`
+  - Runtime activation remains open because no `RESEND_WEBHOOK_SECRET` is currently visible in the repository secret inventory
 - `[ ]` Prove live Resend delivery/bounce callbacks, replay behavior, and provider failure visibility in production
 - `[-]` Event ingestion idempotent for:
   - `open` tracking-pixel replays are race-safe through unique `EmailEvent.dedupeKey`
   - IMAP `reply` replays are race-safe through canonical provider-message dedupe keys
-  - delivery remains open
-  - bounce remains open
+  - delivery/bounce are now idempotent in the deployed provider webhook path, but live callback evidence remains open
   - unsubscribe remains open
-  - Evidence for the partial closure: PR #50 and PR #52; main CI `33609062113`, image publication `33609469179`, production deploy `33610095143`
+  - Evidence for the partial closure: PR #50, PR #52, and PR #54; current main CI `33612509086`, image publication `33612873504`, production deploy `33613469160`
 - `[ ]` Provider health and failure visibility exposed in UI/ops
 
 ---
