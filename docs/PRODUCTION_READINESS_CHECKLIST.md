@@ -69,9 +69,12 @@ An item is only closed when all five conditions are true:
   - Evidence:
     - `apps/api/src/app.module.ts`
 
-- `[ ]` Web auth secret fails closed in production
-  - Current gap:
-    - `apps/web/src/auth.ts` still falls back to a default secret
+- `[x]` Web auth secret fails closed in production
+  - Evidence:
+    - `apps/web/src/auth.ts` permits the build-only secret only under `NODE_ENV=development`, `NODE_ENV=test`, or `CI=true`
+    - `apps/web/Dockerfile` sets `NODE_ENV=production` only in the runtime image, where no fallback is allowed
+    - Production deploy `33596373756` and API/web smoke checks passed on `main@9765997`
+  - The runtime still requires a real `AUTH_SECRET` or `NEXTAUTH_SECRET`; missing configuration throws during server startup.
 
 - `[ ]` Active organization membership and role verified on every protected operation
 
@@ -323,6 +326,6 @@ Public rollout is only allowed when all these are closed:
 
 1. Finish live Engagement recipient progression and scheduled-step truth
 2. Add idempotent delivery/open/reply/bounce ingestion and prove metric parity
-3. Close `apps/web/src/auth.ts` production-secret fallback
+3. Complete RBAC, tenant-isolation, and GDPR acceptance evidence
 4. Re-run CRM + Dashboard regression after Engagement fixes
 5. Prove deploy/rollback/restore path
