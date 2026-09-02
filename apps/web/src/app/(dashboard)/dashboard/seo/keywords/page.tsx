@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
     Card,
@@ -11,7 +11,6 @@ import {
     Button,
     Badge,
     Input,
-    Label,
 } from '@ori-os/ui';
 import {
     TrendingUp,
@@ -21,77 +20,101 @@ import {
     Download,
     Filter,
     BarChart3,
+    Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useSEOProjects } from '@/hooks/use-seo-projects';
+import { apiFetch, getErrorMessage } from '@/lib/api-client';
+
+interface Keyword {
+    id: string;
+    keyword: string;
+    position: number | null;
+    prevPosition: number | null;
+    searchVolume: number | null;
+    difficulty: number | null;
+    url: string;
+    project: string;
+}
 
 export default function KeywordsPage() {
     const [searchQuery, setSearchQuery] = useState('');
+    const [keywords, setKeywords] = useState<Keyword[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const { projects, isLoading: projectsLoading, error: projectsError } = useSEOProjects();
 
-    // Mock keywords data
-    const keywords = [
-        {
-            id: '1',
-            keyword: 'web development services',
-            position: 12,
-            prevPosition: 15,
-            searchVolume: 8100,
-            difficulty: 65,
-            url: '/services/web-development',
-            project: 'Main Website',
-        },
-        {
-            id: '2',
-            keyword: 'seo optimization',
-            position: 8,
-            prevPosition: 9,
-            searchVolume: 12000,
-            difficulty: 72,
-            url: '/services/seo',
-            project: 'Main Website',
-        },
-        {
-            id: '3',
-            keyword: 'custom crm development',
-            position: 5,
-            prevPosition: 5,
-            searchVolume: 1200,
-            difficulty: 54,
-            url: '/services/crm',
-            project: 'Main Website',
-        },
-        {
-            id: '4',
-            keyword: 'react development agency',
-            position: 22,
-            prevPosition: 18,
-            searchVolume: 3600,
-            difficulty: 68,
-            url: '/services',
-            project: 'Blog',
-        },
-        {
-            id: '5',
-            keyword: 'nextjs experts',
-            position: 14,
-            prevPosition: 16,
-            searchVolume: 2400,
-            difficulty: 61,
-            url: '/blog/nextjs',
-            project: 'Blog',
-        },
-    ];
+    useEffect(() => {
+        if (projectsLoading) return;
+        if (projectsError) {
+            setError(projectsError);
+            setIsLoading(false);
+            return;
+        }
+
+        let cancelled = false;
+        const fetchKeywords = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const results = await Promise.all(projects.map(async (project) => {
+                    const response = await apiFetch(`/seo/keywords?projectId=${encodeURIComponent(project.id)}`);
+                    const data = await response.json() as Array<{
+                        id: string;
+                        keyword: string;
+                        targetUrl?: string | null;
+                        searchVolume?: number | null;
+                        difficulty?: number | null;
+                        lastPosition?: number | null;
+                        rankings?: Array<{ position: number; prevPosition?: number | null }>;
+                    }>;
+                    return (Array.isArray(data) ? data : []).map((item) => ({
+                        id: item.id,
+                        keyword: item.keyword,
+                        position: item.rankings?.[0]?.position ?? item.lastPosition ?? null,
+                        prevPosition: item.rankings?.[0]?.prevPosition ?? null,
+                        searchVolume: item.searchVolume ?? null,
+                        difficulty: item.difficulty ?? null,
+                        url: item.targetUrl || '—',
+                        project: project.name,
+                    }));
+                }));
+                if (!cancelled) setKeywords(results.flat());
+            } catch (err) {
+                if (!cancelled) {
+                    setKeywords([]);
+                    setError(getErrorMessage(err, 'Failed to load keywords.'));
+                }
+            } finally {
+                if (!cancelled) setIsLoading(false);
+            }
+        };
+
+        fetchKeywords();
+        return () => { cancelled = true; };
+    }, [projects, projectsLoading, projectsError]);
 
     const filteredKeywords = keywords.filter((kw) =>
         kw.keyword.toLowerCase().includes(searchQuery.toLowerCase())
     );
+    const rankedKeywords = keywords.filter((keyword) => keyword.position !== null);
 
-    const getRankChange = (current: number, prev: number) => {
+    const getRankChange = (current: number | null, prev: number | null) => {
+        if (current === null || prev === null) return { value: 0, trend: 'same' as const };
         const change = prev - current;
         return {
             value: Math.abs(change),
-            trend: change > 0 ? 'up' : change < 0 ? 'down' : 'same',
+            trend: (change > 0 ? 'up' : change < 0 ? 'down' : 'same') as 'up' | 'down' | 'same',
         };
     };
+
+    if (isLoading) {
+        return <div className="flex items-center justify-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    }
+
+    if (error) {
+        return <div role="alert" className="p-6 text-destructive">Unable to load keywords: {error}</div>;
+    }
 
     return (
         <div className="space-y-6">
@@ -126,7 +149,9 @@ export default function KeywordsPage() {
                     <CardContent className="p-6">
                         <p className="text-sm text-muted-foreground">Avg. Position</p>
                         <p className="text-2xl font-bold text-foreground mt-1">
-                            {(keywords.reduce((sum, k) => sum + k.position, 0) / keywords.length).toFixed(1)}
+                            {rankedKeywords.length > 0
+                                ? (rankedKeywords.reduce((sum, keyword) => sum + (keyword.position ?? 0), 0) / rankedKeywords.length).toFixed(1)
+                                : '—'}
                         </p>
                     </CardContent>
                 </Card>
@@ -134,7 +159,7 @@ export default function KeywordsPage() {
                     <CardContent className="p-6">
                         <p className="text-sm text-muted-foreground">Top 3</p>
                         <p className="text-2xl font-bold text-foreground mt-1">
-                            {keywords.filter((k) => k.position <= 3).length}
+                            {keywords.filter((k) => k.position !== null && k.position <= 3).length}
                         </p>
                     </CardContent>
                 </Card>
@@ -142,7 +167,7 @@ export default function KeywordsPage() {
                     <CardContent className="p-6">
                         <p className="text-sm text-muted-foreground">Top 10</p>
                         <p className="text-2xl font-bold text-foreground mt-1">
-                            {keywords.filter((k) => k.position <= 10).length}
+                            {keywords.filter((k) => k.position !== null && k.position <= 10).length}
                         </p>
                     </CardContent>
                 </Card>
@@ -206,7 +231,7 @@ export default function KeywordsPage() {
                                         <Badge variant="secondary">{keyword.project}</Badge>
                                     </div>
                                     <div className="col-span-1 text-center">
-                                        <span className="font-semibold text-foreground">{keyword.position}</span>
+                                        <span className="font-semibold text-foreground">{keyword.position ?? '—'}</span>
                                     </div>
                                     <div className="col-span-1 flex items-center justify-center">
                                         {rankChange.trend === 'up' && (
@@ -226,19 +251,19 @@ export default function KeywordsPage() {
                                         )}
                                     </div>
                                     <div className="col-span-2 text-right text-muted-foreground">
-                                        {keyword.searchVolume.toLocaleString()}/mo
+                                        {keyword.searchVolume !== null ? `${keyword.searchVolume.toLocaleString()}/mo` : '—'}
                                     </div>
                                     <div className="col-span-1 text-right">
                                         <Badge
                                             variant={
-                                                keyword.difficulty > 70
+                                                (keyword.difficulty ?? 0) > 70
                                                     ? 'destructive'
-                                                    : keyword.difficulty > 50
+                                                    : (keyword.difficulty ?? 0) > 50
                                                         ? 'default'
                                                         : 'secondary'
                                             }
                                         >
-                                            {keyword.difficulty}
+                                            {keyword.difficulty ?? '—'}
                                         </Badge>
                                     </div>
                                     <div className="col-span-1 flex justify-end">

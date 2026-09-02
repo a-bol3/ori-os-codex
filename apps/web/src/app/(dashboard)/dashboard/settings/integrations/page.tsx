@@ -1,54 +1,55 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Plus, Zap, Globe, BarChart3, Mail, Database, Slack } from 'lucide-react';
+import { Plus, Zap, Globe, BarChart3, Mail, Database, Slack, type LucideIcon } from 'lucide-react';
 import {
     Card,
     CardContent,
-    CardHeader,
-    CardTitle,
-    CardDescription,
     Button,
     Badge,
     useToast,
 } from '@ori-os/ui';
 import { useEffect, useState } from 'react';
+import { apiFetch, getErrorMessage } from '@/lib/api-client';
 
 interface Integration {
     id: string;
     name: string;
     description: string;
-    icon: any;
+    icon: LucideIcon;
     category: string;
     connected: boolean;
     comingSoon?: boolean;
 }
 
 const INTEGRATIONS: Integration[] = [
-    { id: 'google-analytics', name: 'Google Analytics', description: 'Track website traffic and user behavior', icon: BarChart3, category: 'Analytics', connected: false },
-    { id: 'google-search-console', name: 'Google Search Console', description: 'Monitor search performance and indexing', icon: Globe, category: 'SEO', connected: false },
-    { id: 'slack', name: 'Slack', description: 'Get real-time notifications in your Slack workspace', icon: Slack, category: 'Communication', connected: false },
+    { id: 'google-analytics', name: 'Google Analytics', description: 'Track website traffic and user behavior', icon: BarChart3, category: 'Analytics', connected: false, comingSoon: true },
+    { id: 'google-search-console', name: 'Google Search Console', description: 'Monitor search performance and indexing', icon: Globe, category: 'SEO', connected: false, comingSoon: true },
+    { id: 'slack', name: 'Slack', description: 'Get real-time notifications in your Slack workspace', icon: Slack, category: 'Communication', connected: false, comingSoon: true },
     { id: 'gmail', name: 'Gmail', description: 'Read email metadata for controlled operational signals', icon: Mail, category: 'Email', connected: false },
-    { id: 'mailchimp', name: 'Mailchimp', description: 'Sync contacts and campaigns with Mailchimp', icon: Mail, category: 'Email', connected: false },
+    { id: 'mailchimp', name: 'Mailchimp', description: 'Sync contacts and campaigns with Mailchimp', icon: Mail, category: 'Email', connected: false, comingSoon: true },
     { id: 'hubspot', name: 'HubSpot', description: 'Bi-directional CRM sync with HubSpot', icon: Database, category: 'CRM', connected: false, comingSoon: true },
     { id: 'zapier', name: 'Zapier', description: 'Connect Ori-OS to 5000+ apps via Zapier', icon: Zap, category: 'Automation', connected: false, comingSoon: true },
 ];
 
 export default function IntegrationsPage() {
     const [integrations, setIntegrations] = useState(INTEGRATIONS);
+    const [statusError, setStatusError] = useState<string | null>(null);
     const { toast } = useToast();
 
     useEffect(() => {
         let active = true;
-        fetch('/api/workspace-proxy/integrations/gmail/status', { cache: 'no-store' })
-            .then(async (response) => response.ok ? response.json() : null)
+        apiFetch('/integrations/gmail/status')
+            .then(async (response) => response.json())
             .then((status) => {
-                if (!active || !status) return;
+                if (!active) return;
                 setIntegrations(prev => prev.map(i => i.id === 'gmail'
                     ? { ...i, connected: status.integration?.status === 'active' }
                     : i));
             })
-            .catch(() => undefined);
+            .catch((err) => {
+                if (active) setStatusError(getErrorMessage(err, 'Unable to load Gmail connection status.'));
+            });
         return () => { active = false; };
     }, []);
 
@@ -58,9 +59,9 @@ export default function IntegrationsPage() {
 
         if (id === 'gmail' && !integration.connected) {
             try {
-                const response = await fetch('/api/workspace-proxy/integrations/gmail/connect', { cache: 'no-store' });
+                const response = await apiFetch('/integrations/gmail/connect');
                 const result = await response.json() as { authUrl?: string };
-                if (!response.ok || !result.authUrl) throw new Error('Could not start Gmail authorization');
+                if (!result.authUrl) throw new Error('Could not start Gmail authorization');
                 window.location.assign(result.authUrl);
             } catch {
                 toast({ title: 'Unable to connect Gmail', description: 'Please try again or contact an administrator.' });
@@ -68,25 +69,7 @@ export default function IntegrationsPage() {
             return;
         }
 
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings/integrations/${id}`, {
-                method: integration.connected ? 'DELETE' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-            });
-
-            if (!res.ok) throw new Error('API unavailable');
-        } catch {
-            // Optimistic update even if API fails
-        }
-
-        setIntegrations(prev => prev.map(i =>
-            i.id === id ? { ...i, connected: !i.connected } : i
-        ));
-
-        toast({
-            title: integration.connected ? `${integration.name} disconnected` : `${integration.name} connected`,
-            description: integration.connected ? 'Integration has been removed.' : 'Integration is now active.',
-        });
+        toast({ title: 'Integration unavailable', description: `${integration.name} is not yet available.` });
     };
 
     const categories = [...new Set(INTEGRATIONS.map(i => i.category))];
@@ -97,6 +80,8 @@ export default function IntegrationsPage() {
                 <h1 className="text-2xl font-bold text-foreground">Integrations</h1>
                 <p className="text-muted-foreground">Connect Ori-OS with your favorite tools and services</p>
             </div>
+
+            {statusError && <div role="alert" className="border border-destructive/40 p-4 text-sm text-destructive">{statusError}</div>}
 
             {categories.map((category, ci) => (
                 <motion.div

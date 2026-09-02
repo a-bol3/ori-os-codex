@@ -37,7 +37,6 @@ import {
 } from './test-bench.controller';
 import { UnsubscribeController } from './unsubscribe.controller';
 import { SeoModule } from './seo/seo.module';
-import { BacklinksController } from './backlinks.controller';
 import { NotificationsController } from './notifications.controller';
 import { DashboardController } from './dashboard.controller';
 import { AuditLogService } from './common/audit-log.service';
@@ -107,7 +106,6 @@ const testBenchControllers = isTestBenchEnabled()
     ActivitiesController,
     ...testBenchControllers,
     UnsubscribeController,
-    BacklinksController,
     NotificationsController,
     DashboardController,
     TrackingController,
