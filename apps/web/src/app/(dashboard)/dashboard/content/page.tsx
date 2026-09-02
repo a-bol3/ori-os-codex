@@ -16,6 +16,7 @@ import {
     useToast,
     Badge,
 } from '@ori-os/ui';
+import { apiFetch, getErrorMessage } from '@/lib/api-client';
 
 interface Template {
     id: string;
@@ -30,19 +31,21 @@ export default function ContentPage() {
     const [isOpen, setIsOpen] = useState(false);
     const [templates, setTemplates] = useState<Template[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [form, setForm] = useState({ name: '', subject: '', category: 'Email Template' });
     const { toast } = useToast();
 
     const fetchTemplates = async () => {
         setIsLoading(true);
+        setError(null);
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/engagement/templates`);
-            if (!res.ok) throw new Error('Failed to fetch');
+            const res = await apiFetch('/content/templates');
             const data = await res.json();
-            setTemplates(data);
-        } catch {
+            setTemplates(Array.isArray(data) ? data : []);
+        } catch (err) {
             setTemplates([]);
+            setError(getErrorMessage(err, 'Failed to load content templates.'));
         } finally {
             setIsLoading(false);
         }
@@ -52,25 +55,26 @@ export default function ContentPage() {
 
     const handleCreate = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/engagement/templates`, {
+            const res = await apiFetch('/content/templates', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: form.name, subject: form.subject, category: form.category }),
+                body: JSON.stringify({
+                    name: form.name,
+                    subject: form.subject,
+                    category: form.category,
+                    language: 'en',
+                }),
             });
-            if (!res.ok) throw new Error('Failed to create');
             const created = await res.json();
             setTemplates(prev => [created, ...prev]);
             toast({ title: 'Template Created', description: `"${form.name}" has been added to your library.` });
-        } catch {
-            // Optimistic add
-            setTemplates(prev => [{
-                id: `tmp-${Date.now()}`,
-                name: form.name,
-                subject: form.subject,
-                category: form.category,
-                updatedAt: new Date().toISOString(),
-            }, ...prev]);
-            toast({ title: 'Template Created', description: `"${form.name}" has been added to your library.` });
+        } catch (err) {
+            toast({
+                title: 'Template creation failed',
+                description: getErrorMessage(err, 'The template could not be created.'),
+                variant: 'destructive',
+            });
+            return;
         }
         setIsOpen(false);
         setForm({ name: '', subject: '', category: 'Email Template' });
@@ -79,10 +83,16 @@ export default function ContentPage() {
     const handleDelete = async (id: string, name: string) => {
         if (!confirm(`Delete "${name}"?`)) return;
         try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/engagement/templates/${id}`, { method: 'DELETE' });
-        } catch { /* ignore */ }
-        setTemplates(prev => prev.filter(t => t.id !== id));
-        toast({ title: 'Template deleted' });
+            await apiFetch(`/content/templates/${id}`, { method: 'DELETE' });
+            setTemplates(prev => prev.filter(t => t.id !== id));
+            toast({ title: 'Template deleted' });
+        } catch (err) {
+            toast({
+                title: 'Template deletion failed',
+                description: getErrorMessage(err, 'The template could not be deleted.'),
+                variant: 'destructive',
+            });
+        }
     };
 
     const filtered = templates.filter(t =>
@@ -165,6 +175,13 @@ export default function ContentPage() {
             {isLoading ? (
                 <div className="flex items-center justify-center py-20">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : error ? (
+                <div role="alert" className="flex flex-col items-center justify-center py-20 text-center border border-destructive/40 rounded-none">
+                    <FileText className="h-12 w-12 mb-4 text-destructive opacity-70" />
+                    <p className="text-lg font-medium mb-2">Unable to load content</p>
+                    <p className="text-sm text-muted-foreground mb-6">{error}</p>
+                    <Button onClick={fetchTemplates}>Retry</Button>
                 </div>
             ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-muted-foreground border border-dashed rounded-none">

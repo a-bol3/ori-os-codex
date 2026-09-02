@@ -3,7 +3,7 @@
 import { useSEOProjects } from './use-seo-projects';
 import { useCrawls, useCrawlIssues } from './use-crawls';
 import { useState, useEffect } from 'react';
-import { apiFetch, getErrorMessage } from '@/lib/api-client';
+import { apiFetch } from '@/lib/api-client';
 
 export function useSEO() {
     const { projects, isLoading: projectsLoading, error: projectsError, refresh: refreshProjects } = useSEOProjects();
@@ -14,7 +14,7 @@ export function useSEO() {
     const { crawls, isLoading: crawlsLoading, error: crawlsError } = useCrawls(selectedProject?.id);
     const latestCrawl = crawls && crawls.length > 0 ? crawls.find(c => c.status === 'completed') || crawls[0] : null;
 
-    const { issues, summary: issuesSummary, isLoading: issuesLoading, error: issuesError } = useCrawlIssues(latestCrawl?.id);
+    const { issues, summary: issuesSummary, isLoading: issuesLoading, error: issuesError } = useCrawlIssues(selectedProject?.id, latestCrawl?.id);
 
     useEffect(() => {
         if (projects.length > 0 && !selectedProjectId) {

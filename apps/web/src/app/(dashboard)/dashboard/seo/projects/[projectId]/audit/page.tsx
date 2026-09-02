@@ -1,32 +1,36 @@
 'use client';
 
 import { useParams } from 'next/navigation';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Card, Button } from '@ori-os/ui';
+import { Card, Button, useToast } from '@ori-os/ui';
 import { Plus, Calendar, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useCrawls } from '@/hooks/use-crawls';
 import { CrawlStatusBadge } from '@/components/seo/crawl-status-badge';
+import { apiFetch, getErrorMessage } from '@/lib/api-client';
 
 export default function AuditOverviewPage() {
     const params = useParams();
     const projectId = params.projectId as string;
 
     const { crawls, isLoading } = useCrawls(projectId);
+    const [actionError, setActionError] = useState<string | null>(null);
+    const { toast } = useToast();
 
     const handleStartCrawl = async () => {
+        setActionError(null);
         try {
-            const response = await fetch(`/api/seo/projects/${projectId}/crawl`, {
+            await apiFetch(`/seo/projects/${projectId}/crawl`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId, maxPages: 500 }),
+                body: JSON.stringify({ maxPages: 500 }),
             });
-
-            if (response.ok) {
-                window.location.reload();
-            }
-        } catch (error) {
-            console.error('Failed to start crawl:', error);
+            window.location.reload();
+        } catch (err) {
+            const message = getErrorMessage(err, 'Failed to start crawl.');
+            setActionError(message);
+            toast({ title: 'Audit could not be started', description: message, variant: 'destructive' });
         }
     };
 
@@ -43,6 +47,11 @@ export default function AuditOverviewPage() {
 
     return (
         <div className="p-6 space-y-6">
+            {actionError && (
+                <div role="alert" className="border border-destructive/40 p-4 text-sm text-destructive">
+                    {actionError}
+                </div>
+            )}
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>

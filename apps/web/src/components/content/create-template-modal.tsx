@@ -23,6 +23,7 @@ import {
     TabsTrigger,
 } from '@ori-os/ui';
 import { Sparkles, Mail, FileText, Loader2 } from 'lucide-react';
+import { apiFetch, getErrorMessage } from '@/lib/api-client';
 
 interface TemplateModalProps {
     isOpen: boolean;
@@ -54,18 +55,16 @@ export function TemplateModal({ isOpen, onClose, onSuccess, template }: Template
 
         try {
             const url = isEditing
-                ? `${process.env.NEXT_PUBLIC_API_URL}/content/templates/${template.id}`
-                : `${process.env.NEXT_PUBLIC_API_URL}/content/templates`;
+                ? `/content/templates/${template.id}`
+                : '/content/templates';
 
             const method = isEditing ? 'PUT' : 'POST';
 
-            const response = await fetch(url, {
+            await apiFetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
-
-            if (!response.ok) throw new Error('Failed to save template');
 
             toast({
                 title: isEditing ? 'Template Updated' : 'Template Created',
@@ -74,12 +73,11 @@ export function TemplateModal({ isOpen, onClose, onSuccess, template }: Template
             onSuccess();
         } catch (error) {
             console.error('Template operation failed:', error);
-            // Mock success
             toast({
-                title: `${isEditing ? 'Updated' : 'Created'} (Simulated)`,
-                description: `"${data.name}" saved in dashboard.`,
+                title: `${isEditing ? 'Template update' : 'Template creation'} failed`,
+                description: getErrorMessage(error, 'The template could not be saved.'),
+                variant: 'destructive',
             });
-            onSuccess();
         } finally {
             setIsSubmitting(false);
         }
