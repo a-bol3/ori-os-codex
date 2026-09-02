@@ -4,11 +4,14 @@
 
 ## Last verified
 
-- Date: 2026-08-22
+- Date: 2026-09-02
 - Local repository: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0`
 - Canonical remote: `https://github.com/a-bol3/ori-os-codex.git`
 - Canonical production line: `main` at the merged private-beta release line
-- Latest release workflow: `Publish release images #7`, commit `e7fe452`
+- Latest release line: `main` at commit `bc1b46d0323609c3e5f7713f7095461a274f2774`
+- Latest CI: `33484524381` passed
+- Latest image publication: `33484754442` passed
+- Latest production deploy: `33485277668` passed
 - Public web: `https://orios.ori-craftlabs.com`
 - Public API: `https://api.orios.ori-craftlabs.com`
 
@@ -20,20 +23,32 @@
 | Web availability         | Passing                          | Login, dashboard, logout-to-marketing, and private-beta messaging verified in browser                  |
 | API health               | Passing                          | `/health` returned HTTP 200                                                                            |
 | API readiness            | Passing                          | `/ready` returned DB and Redis `ok`                                                                    |
-| GitHub Actions           | Green baseline                   | PR #1 merged; main run #21 passed install, Prisma, build, lint, and tests                              |
-| Release images           | Published and promoted           | Workflow #7 published API, Worker, and Web images; the same digests were pulled and started on the VPS |
+| GitHub Actions           | Green baseline                   | Main CI run `33484524381` passed on commit `bc1b46d`; image publication and production deploy also passed |
+| Release images           | Published and promoted           | Run `33484754442` published API, Worker, and Web images at immutable digests recorded below           |
 | VPS identity             | Confirmed operational            | `/opt/orios-codex`; release Compose overlay active; API, Worker, Web, PostgreSQL, and Redis running    |
 | Backups                  | Verified                         | PostgreSQL dump and Hostinger snapshot exist; isolated restore drill passed                           |
-| Production certification | Blocked                          | See `docs/PRODUCTION_READINESS_CHECKLIST.md`                                                           |
+| Production certification | Private beta operational         | Production smoke passed; public distribution remains gated by `docs/PRODUCTION_READINESS_CHECKLIST.md` |
 
 ## Active blockers
 
-1. Complete the isolated PostgreSQL restore drill and record RPO/RTO evidence.
-2. Review firewall, SSH, CPU limitation, monitoring, and external backup posture.
-3. Complete authentication, RBAC, dependency, and cross-tenant security hardening.
-4. Expand real CRM vertical-slice tests before inviting additional beta organizations.
-5. Reconcile historical “ready” documents with the canonical beta-readiness documents.
+1. Activate an actually isolated staging host, DNS/routing, secrets, and the GitHub `staging` environment.
+2. Remove remaining silent/demo fallbacks in Automation, Content, Crawls, and Intelligence; surface explicit unavailable/error states.
+3. Complete authentication, RBAC, tenant-isolation, GDPR, dependency, and credential-rotation acceptance evidence.
+4. Expand Engagement progression, event idempotency, and metric-contract tests before inviting additional beta organizations.
+5. Complete monitoring/alerting, firewall/SSH review, and full-stack rollback timing evidence.
 6. Keep production on immutable release digests; no `latest` or VPS-side builds.
+
+## Recovery update — 2026-09-01/02 current production line
+
+- PR #31 was merged into `main` at commit `bc1b46d0323609c3e5f7713f7095461a274f2774`.
+- Main CI run `33484524381` passed. The release publication run `33484754442` passed all three image jobs.
+- Immutable images published for the deployed release:
+  - API `sha256:82322c39a2222abf5d81906e7ff4e766506febecc02d20d0ce56b2b17c4b5264`
+  - Worker `sha256:5d52aac89fd8f550ee108c9adfd5c305bf008eb6a041937b399242f39f097bd8`
+  - Web `sha256:4b3211e0699596017cce562430e918ceeaf1e48c1c723210eb56bc44e999bca5`
+- Production deploy run `33485277668` passed after the required production-environment approval. The deployment used pinned images and did not build on the VPS.
+- Final smoke evidence passed: public Web HTTP 200; API `/health` HTTP 200 with database and Redis `ok`; API `/ready` HTTP 200 with database and Redis `ok`; `/dashboard/operations` redirected unauthenticated traffic to `/login` (HTTP 307); request ID propagation was preserved.
+- Release state is `PRIVATE_BETA_OPERATIONAL`. This confirms the current production line is running; it does not certify public distribution. Staging activation, remaining fallback removal, security/RBAC/GDPR acceptance, observability, and rollback evidence remain open.
 
 ## Recovery update — 2026-08-20
 
