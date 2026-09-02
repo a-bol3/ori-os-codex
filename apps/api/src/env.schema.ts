@@ -7,6 +7,7 @@ const baseEnvSchema = z.object({
   REDIS_PORT: z.string().regex(/^\d+$/).optional(),
   OPENAI_API_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
+  RESEND_WEBHOOK_SECRET: z.string().optional(),
   FROM_EMAIL: z.string().email().optional(),
   IMAP_HOST: z.string().optional(),
   IMAP_PORT: z.string().regex(/^\d+$/).optional(),
