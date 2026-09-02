@@ -34,10 +34,10 @@ An item is only closed when all five conditions are true:
   - Closed in the current production release for the reviewed paths:
     - Content template load/create/update/delete
     - SEO crawl listing, crawl details, issue loading, and crawl start
-    - Evidence: PR #37, main CI `33588696872`, production deploy `33589139919`
-  - Still to verify/fix:
     - SEO keyword/ranking/backlink pages
-    - Settings integrations
+    - Settings integrations: Gmail is real; other providers are explicit `Soon`/unavailable
+    - Evidence: PR #37 and PR #39; latest main CI `33591373235`, image publication `33591620754`, production deploy `33592108484`
+  - Still to verify/fix:
     - remaining engagement edge flows
     - any optimistic success toasts without persistence
 

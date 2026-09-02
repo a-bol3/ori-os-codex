@@ -42,7 +42,7 @@ This backlog assumes:
 ### P0.1 Product truth and contract cleanup
 
 Owner lane: B
-Status: pending
+Status: in progress
 
 Required:
 
@@ -304,7 +304,7 @@ Status: in progress
 Required:
 
 - Content template CRUD and reviewed SEO crawl flows must use authenticated, project-scoped API routes and explicit error states. Closed for the reviewed paths by PR #37 and production release `e4818d2`.
-- Replace mock keyword/ranking/backlink data.
+- Replace mock keyword/ranking/backlink data. Closed for the reviewed paths by PR #39 and production release `3b0b49e`; remaining SEO ranking/provider completeness is tracked separately from fallback removal.
 - Make project-scoped flows persist real state.
 - Ensure optional AI stays optional and transparent.
 
@@ -318,6 +318,8 @@ Required:
 - Replace simulated profile/security saves.
 - Implement real notification persistence and marking behavior.
 - Complete billing status, usage, portal, webhook, cancellation, and invoice consistency.
+
+Current correction status: Settings integration controls no longer simulate successful connections. Gmail uses the real status/connect flow; unsupported providers are visibly marked `Soon`/unavailable. Broader notification and billing work remains open.
 
 ## Phase 6 - Beta Gate
 
