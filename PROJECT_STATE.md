@@ -8,10 +8,10 @@
 - Local repository: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0`
 - Canonical remote: `https://github.com/a-bol3/ori-os-codex.git`
 - Canonical production line: `main` at the merged private-beta release line
-- Latest release line: `main` at commit `3b0b49ed8ff67e4b346cb30bfd37542bad4afa05`
-- Latest CI: `33591373235` passed
-- Latest image publication: `33591620754` passed
-- Latest production deploy: `33592108484` passed
+- Latest release line: `main` at commit `976599777723fc72c2768128615a08dea1257c29`
+- Latest CI: `33595413701` passed
+- Latest image publication: `33595798284` passed
+- Latest production deploy: `33596373756` passed
 - Public web: `https://orios.ori-craftlabs.com`
 - Public API: `https://api.orios.ori-craftlabs.com`
 
@@ -23,8 +23,8 @@
 | Web availability         | Passing                          | Login, dashboard, logout-to-marketing, and private-beta messaging verified in browser                  |
 | API health               | Passing                          | `/health` returned HTTP 200                                                                            |
 | API readiness            | Passing                          | `/ready` returned DB and Redis `ok`                                                                    |
-| GitHub Actions           | Green baseline                   | Main CI run `33591373235` passed on commit `3b0b49e`; image publication and production deploy also passed |
-| Release images           | Published and promoted           | Run `33591620754` published API, Worker, and Web images at immutable digests recorded below           |
+| GitHub Actions           | Green baseline                   | Main CI run `33595413701` passed on commit `9765997`; image publication and production deploy also passed |
+| Release images           | Published and promoted           | Run `33595798284` published API, Worker, and Web images at immutable digests recorded below           |
 | VPS identity             | Confirmed operational            | `/opt/orios-codex`; release Compose overlay active; API, Worker, Web, PostgreSQL, and Redis running    |
 | Backups                  | Verified                         | PostgreSQL dump and Hostinger snapshot exist; isolated restore drill passed                           |
 | Production certification | Private beta operational         | Production smoke passed; public distribution remains gated by `docs/PRODUCTION_READINESS_CHECKLIST.md` |
@@ -32,11 +32,24 @@
 ## Active blockers
 
 1. Activate an actually isolated staging host, DNS/routing, secrets, and the GitHub `staging` environment.
-2. Complete remaining silent-fallback review in Engagement edge flows; SEO keywords/backlinks and Settings integrations are closed for the reviewed paths.
+2. Complete live Engagement progression, wait-step, and event-idempotency proof; launch preflight validation is now enforced.
 3. Complete authentication, RBAC, tenant-isolation, GDPR, dependency, and credential-rotation acceptance evidence.
 4. Expand Engagement progression, event idempotency, and metric-contract tests before inviting additional beta organizations.
 5. Complete monitoring/alerting, firewall/SSH review, and full-stack rollback timing evidence.
 6. Keep production on immutable release digests; no `latest` or VPS-side builds.
+
+## Recovery update — 2026-09-02 Engagement hardening and production promotion
+
+- PR #41 added server-side campaign launch readiness validation for pending audience, active organization-owned mailbox, sender address, first sequence step, and usable email subject/body; it also added `opened` counts to campaign list metrics and regression tests. It was merged into `main` at commit `b54b7d9513f52f794064696b2ce7dc5b1cbaeb3e`.
+- PR CI run `33593796471` and post-merge main CI run `33594043988` passed. Full API validation passed locally: 50 suites / 143 tests.
+- PR #42 added stale Docker image/build-cache reclamation before deployment, preserving Docker volumes. It was merged into `main` at commit `976599777723fc72c2768128615a08dea1257c29`; main CI run `33595413701` passed.
+- Image publication run `33595798284` passed all three image jobs for the current `main` commit. Immutable image digests:
+  - API `sha256:039eabd165addbfd68557dcaff4469fbeb44507670c0bbcbc38b71189885868e`
+  - Worker `sha256:8039bb2aee1b91ce2e8649b062ff8855084728841e1c002aeeb35021984fb4c8`
+  - Web `sha256:ec74a357cb79611a3ef01467d8744c2795b2200a34635ae5da51a2a0e626e1d6`
+- Production deploy run `33596373756` passed after environment approval. The deploy used the exact `main@9765997` source and immutable digests; the pre-deploy Docker cleanup reclaimed stale storage and the VPS did not build images.
+- External smoke evidence passed at `https://orios.ori-craftlabs.com`: Web HTTP 200; `/api/health` HTTP 200 with database and Redis `ok`; `/api/ready` HTTP 200 with database and Redis `ok`; unauthenticated `/dashboard/operations` returned HTTP 307 to `/login`; API request ID `ori-os-engagement-9765997-smoke` was preserved.
+- Engagement launch guard and aggregate `opened` metric correction are deployed. Release state remains `PRIVATE_BETA_OPERATIONAL`; live wait-step progression, open/reply/bounce idempotency, staging activation, security/RBAC/GDPR acceptance, observability, and rollback timing remain open.
 
 ## Recovery update — 2026-09-02 SEO/Settings production line
 

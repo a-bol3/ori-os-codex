@@ -38,7 +38,7 @@ An item is only closed when all five conditions are true:
     - Settings integrations: Gmail is real; other providers are explicit `Soon`/unavailable
     - Evidence: PR #37 and PR #39; latest main CI `33591373235`, image publication `33591620754`, production deploy `33592108484`
   - Still to verify/fix:
-    - remaining engagement edge flows
+    - live Engagement progression and event edge flows
     - any optimistic success toasts without persistence
 
 - `[ ]` Web/API route contract matrix completed
@@ -196,6 +196,13 @@ An item is only closed when all five conditions are true:
       - completed
       - blocked
 
+- `[x]` Campaign launch preflight rejects incomplete real-world configuration
+  - Evidence:
+    - `apps/api/src/engagement/campaign-launch.service.ts`
+    - `apps/api/src/engagement/campaign-launch.service.spec.ts`
+    - PR #41; production deploy `33596373756` from `main@9765997`
+  - Enforced checks: pending audience, organization-owned active mailbox, sender address, first sequence step, and complete email subject/body.
+
 ### 2.3 Launch and sender validation
 
 - `[x]` Campaign launch path works with configured sender
@@ -205,6 +212,8 @@ An item is only closed when all five conditions are true:
 ### 2.4 Analytics correctness
 
 - `[x]` Delivery metric reached verified state in at least one real scenario
+- `[x]` Campaign list exposes persisted `opened` aggregate from recipient events
+  - Evidence: PR #41; production deploy `33596373756`
 - `[x]` Bounce state surfaced in analytics in prior scenario
 - `[x]` Reply email was physically received and confirmed in mailbox flow
 - `[-]` Cross-surface delivery evidence exists, but analytics parity is not yet fully proven across every view
@@ -312,8 +321,8 @@ Public rollout is only allowed when all these are closed:
 
 ## Immediate next focus
 
-1. Finish Engagement recipient progression and scheduled-step truth
-2. Fix remaining metric inconsistency for open/reply tracking
+1. Finish live Engagement recipient progression and scheduled-step truth
+2. Add idempotent delivery/open/reply/bounce ingestion and prove metric parity
 3. Close `apps/web/src/auth.ts` production-secret fallback
 4. Re-run CRM + Dashboard regression after Engagement fixes
 5. Prove deploy/rollback/restore path

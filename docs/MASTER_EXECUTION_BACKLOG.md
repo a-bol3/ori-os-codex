@@ -85,7 +85,7 @@ Acceptance:
 ### P0.3 Deliverability and engagement correctness
 
 Owner lane: B with A support
-Status: pending
+Status: in progress
 
 Required:
 
@@ -102,6 +102,8 @@ Acceptance:
 - A campaign with wait steps progresses correctly over time.
 - A reply and an open update metrics consistently.
 - Recipient-level progression is visible in the campaign UI.
+
+Progress recorded in PR #41 and production deploy `33596373756`: launch preflight now enforces pending audience, active organization-owned mailbox, sender, first sequence step, and complete email content; campaign list responses now include `opened`. Remaining acceptance requires live wait-step progression, recipient-state proof, event-idempotent delivery/open/reply/bounce ingestion, and cross-surface metric parity.
 
 ### P0.4 Release pipeline and production safety
 
