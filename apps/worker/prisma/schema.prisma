@@ -617,6 +617,7 @@ model EmailEvent {
   contactId         String?
   mailboxId         String?
   providerMessageId String?
+  dedupeKey         String?        @unique
   eventType         EmailEventType
   rawPayloadJson    Json?
   createdAt         DateTime       @default(now())

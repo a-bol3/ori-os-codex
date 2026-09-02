@@ -78,12 +78,43 @@ describe('TrackingController', () => {
       data: {
         campaignId: 'campaign-1',
         contactId: 'contact-1',
+        dedupeKey: 'tracking-open:campaign-1:contact-1',
         eventType: 'OPENED',
         rawPayloadJson: {
           source: 'tracking-pixel',
         },
       },
     });
+    expect(prisma.campaignRecipient.updateMany).toHaveBeenCalledWith({
+      where: {
+        campaignId: 'campaign-1',
+        contactId: 'contact-1',
+      },
+      data: {
+        lastEventAt: expect.any(Date),
+      },
+    });
+  });
+
+  it('treats a concurrent duplicate open insert as a successful replay', async () => {
+    prisma.contact.findFirst.mockResolvedValue({ id: 'contact-1' });
+    prisma.emailEvent.findFirst.mockResolvedValue(null);
+    prisma.emailEvent.create.mockRejectedValue({ code: 'P2002' });
+
+    await expect(
+      (controller as never as {
+        recordOpen(payload: {
+          contactId: string;
+          organizationId: string;
+          campaignId?: string;
+        }): Promise<void>;
+      }).recordOpen({
+        contactId: 'contact-1',
+        organizationId: 'org-1',
+        campaignId: 'campaign-1',
+      }),
+    ).resolves.toBeUndefined();
+
     expect(prisma.campaignRecipient.updateMany).toHaveBeenCalledWith({
       where: {
         campaignId: 'campaign-1',

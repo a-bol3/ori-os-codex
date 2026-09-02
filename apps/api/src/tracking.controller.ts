@@ -63,16 +63,25 @@ export class TrackingController {
     });
 
     if (!existingOpen) {
-      await this.prisma.emailEvent.create({
-        data: {
-          campaignId: payload.campaignId ?? null,
-          contactId: payload.contactId,
-          eventType: 'OPENED',
-          rawPayloadJson: {
-            source: 'tracking-pixel',
+      try {
+        await this.prisma.emailEvent.create({
+          data: {
+            campaignId: payload.campaignId ?? null,
+            contactId: payload.contactId,
+            dedupeKey: this.buildOpenDedupeKey(payload),
+            eventType: 'OPENED',
+            rawPayloadJson: {
+              source: 'tracking-pixel',
+            },
           },
-        },
-      });
+        });
+      } catch (error) {
+        // Two clients can request the same pixel at the same time. The
+        // unique dedupe key makes the second insert a harmless replay.
+        if (!this.isUniqueConstraintError(error)) {
+          throw error;
+        }
+      }
     }
 
     if (payload.campaignId) {
@@ -99,5 +108,18 @@ export class TrackingController {
     }
 
     return decodeOpenTrackingToken(token, secret);
+  }
+
+  private buildOpenDedupeKey(payload: OpenTrackingTokenPayload) {
+    return `tracking-open:${payload.campaignId ?? 'none'}:${payload.contactId}`;
+  }
+
+  private isUniqueConstraintError(error: unknown) {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: unknown }).code === 'P2002'
+    );
   }
 }
