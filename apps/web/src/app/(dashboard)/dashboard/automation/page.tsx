@@ -24,12 +24,13 @@ import {
     Plus,
     Search,
     Zap,
+    AlertCircle,
 } from 'lucide-react';
 
 import { useWorkflows } from '@/hooks/use-workflows';
 import { CreateWorkflowModal } from '@/components/automation/create-workflow-modal';
 import { ExecutionLogModal } from '@/components/automation/execution-log-modal';
-import { getApiBaseUrl } from '@/lib/api-base';
+import { apiFetch, getErrorMessage } from '@/lib/api-client';
 
 function statusLabel(status: string) {
     const s = String(status).toLowerCase();
@@ -46,7 +47,7 @@ function statusVariant(status: string): any {
 }
 
 export default function AutomationPage() {
-    const { workflows, isLoading, refresh } = useWorkflows();
+    const { workflows, isLoading, error, refresh } = useWorkflows();
     const { toast } = useToast();
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -66,26 +67,22 @@ export default function AutomationPage() {
     const handleRunWorkflow = async (id: string, name: string) => {
         setRunningId(id);
         try {
-            const response = await fetch(
-                `${getApiBaseUrl()}/automations/workflows/${id}/run`,
-                { method: 'POST' },
-            );
-
-            if (!response.ok) throw new Error('Failed to run workflow');
-            const result = await response.json();
-
+            await apiFetch(`/automations/workflows/${id}/test`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ payload: { source: 'automation_dashboard' } }),
+            });
             toast({
-                title: 'Workflow Executed',
-                description: `Successfully ran "${name}". ${result?.stepsRun ?? 0} steps completed.`,
+                title: 'Workflow Test Queued',
+                description: `The test for "${name}" was queued. Check Execution Log for progress.`,
             });
 
             refresh();
-        } catch {
-
-            // Simulated success in dev until the backend is fully wired
+        } catch (error) {
             toast({
-                title: 'Workflow Simulated',
-                description: `Simulation of "${name}" triggered successfully.`,
+                title: 'Workflow Test Failed',
+                description: getErrorMessage(error, 'The workflow test could not be queued.'),
+                variant: 'destructive',
             });
         } finally {
             setRunningId(null);
@@ -99,6 +96,23 @@ export default function AutomationPage() {
                     <Loader2 className="h-4 w-4 animate-spin text-tangerine" />
                     Loading automations…
                 </div>
+            </div>
+        );
+    }
+
+    if (error && workflows.length === 0) {
+        return (
+            <div className="p-6">
+                <Card className="border-destructive/20 bg-destructive/5">
+                    <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
+                        <AlertCircle className="h-10 w-10 text-destructive" />
+                        <div>
+                            <p className="font-medium">Unable to load workflows</p>
+                            <p className="mt-1 text-sm text-muted-foreground">{error}</p>
+                        </div>
+                        <Button variant="outline" onClick={refresh}>Retry</Button>
+                    </CardContent>
+                </Card>
             </div>
         );
     }
@@ -140,13 +154,13 @@ export default function AutomationPage() {
                     {
                         label: 'Total Executions',
                         value: workflows
-                            .reduce((acc, curr) => acc + (curr.executions || 0), 1248)
+                            .reduce((acc, curr) => acc + (curr.executions || 0), 0)
                             .toLocaleString(),
                         icon: Zap,
                     },
                     {
                         label: 'Time Saved',
-                        value: `${((workflows.length * 12) + 42).toFixed(1)} hrs`,
+                        value: '—',
                         icon: Clock,
                     },
                 ].map((stat) => (
@@ -225,6 +239,15 @@ export default function AutomationPage() {
                         </Card>
                     </motion.div>
                 ))}
+                {filteredWorkflows.length === 0 && (
+                    <Card className="lg:col-span-2">
+                        <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                            {searchQuery.trim()
+                                ? 'No workflows match your search.'
+                                : 'No workflows have been created for this workspace yet.'}
+                        </CardContent>
+                    </Card>
+                )}
             </div>
 
             <Card>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getApiBaseUrl } from '@/lib/api-base';
+import { apiFetch, getErrorMessage } from '@/lib/api-client';
 
 export type WorkflowStatus = 'active' | 'paused' | 'draft';
 
@@ -26,6 +26,7 @@ interface WorkflowApiItem {
 export function useWorkflows() {
     const [workflows, setWorkflows] = useState<Workflow[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const normalize = (w: WorkflowApiItem): Workflow => {
         const raw = String(w?.status ?? 'draft').toLowerCase();
@@ -44,57 +45,16 @@ export function useWorkflows() {
 
     const fetchWorkflows = async () => {
         setIsLoading(true);
+        setError(null);
         try {
-            const res = await fetch(`${getApiBaseUrl()}/automations/workflows`, {
-                cache: 'no-store',
-            });
-
-            if (!res.ok) throw new Error(`Failed to fetch workflows (${res.status})`);
-
+            const res = await apiFetch('/automations/workflows');
             const data: WorkflowApiItem[] = await res.json();
             const list = Array.isArray(data) ? data.map(normalize) : [];
-
-            if (list.length > 0) {
-                setWorkflows(list);
-            } else {
-                setWorkflows([
-                    {
-                        id: '1',
-                        name: 'Auto-reply to New Leads',
-                        description: 'Send a personalized email when a new contact is added',
-                        status: 'active',
-                        lastRun: '2 hours ago',
-                        executions: 42,
-                    },
-                    {
-                        id: '2',
-                        name: 'Slack Notify: Big Deal',
-                        description: 'Post to #sales when a deal over $50k is created',
-                        status: 'active',
-                        lastRun: '1 day ago',
-                        executions: 7,
-                    },
-                    {
-                        id: '3',
-                        name: 'Monthly Report Sync',
-                        description: 'Export monthly performance to Google Sheets',
-                        status: 'paused',
-                        executions: 3,
-                    },
-                ]);
-            }
+            setWorkflows(list);
         } catch (err) {
             console.error('Fetch workflows failed:', err);
-            setWorkflows([
-                {
-                    id: '1',
-                    name: 'Auto-reply to New Leads',
-                    description: 'Send a personalized email when a new contact is added',
-                    status: 'active',
-                    lastRun: '2 hours ago',
-                    executions: 42,
-                },
-            ]);
+            setWorkflows([]);
+            setError(getErrorMessage(err, 'Failed to load workflows.'));
         } finally {
             setIsLoading(false);
         }
@@ -105,5 +65,5 @@ export function useWorkflows() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    return { workflows, isLoading, refresh: fetchWorkflows };
+    return { workflows, isLoading, error, refresh: fetchWorkflows };
 }
