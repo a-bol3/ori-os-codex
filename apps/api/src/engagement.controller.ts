@@ -12,6 +12,8 @@ import {
 import { EngagementService } from './engagement.service';
 import { CampaignLaunchService } from './engagement/campaign-launch.service';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { Roles } from './auth/roles.decorator';
+import { RolesGuard } from './auth/roles.guard';
 import { CreateCampaignDto, UpdateCampaignDto } from './dto/campaign.dto';
 import {
   AuthenticatedRequest,
@@ -38,6 +40,8 @@ export class CampaignsController {
   }
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER', 'OPERATOR')
   async create(@Request() req: AuthenticatedRequest, @Body() dto: CreateCampaignDto) {
     const orgId = requireOrganizationId(req);
     const userId = requireUserId(req);
@@ -45,6 +49,8 @@ export class CampaignsController {
   }
 
   @Put(':id')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER', 'OPERATOR')
   async update(
     @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
@@ -54,11 +60,15 @@ export class CampaignsController {
   }
 
   @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER')
   async delete(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.service.deleteCampaign(requireOrganizationId(req), id);
   }
 
   @Post(':id/recipients')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER', 'OPERATOR')
   async addRecipients(
     @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
@@ -72,6 +82,8 @@ export class CampaignsController {
   }
 
   @Delete(':id/recipients/:contactId')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER')
   async removeRecipient(
     @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
@@ -85,11 +97,15 @@ export class CampaignsController {
   }
 
   @Post('process')
-  async processCampaigns() {
-    await this.service.processRunningCampaigns();
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER', 'OPERATOR')
+  async processCampaigns(@Request() req: AuthenticatedRequest) {
+    await this.service.processRunningCampaigns(requireOrganizationId(req));
     return { status: 'success', message: 'Campaign processing triggered' };
   }
   @Post(':id/launch')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER')
   async launch(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.launchService.launch(requireOrganizationId(req), id);
   }
@@ -140,6 +156,8 @@ export class InboxController {
   }
 
   @Post(':id/reply')
+  @UseGuards(RolesGuard)
+  @Roles('OWNER', 'ADMIN', 'MANAGER', 'OPERATOR')
   async reply(
     @Request() req: AuthenticatedRequest,
     @Param('id') id: string,

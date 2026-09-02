@@ -34,6 +34,12 @@ describe('CampaignsController', () => {
 
     expect(launchService.launch).toHaveBeenCalledWith('org-1', 'campaign-1');
   });
+
+  it('passes tenant context into manual campaign processing', async () => {
+    await controller.processCampaigns({ user: { organizationId: 'org-1' } });
+
+    expect(service.processRunningCampaigns).toHaveBeenCalledWith('org-1');
+  });
 });
 
 describe('InboxController', () => {
