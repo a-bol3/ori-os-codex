@@ -10,6 +10,9 @@ describe('UnsubscribeController', () => {
       findFirst: jest.fn(),
       update: jest.fn(),
     },
+    emailEvent: {
+      create: jest.fn(),
+    },
     campaignRecipient: {
       updateMany: jest.fn(),
     },
@@ -44,8 +47,10 @@ describe('UnsubscribeController', () => {
       organizationId: 'org-1',
       email: 'person@example.com',
       optOut: false,
+      optOutTimestamp: null,
     });
     prisma.contact.update.mockResolvedValue({});
+    prisma.emailEvent.create.mockResolvedValue({ id: 'event-1' });
     prisma.campaignRecipient.updateMany.mockResolvedValue({ count: 1 });
 
     const token = createToken({
@@ -75,6 +80,38 @@ describe('UnsubscribeController', () => {
         status: 'OPTED_OUT',
       },
     });
+    expect(prisma.emailEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        campaignId: 'campaign-1',
+        contactId: 'contact-1',
+        dedupeKey: 'unsubscribe:org-1:contact-1',
+        eventType: 'UNSUBSCRIBED',
+      }),
+    });
+  });
+
+  it('accepts an unsubscribe replay when the event already exists', async () => {
+    prisma.contact.findFirst.mockResolvedValue({
+      id: 'contact-1',
+      organizationId: 'org-1',
+      email: 'person@example.com',
+      optOut: true,
+      optOutTimestamp: new Date('2026-09-02T09:00:00.000Z'),
+    });
+    prisma.contact.update.mockResolvedValue({});
+    prisma.emailEvent.create.mockRejectedValue({ code: 'P2002' });
+    prisma.campaignRecipient.updateMany.mockResolvedValue({ count: 1 });
+
+    const token = createToken({
+      contactId: 'contact-1',
+      organizationId: 'org-1',
+      campaignId: 'campaign-1',
+    });
+
+    await expect(controller.unsubscribe(token)).resolves.toMatchObject({
+      success: true,
+    });
+    expect(prisma.emailEvent.create).toHaveBeenCalledTimes(1);
   });
 
   it('allows idempotent resubscribe through the signed token', async () => {
@@ -83,6 +120,7 @@ describe('UnsubscribeController', () => {
       organizationId: 'org-1',
       email: 'person@example.com',
       optOut: true,
+      optOutTimestamp: new Date('2026-09-02T09:00:00.000Z'),
     });
     prisma.contact.update.mockResolvedValue({});
 

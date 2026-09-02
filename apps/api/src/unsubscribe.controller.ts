@@ -16,6 +16,7 @@ type UnsubscribePreview = {
   organizationId: string;
   email: string;
   optOut: boolean;
+  optOutTimestamp: Date | null;
 };
 
 @Controller('unsubscribe')
@@ -44,9 +45,29 @@ export class UnsubscribeController {
       where: { id: contact.id },
       data: {
         optOut: true,
-        optOutTimestamp: new Date(),
+        optOutTimestamp: contact.optOutTimestamp ?? new Date(),
       },
     });
+
+    try {
+      await this.prisma.emailEvent.create({
+        data: {
+          campaignId: payload.campaignId ?? null,
+          contactId: contact.id,
+          dedupeKey: this.buildUnsubscribeDedupeKey(payload),
+          eventType: 'UNSUBSCRIBED',
+          rawPayloadJson: {
+            source: 'signed-unsubscribe',
+            organizationId: payload.organizationId,
+          },
+        },
+      });
+    } catch (error) {
+      // Replayed links and concurrent clicks are harmless after the first event.
+      if (!this.isUniqueConstraintError(error)) {
+        throw error;
+      }
+    }
 
     if (payload.campaignId) {
       await this.prisma.campaignRecipient.updateMany({
@@ -97,6 +118,7 @@ export class UnsubscribeController {
         organizationId: true,
         email: true,
         optOut: true,
+        optOutTimestamp: true,
       },
     });
 
@@ -136,5 +158,18 @@ export class UnsubscribeController {
     }
 
     return `${localPart.slice(0, 2)}***@${domain}`;
+  }
+
+  private buildUnsubscribeDedupeKey(payload: UnsubscribeTokenPayload) {
+    return `unsubscribe:${payload.organizationId}:${payload.contactId}`;
+  }
+
+  private isUniqueConstraintError(error: unknown) {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: unknown }).code === 'P2002'
+    );
   }
 }
