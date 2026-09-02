@@ -8,10 +8,10 @@
 - Local repository: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0`
 - Canonical remote: `https://github.com/a-bol3/ori-os-codex.git`
 - Canonical production line: `main` at the merged private-beta release line
-- Latest release line: `main` at commit `88b6910c5d72a46386a25fba2f5c3bdbd15a61c6`
-- Latest CI: `33599534591` passed
-- Latest image publication: `33599809388` passed
-- Latest production deploy: `33600262585` passed
+- Latest release line: `main` at commit `2cc6f5facee7fc83dcbcea6f14a7904e048154fa`
+- Latest CI: `33602446667` passed
+- Latest image publication: `33602731772` passed
+- Latest production deploy: `33603411924` passed
 - Public web: `https://orios.ori-craftlabs.com`
 - Public API: `https://api.orios.ori-craftlabs.com`
 
@@ -23,8 +23,8 @@
 | Web availability         | Passing                          | Login, dashboard, logout-to-marketing, and private-beta messaging verified in browser                  |
 | API health               | Passing                          | `/health` returned HTTP 200                                                                            |
 | API readiness            | Passing                          | `/ready` returned DB and Redis `ok`                                                                    |
-| GitHub Actions           | Green baseline                   | Main CI run `33599534591` passed on commit `88b6910`; image publication and production deploy also passed |
-| Release images           | Published and promoted           | Run `33599809388` published API, Worker, and Web images at immutable digests recorded below           |
+| GitHub Actions           | Green baseline                   | Main CI run `33602446667` passed on commit `2cc6f5f`; image publication and production deploy also passed |
+| Release images           | Published and promoted           | Run `33602731772` published API, Worker, and Web images at immutable digests recorded below           |
 | VPS identity             | Confirmed operational            | `/opt/orios-codex`; release Compose overlay active; API, Worker, Web, PostgreSQL, and Redis running    |
 | Backups                  | Verified                         | PostgreSQL dump and Hostinger snapshot exist; isolated restore drill passed                           |
 | Production certification | Private beta operational         | Production smoke passed; public distribution remains gated by `docs/PRODUCTION_READINESS_CHECKLIST.md` |
@@ -33,10 +33,22 @@
 
 1. Activate an actually isolated staging host, DNS/routing, secrets, and the GitHub `staging` environment.
 2. Complete live Engagement progression, wait-step, and event-idempotency proof; launch preflight validation is now enforced.
-3. Complete remaining RBAC, tenant-isolation, GDPR, dependency, and credential-rotation acceptance evidence; GDPR compliance endpoints now require OWNER/ADMIN roles, and the web production-secret fail-closed check is closed.
+3. Complete remaining RBAC, tenant-isolation, GDPR, dependency, and credential-rotation acceptance evidence; GDPR endpoints and Engagement mutations now have explicit authorization, and the web production-secret fail-closed check is closed.
 4. Expand Engagement progression, event idempotency, and metric-contract tests before inviting additional beta organizations.
 5. Complete monitoring/alerting, firewall/SSH review, and full-stack rollback timing evidence.
 6. Keep production on immutable release digests; no `latest` or VPS-side builds.
+
+## Recovery update — 2026-09-02 Engagement tenant-scope correction and production promotion
+
+- PR #48 scoped manual running-campaign processing to the authenticated organization and added explicit roles to Engagement mutations, launch, and Inbox reply. It merged into `main` at commit `2cc6f5facee7fc83dcbcea6f14a7904e048154fa`.
+- PR CI `33602123466` and post-merge main CI `33602446667` passed.
+- Image publication run `33602731772` passed for `main@2cc6f5f`. Immutable image digests:
+  - API `sha256:b85dbbcba26d96052a4616eb08dcc60d3fb0434b3c60683244db8af63dfcbd4e`
+  - Worker `sha256:d4ded97662a7651a0d5c59c7173e8b4032b51a86068e8a405538143cc1653626`
+  - Web `sha256:462f9417c7701806f58723362ce2561680ee11273f473018f9178a32c8e78310`
+- Production deploy `33603411924` passed after environment approval using the exact source SHA and immutable digests above.
+- External smoke passed: Web `/` HTTP 200; API `/health` and `/ready` HTTP 200 with database and Redis `ok`; unauthenticated `/dashboard/operations` returned HTTP 307 to `/login`; API request ID `scope-2cc6f5f-smoke` was preserved.
+- Engagement tenant-scope processing and explicit mutation RBAC are deployed. Live wait-step progression, event idempotency, broader active-membership/session proof, staging activation, observability, rollback timing, and public distribution gates remain open.
 
 ## Recovery update — 2026-09-02 GDPR RBAC hardening and deploy storage correction
 

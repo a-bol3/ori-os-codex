@@ -82,7 +82,7 @@ Acceptance:
 - Sensitive routes reject unauthorized members.
 - Development bypass cannot be activated in production.
 
-Progress: PR #45 added `JwtAuthGuard` plus `RolesGuard` with `OWNER`/`ADMIN` authorization to the organization-scoped GDPR list/export/delete endpoints and added regression coverage. Broader sensitive-action RBAC, active membership checks on every protected operation, session invalidation, and end-to-end tenant isolation remain open.
+Progress: PR #45 added `JwtAuthGuard` plus `RolesGuard` with `OWNER`/`ADMIN` authorization to the organization-scoped GDPR list/export/delete endpoints. PR #48 scoped manual running-campaign processing to the authenticated organization and added explicit roles to reviewed Engagement mutations, launch, and Inbox reply routes. Broader sensitive-action RBAC, active membership checks on every protected operation, session invalidation, and end-to-end tenant isolation remain open.
 
 ### P0.3 Deliverability and engagement correctness
 
@@ -105,7 +105,7 @@ Acceptance:
 - A reply and an open update metrics consistently.
 - Recipient-level progression is visible in the campaign UI.
 
-Progress recorded in PR #41 and production deploy `33596373756`: launch preflight now enforces pending audience, active organization-owned mailbox, sender, first sequence step, and complete email content; campaign list responses now include `opened`. Remaining acceptance requires live wait-step progression, recipient-state proof, event-idempotent delivery/open/reply/bounce ingestion, and cross-surface metric parity.
+Progress recorded in PR #41 and production deploy `33596373756`: launch preflight now enforces pending audience, active organization-owned mailbox, sender, first sequence step, and complete email content; campaign list responses now include `opened`. PR #48 additionally prevents manual processing from crossing organization boundaries. Remaining acceptance requires live wait-step progression, recipient-state proof, event-idempotent delivery/open/reply/bounce ingestion, and cross-surface metric parity.
 
 ### P0.4 Release pipeline and production safety
 

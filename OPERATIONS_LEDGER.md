@@ -2,6 +2,21 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-09-02 — PR #48 Engagement tenant-scope/RBAC correction, production promotion and smoke verification
+
+- Operator: Codex with project owner
+- Scope: Scope Engagement campaign processing to the authenticated organization and add explicit role authorization to Engagement mutations; no data migration or destructive volume operation.
+- Source: PR #48 merged into `main` at `2cc6f5facee7fc83dcbcea6f14a7904e048154fa`.
+- Change: Manual running-campaign processing now receives the authenticated `organizationId`; campaign execution, recipient queries, and campaign lookup are organization-scoped. Engagement create/update/delete, recipient management, launch, and Inbox reply routes now declare explicit roles.
+- Verification: PR CI `33602123466` and post-merge main CI `33602446667` passed. Targeted controller regression passed 5/5; API build and lint passed with 0 errors.
+- Image publication: run `33602731772` passed for API, Worker, and Web. Promoted digests:
+  - API: `ghcr.io/a-bol3/ori-os-api@sha256:b85dbbcba26d96052a4616eb08dcc60d3fb0434b3c60683244db8af63dfcbd4e`
+  - Worker: `ghcr.io/a-bol3/ori-os-worker@sha256:d4ded97662a7651a0d5c59c7173e8b4032b51a86068e8a405538143cc1653626`
+  - Web: `ghcr.io/a-bol3/ori-os-web@sha256:462f9417c7701806f58723362ce2561680ee11273f473018f9178a32c8e78310`
+- Deployment: run `33603411924` passed after production environment approval using source `2cc6f5facee7fc83dcbcea6f14a7904e048154fa` and the pinned digests above.
+- External smoke: Web HTTP 200; `/health` and `/ready` HTTP 200 with database and Redis healthy; unauthenticated `/dashboard/operations` HTTP 307 to `/login`; request ID `scope-2cc6f5f-smoke` preserved by API health/readiness.
+- Result: Engagement manual processing is tenant-scoped and its reviewed mutation routes have explicit RBAC. Live progression, event idempotency, broader tenancy/session acceptance, staging, observability, rollback timing, and public distribution remain open.
+
 ## 2026-09-02 — PR #45 GDPR RBAC hardening, PR #46 Docker storage correction, production promotion and smoke verification
 
 - Operator: Codex with project owner
