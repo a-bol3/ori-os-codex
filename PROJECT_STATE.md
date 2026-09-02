@@ -33,7 +33,7 @@
 
 1. Activate an actually isolated staging host, DNS/routing, secrets, and the GitHub `staging` environment.
 2. Complete live Engagement progression, wait-step, and event-idempotency proof; launch preflight validation is now enforced.
-3. Complete authentication, RBAC, tenant-isolation, GDPR, dependency, and credential-rotation acceptance evidence.
+3. Complete RBAC, tenant-isolation, GDPR, dependency, and credential-rotation acceptance evidence; the web production-secret fail-closed check is closed.
 4. Expand Engagement progression, event idempotency, and metric-contract tests before inviting additional beta organizations.
 5. Complete monitoring/alerting, firewall/SSH review, and full-stack rollback timing evidence.
 6. Keep production on immutable release digests; no `latest` or VPS-side builds.
@@ -50,6 +50,13 @@
 - Production deploy run `33596373756` passed after environment approval. The deploy used the exact `main@9765997` source and immutable digests; the pre-deploy Docker cleanup reclaimed stale storage and the VPS did not build images.
 - External smoke evidence passed at `https://orios.ori-craftlabs.com`: Web HTTP 200; `/api/health` HTTP 200 with database and Redis `ok`; `/api/ready` HTTP 200 with database and Redis `ok`; unauthenticated `/dashboard/operations` returned HTTP 307 to `/login`; API request ID `ori-os-engagement-9765997-smoke` was preserved.
 - Engagement launch guard and aggregate `opened` metric correction are deployed. Release state remains `PRIVATE_BETA_OPERATIONAL`; live wait-step progression, open/reply/bounce idempotency, staging activation, security/RBAC/GDPR acceptance, observability, and rollback timing remain open.
+
+## Recovery update — 2026-09-02 authentication secret audit
+
+- Audited `apps/web/src/auth.ts`, `apps/web/Dockerfile`, the production Compose environment, and the release workflow.
+- Confirmed the only fallback (`ci-build-only-secret`) is build-only for development/test/CI paths. The runtime image sets `NODE_ENV=production` and requires a real `AUTH_SECRET` or `NEXTAUTH_SECRET`; missing configuration throws instead of starting with a default secret.
+- Production smoke after the current release passed: Web HTTP 200, API health/readiness HTTP 200, and protected Operations HTTP 307 to `/login`.
+- The checklist item “Web auth secret fails closed in production” is now closed. Remaining authentication work is active organization membership, RBAC, session invalidation, and end-to-end tenant isolation.
 
 ## Recovery update — 2026-09-02 SEO/Settings production line
 
