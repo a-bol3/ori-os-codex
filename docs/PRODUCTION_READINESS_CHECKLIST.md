@@ -36,7 +36,7 @@ An item is only closed when all five conditions are true:
     - SEO crawl listing, crawl details, issue loading, and crawl start
     - SEO keyword/ranking/backlink pages
     - Settings integrations: Gmail is real; other providers are explicit `Soon`/unavailable
-    - Evidence: PR #37 and PR #39; latest main CI `33591373235`, image publication `33591620754`, production deploy `33592108484`
+    - Evidence: PR #37, PR #39, and PR #48; latest main CI `33602446667`, image publication `33602731772`, production deploy `33603411924`
   - Still to verify/fix:
     - live Engagement progression and event edge flows
     - any optimistic success toasts without persistence
@@ -82,10 +82,12 @@ An item is only closed when all five conditions are true:
 
 - `[-]` Sensitive actions fully protected by RBAC
   - GDPR list/export/delete endpoints now require `OWNER` or `ADMIN` via `JwtAuthGuard` and `RolesGuard`
-  - Evidence: PR #45, CI `33598057887`, main CI `33598267883`, production deploy `33600262585`
+  - Engagement campaign mutations, launch, manual processing, and Inbox reply now declare explicit roles
+  - Evidence: PR #45, PR #48, main CI `33602446667`, image publication `33602731772`, production deploy `33603411924`
   - Broader sensitive-action coverage and end-to-end tenant-isolation proof remain open
 
 - `[ ]` Multi-tenant write safety verified end-to-end
+  - Partial evidence: PR #48 scopes manual running-campaign processing and reviewed Engagement writes to the authenticated organization; full cross-module and two-organization acceptance remains open
 
 ### 0.3 Release and deploy safety
 
