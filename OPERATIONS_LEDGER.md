@@ -2,6 +2,21 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-09-02 — PR #56/#57 unsubscribe idempotency, deploy-script refresh, image publication, production deploy and smoke verification
+
+- Operator: Codex with project owner
+- Scope: Deploy idempotent signed unsubscribe ingestion and refresh the VPS deploy helper so the synchronized release script is installed before execution. No destructive volume operation.
+- Source: PR #56 merged at `e3fd8055f2a5cb31c47d0dc0f8c7ad9122234e35`; PR #57 merged at `9bb83f8e7ad2e7ae1e3ce35b686a0e064277e412`.
+- Change: Signed unsubscribe requests record one `UNSUBSCRIBED` event per organization/contact and absorb duplicate requests. The deploy workflow now installs `/opt/orios-codex/scripts/orios-deploy-release.sh` from the synchronized checkout into the active helper path before deployment.
+- Verification: PR #56 CI `33615176601`, main CI `33615538962`, PR #57 CI `33617406209`, and post-merge main CI `33617760335` passed. The unsubscribe tests passed 4/4.
+- Image publication: run `33618076871` passed. Promoted digests:
+  - API: `ghcr.io/a-bol3/ori-os-api@sha256:d4739c9085a248b4bd070f055f8dbf26d83f8daf53d4e6e9686ea8f22807cd93`
+  - Worker: `ghcr.io/a-bol3/ori-os-worker@sha256:46991d9be4d24cfc948f2186b22c04e866e0122916c67f521d03203a9aed54d5`
+  - Web: `ghcr.io/a-bol3/ori-os-web@sha256:82bc3062d2fe8c892a2e92000878edde158abfe4b967fb660c6f378ee66cb28a`
+- Deployment: run `33618720025` passed after production environment approval using source `main@9bb83f8` and the immutable digests above. The prior attempt for `e3fd805` reached the VPS but failed because the installed helper performed an unauthenticated redundant Git fetch; no running release replacement occurred. The corrected release then synchronized and deployed successfully.
+- External smoke: Web HTTP 200; API `/health` and `/ready` HTTP 200 with database and Redis healthy; unauthenticated `/dashboard/operations` HTTP 307 to `/login`; request ID `scope-9bb83f8-smoke` preserved by API health.
+- Result: Unsubscribe idempotency and the deploy-helper correction are live. Provider secret/registration, live callback/replay evidence, suppression policy, scheduler progression, metric parity, staging activation, observability, rollback timing, and public distribution gates remain open.
+
 ## 2026-09-02 — PR #54 Resend delivery/bounce webhook, image publication, production deploy and smoke verification
 
 - Operator: Codex with project owner

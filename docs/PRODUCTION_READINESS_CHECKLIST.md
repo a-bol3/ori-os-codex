@@ -36,7 +36,7 @@ An item is only closed when all five conditions are true:
     - SEO crawl listing, crawl details, issue loading, and crawl start
     - SEO keyword/ranking/backlink pages
     - Settings integrations: Gmail is real; other providers are explicit `Soon`/unavailable
-    - Evidence: PR #37, PR #39, PR #48, PR #50, and PR #52; latest main CI `33609062113`, image publication `33609469179`, production deploy `33610095143`
+    - Evidence: PR #37, PR #39, PR #48, PR #50, PR #52, PR #54, PR #56, and PR #57; latest main CI `33617760335`, image publication `33618076871`, production deploy `33618720025`
   - Still to verify/fix:
     - live Engagement progression and event edge flows
     - any optimistic success toasts without persistence
@@ -264,15 +264,15 @@ An item is only closed when all five conditions are true:
 - `[ ]` SMTP/auth configuration fully hardened and documented
 - `[x]` Resend webhook endpoint verifies the raw Svix-signed body and handles `email.delivered`/`email.bounced` idempotently in code
 - `[ ]` Configure `RESEND_WEBHOOK_SECRET` in the production runtime and register `https://api.orios.ori-craftlabs.com/webhooks/resend` in Resend
-  - Code deployed in production at `main@db1261d`; CI `33612509086`, image publication `33612873504`, deploy `33613469160`
+  - Code deployed in production at `main@9bb83f8`; CI `33617760335`, image publication `33618076871`, deploy `33618720025`
   - Runtime activation remains open because no `RESEND_WEBHOOK_SECRET` is currently visible in the repository secret inventory
 - `[ ]` Prove live Resend delivery/bounce callbacks, replay behavior, and provider failure visibility in production
 - `[-]` Event ingestion idempotent for:
   - `open` tracking-pixel replays are race-safe through unique `EmailEvent.dedupeKey`
   - IMAP `reply` replays are race-safe through canonical provider-message dedupe keys
   - delivery/bounce are now idempotent in the deployed provider webhook path, but live callback evidence remains open
-  - unsubscribe remains open
-  - Evidence for the partial closure: PR #50, PR #52, and PR #54; current main CI `33612509086`, image publication `33612873504`, production deploy `33613469160`
+  - signed unsubscribe replays are now idempotent through `unsubscribe:{organizationId}:{contactId}`; live suppression-policy acceptance remains open
+  - Evidence for the partial closure: PR #50, PR #52, PR #54, PR #56, and PR #57; current main CI `33617760335`, image publication `33618076871`, production deploy `33618720025`
 - `[ ]` Provider health and failure visibility exposed in UI/ops
 
 ---
@@ -285,6 +285,7 @@ An item is only closed when all five conditions are true:
 - `[ ]` DSAR delete/anonymization flow complete
 - `[ ]` Retention rules implemented
 - `[ ]` Suppression/unsubscribe rules completed
+  - Signed unsubscribe event ingestion is implemented, tested 4/4, and deployed; the end-to-end suppression behavior and live acceptance test remain open
 - `[ ]` Privacy/legal docs aligned with actual implementation
 
 ---
@@ -334,8 +335,8 @@ Public rollout is only allowed when all these are closed:
 
 ## Immediate next focus
 
-1. Finish live Engagement recipient progression and scheduled-step truth
-2. Complete idempotent delivery/reply/bounce ingestion, retain the deployed open dedupe, and prove metric parity
-3. Complete RBAC, tenant-isolation, and GDPR acceptance evidence
-4. Re-run CRM + Dashboard regression after Engagement fixes
-5. Prove deploy/rollback/restore path
+1. Configure the Resend production secret and webhook registration, then capture one delivered callback, one bounced callback, and replay evidence
+2. Finish live Engagement recipient progression and scheduled-step truth, including restart/redeploy safety
+3. Prove suppression/unsubscribe behavior and cross-surface metric parity
+4. Complete RBAC, tenant-isolation, GDPR, staging, monitoring, and rollback acceptance evidence
+5. Re-run CRM + Dashboard regression and then evaluate the private-beta/public-distribution gates
