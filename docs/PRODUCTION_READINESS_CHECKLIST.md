@@ -1,6 +1,6 @@
 # ORI-OS Production Readiness Checklist
 
-Last updated: 2026-08-06
+Last updated: 2026-09-02
 Status legend:
 
 - `[x]` Closed and validated
@@ -31,9 +31,12 @@ An item is only closed when all five conditions are true:
     - web build passed
 
 - `[ ]` Silent production success states removed across all critical modules
+  - Closed in the current production release for the reviewed paths:
+    - Content template load/create/update/delete
+    - SEO crawl listing, crawl details, issue loading, and crawl start
+    - Evidence: PR #37, main CI `33588696872`, production deploy `33589139919`
   - Still to verify/fix:
-    - SEO pages
-    - Content templates
+    - SEO keyword/ranking/backlink pages
     - Settings integrations
     - remaining engagement edge flows
     - any optimistic success toasts without persistence
@@ -93,10 +96,8 @@ An item is only closed when all five conditions are true:
 
 - `[-]` CI deterministic and aligned, but not globally proven end-to-end yet
   - Remaining proof required:
-    - full build under production-like conditions
-    - deploy rehearsal
     - rollback rehearsal
-    - restore rehearsal
+    - staging restore rehearsal
 
 - `[ ]` Backup and restore procedure proven
 
