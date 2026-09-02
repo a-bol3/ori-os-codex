@@ -36,7 +36,7 @@ An item is only closed when all five conditions are true:
     - SEO crawl listing, crawl details, issue loading, and crawl start
     - SEO keyword/ranking/backlink pages
     - Settings integrations: Gmail is real; other providers are explicit `Soon`/unavailable
-    - Evidence: PR #37, PR #39, PR #48, and PR #50; latest main CI `33605474694`, image publication `33605778213`, production deploy `33606380185`
+    - Evidence: PR #37, PR #39, PR #48, PR #50, and PR #52; latest main CI `33609062113`, image publication `33609469179`, production deploy `33610095143`
   - Still to verify/fix:
     - live Engagement progression and event edge flows
     - any optimistic success toasts without persistence
@@ -264,11 +264,11 @@ An item is only closed when all five conditions are true:
 - `[ ]` SMTP/auth configuration fully hardened and documented
 - `[-]` Event ingestion idempotent for:
   - `open` tracking-pixel replays are race-safe through unique `EmailEvent.dedupeKey`
+  - IMAP `reply` replays are race-safe through canonical provider-message dedupe keys
   - delivery remains open
-  - reply remains open
   - bounce remains open
   - unsubscribe remains open
-  - Evidence for the partial closure: PR #50, main CI `33605474694`, image publication `33605778213`, production deploy `33606380185`
+  - Evidence for the partial closure: PR #50 and PR #52; main CI `33609062113`, image publication `33609469179`, production deploy `33610095143`
 - `[ ]` Provider health and failure visibility exposed in UI/ops
 
 ---

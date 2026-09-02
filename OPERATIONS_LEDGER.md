@@ -2,6 +2,21 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-09-02 — PR #52 IMAP reply idempotency, image publication, production deploy and smoke verification
+
+- Operator: Codex with project owner
+- Scope: Make inferred tracking opens and IMAP reply ingestion idempotent under replay/concurrency; deploy the merged `main` release. No destructive volume operation.
+- Source: PR #52 merged into `main` at `95b1c49b803fce7e162665ceb2fcb91a0bad370d`.
+- Change: IMAP replies use `imap-reply:{providerMessageId}`; inferred opens use the canonical tracking dedupe key. Existing/replayed replies repair recipient state without duplicate events, and `replyCount` increments only for a newly created reply.
+- Verification: PR CI `33608734116` and post-merge main CI `33609062113` passed. Targeted dedupe tests passed 3/3; web build passed with a temporary validation-only `AUTH_SECRET` shell variable.
+- Image publication: run `33609469179` passed for API, Worker, and Web. Promoted digests:
+  - API: `ghcr.io/a-bol3/ori-os-api@sha256:8b00adba59ab8d6078fee21a34f67ec24ab3711ff66079e8899351df38b85fcc`
+  - Worker: `ghcr.io/a-bol3/ori-os-worker@sha256:27f3d09943fca66f6573397265a1280ebec7f22d0d94f89ef45a22e5152c19ab`
+  - Web: `ghcr.io/a-bol3/ori-os-web@sha256:bdf48b8093221e7582755c96b4ed88ffef3b685edfdd87f785a18b7a5e079d86`
+- Deployment: run `33610095143` passed after production environment approval using the exact source SHA and immutable digests above.
+- External smoke: Web HTTP 200; API `/health` and `/ready` HTTP 200 with database and Redis healthy; unauthenticated `/dashboard/operations` HTTP 307 to `/login`; request ID `scope-95b1c49-smoke` preserved by API health.
+- Result: IMAP reply replays are deduplicated in production. Provider delivery/bounce/unsubscribe idempotency, live wait-step progression, full metric parity, and public distribution gates remain open.
+
 ## 2026-09-02 — PR #50 Engagement OPENED idempotency, image publication, production deploy and smoke verification
 
 - Operator: Codex with project owner

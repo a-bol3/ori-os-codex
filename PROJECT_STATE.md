@@ -8,10 +8,10 @@
 - Local repository: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0`
 - Canonical remote: `https://github.com/a-bol3/ori-os-codex.git`
 - Canonical production line: `main` at the merged private-beta release line
-- Latest release line: `main` at commit `943b453243900804442b3788e2fa9b97c3c3585e`
-- Latest CI: `33605474694` passed
-- Latest image publication: `33605778213` passed
-- Latest production deploy: `33606380185` passed
+- Latest release line: `main` at commit `95b1c49b803fce7e162665ceb2fcb91a0bad370d`
+- Latest CI: `33609062113` passed
+- Latest image publication: `33609469179` passed
+- Latest production deploy: `33610095143` passed
 - Public web: `https://orios.ori-craftlabs.com`
 - Public API: `https://api.orios.ori-craftlabs.com`
 
@@ -23,8 +23,8 @@
 | Web availability         | Passing                          | Login, dashboard, logout-to-marketing, and private-beta messaging verified in browser                  |
 | API health               | Passing                          | `/health` returned HTTP 200                                                                            |
 | API readiness            | Passing                          | `/ready` returned DB and Redis `ok`                                                                    |
-| GitHub Actions           | Green baseline                   | Main CI run `33605474694` passed on commit `943b453`; image publication and production deploy also passed |
-| Release images           | Published and promoted           | Run `33605778213` published API, Worker, and Web images at immutable digests recorded below           |
+| GitHub Actions           | Green baseline                   | Main CI run `33609062113` passed on commit `95b1c49`; image publication and production deploy also passed |
+| Release images           | Published and promoted           | Run `33609469179` published API, Worker, and Web images at immutable digests recorded below           |
 | VPS identity             | Confirmed operational            | `/opt/orios-codex`; release Compose overlay active; API, Worker, Web, PostgreSQL, and Redis running    |
 | Backups                  | Verified                         | PostgreSQL dump and Hostinger snapshot exist; isolated restore drill passed                           |
 | Production certification | Private beta operational         | Production smoke passed; public distribution remains gated by `docs/PRODUCTION_READINESS_CHECKLIST.md` |
@@ -32,11 +32,23 @@
 ## Active blockers
 
 1. Activate an actually isolated staging host, DNS/routing, secrets, and the GitHub `staging` environment.
-2. Complete live Engagement progression, wait-step, and remaining event-idempotency proof; launch preflight validation is now enforced and tracking-pixel OPENED replays are deduplicated.
+2. Complete live Engagement progression, wait-step, and remaining event-idempotency proof; launch preflight validation is enforced, tracking-pixel OPENED replays are deduplicated, and IMAP reply replays are now deduplicated.
 3. Complete remaining RBAC, tenant-isolation, GDPR, dependency, and credential-rotation acceptance evidence; GDPR endpoints and Engagement mutations now have explicit authorization, and the web production-secret fail-closed check is closed.
-4. Expand Engagement progression, delivery/reply/bounce idempotency, and metric-contract tests before inviting additional beta organizations.
+4. Expand Engagement progression, provider delivery/bounce/unsubscribe idempotency, and metric-contract tests before inviting additional beta organizations; IMAP reply idempotency is now implemented.
 5. Complete monitoring/alerting, firewall/SSH review, and full-stack rollback timing evidence.
 6. Keep production on immutable release digests; no `latest` or VPS-side builds.
+
+## Recovery update — 2026-09-02 IMAP reply idempotency and production promotion
+
+- PR #52 added canonical dedupe keys for inferred tracking opens and IMAP replies. Existing reply replays now repair recipient state without creating a second event; concurrent/replayed inserts are absorbed through the unique `EmailEvent.dedupeKey` constraint, and reply metrics increment only for a newly accepted reply.
+- PR #52 merged into `main` at commit `95b1c49b803fce7e162665ceb2fcb91a0bad370d`. PR CI `33608734116` and post-merge main CI `33609062113` passed.
+- Image publication run `33609469179` passed for all three images. Immutable image digests:
+  - API `sha256:8b00adba59ab8d6078fee21a34f67ec24ab3711ff66079e8899351df38b85fcc`
+  - Worker `sha256:27f3d09943fca66f6573397265a1280ebec7f22d0d94f89ef45a22e5152c19ab`
+  - Web `sha256:bdf48b8093221e7582755c96b4ed88ffef3b685edfdd87f785a18b7a5e079d86`
+- Production deploy `33610095143` passed after approval of the `production` environment, using source `95b1c49b803fce7e162665ceb2fcb91a0bad370d` and the pinned digests above.
+- External smoke passed: Web HTTP 200; API `/health` and `/ready` HTTP 200 with database and Redis `ok`; unauthenticated `/dashboard/operations` returned HTTP 307 to `/login`; API request ID `scope-95b1c49-smoke` was preserved.
+- IMAP reply idempotency is deployed. Provider delivery/bounce/unsubscribe ingestion, live wait-step progression, cross-surface metric parity, broader security acceptance, staging activation, observability, rollback timing, and public distribution gates remain open.
 
 ## Recovery update — 2026-09-02 Engagement OPENED idempotency and production promotion
 
