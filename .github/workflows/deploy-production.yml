@@ -95,6 +95,17 @@ jobs:
         run: |
           set -euo pipefail
           port="${VPS_PORT:-22}"
+          echo "Installing the versioned release script from the synchronized checkout..."
+          ssh -i "$HOME/.ssh/orios_vps" \
+            -p "$port" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
+            -o StrictHostKeyChecking=yes \
+            -o IdentitiesOnly=yes \
+            "${VPS_USER}@${VPS_HOST}" \
+            sudo -n install -o root -g root -m 0750 \
+              /opt/orios-codex/scripts/orios-deploy-release.sh \
+              /usr/local/sbin/orios-deploy-release
           echo "Docker storage before cleanup:"
           ssh -i "$HOME/.ssh/orios_vps" \
             -p "$port" \
