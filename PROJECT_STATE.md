@@ -8,10 +8,10 @@
 - Local repository: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0`
 - Canonical remote: `https://github.com/a-bol3/ori-os-codex.git`
 - Canonical production line: `main` at the merged private-beta release line
-- Latest release line: `main` at commit `95b1c49b803fce7e162665ceb2fcb91a0bad370d`
-- Latest CI: `33609062113` passed
-- Latest image publication: `33609469179` passed
-- Latest production deploy: `33610095143` passed
+- Latest release line: `main` at commit `db1261d213e38503d0d1255dc7f879778a86d5fc`
+- Latest CI: `33612509086` passed
+- Latest image publication: `33612873504` passed
+- Latest production deploy: `33613469160` passed
 - Public web: `https://orios.ori-craftlabs.com`
 - Public API: `https://api.orios.ori-craftlabs.com`
 
@@ -23,8 +23,8 @@
 | Web availability         | Passing                          | Login, dashboard, logout-to-marketing, and private-beta messaging verified in browser                  |
 | API health               | Passing                          | `/health` returned HTTP 200                                                                            |
 | API readiness            | Passing                          | `/ready` returned DB and Redis `ok`                                                                    |
-| GitHub Actions           | Green baseline                   | Main CI run `33609062113` passed on commit `95b1c49`; image publication and production deploy also passed |
-| Release images           | Published and promoted           | Run `33609469179` published API, Worker, and Web images at immutable digests recorded below           |
+| GitHub Actions           | Green baseline                   | Main CI run `33612509086` passed on commit `db1261d`; image publication and production deploy also passed |
+| Release images           | Published and promoted           | Run `33612873504` published API, Worker, and Web images at immutable digests recorded below           |
 | VPS identity             | Confirmed operational            | `/opt/orios-codex`; release Compose overlay active; API, Worker, Web, PostgreSQL, and Redis running    |
 | Backups                  | Verified                         | PostgreSQL dump and Hostinger snapshot exist; isolated restore drill passed                           |
 | Production certification | Private beta operational         | Production smoke passed; public distribution remains gated by `docs/PRODUCTION_READINESS_CHECKLIST.md` |
@@ -32,11 +32,23 @@
 ## Active blockers
 
 1. Activate an actually isolated staging host, DNS/routing, secrets, and the GitHub `staging` environment.
-2. Complete live Engagement progression, wait-step, and remaining event-idempotency proof; launch preflight validation is enforced, tracking-pixel OPENED replays are deduplicated, and IMAP reply replays are now deduplicated.
+2. Complete live Engagement progression, wait-step, and remaining event-idempotency proof; launch preflight validation is enforced, tracking-pixel OPENED and IMAP reply replays are deduplicated, and provider delivery/bounce handling is implemented and deployed but not live-configured.
 3. Complete remaining RBAC, tenant-isolation, GDPR, dependency, and credential-rotation acceptance evidence; GDPR endpoints and Engagement mutations now have explicit authorization, and the web production-secret fail-closed check is closed.
-4. Expand Engagement progression, provider delivery/bounce/unsubscribe idempotency, and metric-contract tests before inviting additional beta organizations; IMAP reply idempotency is now implemented.
+4. Configure and verify the Resend webhook secret/registration, then close unsubscribe ingestion, live wait-step progression, cross-surface metric parity, and provider failure visibility before inviting additional beta organizations.
 5. Complete monitoring/alerting, firewall/SSH review, and full-stack rollback timing evidence.
 6. Keep production on immutable release digests; no `latest` or VPS-side builds.
+
+## Recovery update — 2026-09-02 Resend delivery/bounce webhook production promotion
+
+- PR #54 added `POST /webhooks/resend` with raw-body Svix signature verification, verified `email.delivered`/`email.bounced` handling, provider-message correlation, and race-safe deduplication through `resend-webhook:{svix-id}`.
+- PR #54 merged into `main` at commit `db1261d213e38503d0d1255dc7f879778a86d5fc`. PR CI `33612139707` and post-merge main CI `33612509086` passed.
+- Image publication run `33612873504` passed for API, Worker, and Web. Immutable image digests:
+  - API `sha256:c8ed193b16c4924a21e5ba0fb200842dd1e4f8514b9e9da77ff44b00014ac9b5`
+  - Worker `sha256:e49dffd7e583d205174a09b7429fe7d5e751af0f895758f336549705b38714ad`
+  - Web `sha256:8a6ff30b56c962c5c144ec99fa80fe8302e6525d52cfe105192d3a35a506a458`
+- Production deploy `33613469160` passed after production environment approval, using the exact source SHA and immutable digests above.
+- External smoke passed: Web HTTP 200; API `/health` and `/ready` HTTP 200 with database and Redis `ok`; unauthenticated `/dashboard/operations` returned HTTP 307 to `/login`; request ID `scope-db1261d-smoke` was preserved.
+- The code path is deployed fail-closed, but live provider activation is not yet complete: the production runtime still needs `RESEND_WEBHOOK_SECRET`, the webhook URL must be registered in Resend, and a real delivered/bounced callback plus replay must be observed.
 
 ## Recovery update — 2026-09-02 IMAP reply idempotency and production promotion
 
