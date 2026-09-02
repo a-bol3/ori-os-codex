@@ -105,7 +105,7 @@ Acceptance:
 - A reply and an open update metrics consistently.
 - Recipient-level progression is visible in the campaign UI.
 
-Progress recorded in PR #41 and production deploy `33596373756`: launch preflight now enforces pending audience, active organization-owned mailbox, sender, first sequence step, and complete email content; campaign list responses now include `opened`. PR #48 additionally prevents manual processing from crossing organization boundaries. PR #50 adds a unique `EmailEvent.dedupeKey` and race-safe tracking-pixel `OPENED` ingestion, deployed at `943b453` by production run `33606380185`. Remaining acceptance requires live wait-step progression, recipient-state proof, event-idempotent delivery/reply/bounce ingestion, unsubscribe handling, and cross-surface metric parity.
+Progress recorded in PR #41 and production deploy `33596373756`: launch preflight now enforces pending audience, active organization-owned mailbox, sender, first sequence step, and complete email content; campaign list responses now include `opened`. PR #48 additionally prevents manual processing from crossing organization boundaries. PR #50 adds a unique `EmailEvent.dedupeKey` and race-safe tracking-pixel `OPENED` ingestion; PR #52 adds idempotent IMAP reply ingestion and is deployed on the current production line. Remaining acceptance requires live wait-step progression, recipient-state proof, provider delivery/bounce ingestion, unsubscribe handling, and cross-surface metric parity.
 
 ### P0.4 Release pipeline and production safety
 
