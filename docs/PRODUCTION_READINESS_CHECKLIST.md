@@ -262,6 +262,9 @@ An item is only closed when all five conditions are true:
 ### 2.6 Mailbox/webhook/provider hardening
 
 - `[ ]` SMTP/auth configuration fully hardened and documented
+- `[x]` Resend webhook endpoint verifies the raw Svix-signed body and handles `email.delivered`/`email.bounced` idempotently in code
+- `[ ]` Configure `RESEND_WEBHOOK_SECRET` in the production runtime and register `https://api.orios.ori-craftlabs.com/webhooks/resend` in Resend
+- `[ ]` Prove live Resend delivery/bounce callbacks, replay behavior, and provider failure visibility in production
 - `[-]` Event ingestion idempotent for:
   - `open` tracking-pixel replays are race-safe through unique `EmailEvent.dedupeKey`
   - IMAP `reply` replays are race-safe through canonical provider-message dedupe keys

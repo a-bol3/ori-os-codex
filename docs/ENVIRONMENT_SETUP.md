@@ -34,4 +34,5 @@
 - **Postgres/Redis**: Self-hosted or Managed (DigitalOcean/AWS)
 - **Stripe**: [Dashboard](https://dashboard.stripe.com/test/apikeys)
 - **Email**: [Resend](https://resend.com/api-keys) or [Mailgun](https://app.mailgun.com/app/dashboard)
+- `RESEND_WEBHOOK_SECRET`: Signing secret for the Resend webhook endpoint at `/webhooks/resend`; keep it only in the production runtime/GitHub environment, never in Git.
 - **Google**: [GCP Console](https://console.cloud.google.com/apis/credentials)

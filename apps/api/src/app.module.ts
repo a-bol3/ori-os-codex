@@ -39,6 +39,8 @@ import { UnsubscribeController } from './unsubscribe.controller';
 import { SeoModule } from './seo/seo.module';
 import { NotificationsController } from './notifications.controller';
 import { DashboardController } from './dashboard.controller';
+import { ResendWebhookController } from './email-events/resend-webhook.controller';
+import { ResendWebhookService } from './email-events/resend-webhook.service';
 import { AuditLogService } from './common/audit-log.service';
 import { ComplianceModule } from './compliance/compliance.module';
 import { TrackingController } from './tracking.controller';
@@ -108,6 +110,7 @@ const testBenchControllers = isTestBenchEnabled()
     UnsubscribeController,
     NotificationsController,
     DashboardController,
+    ResendWebhookController,
     TrackingController,
   ],
   providers: [
@@ -121,6 +124,7 @@ const testBenchControllers = isTestBenchEnabled()
     CampaignLaunchService,
     AuditLogService,
     UsageLimitMiddleware,
+    ResendWebhookService,
   ],
 })
 export class AppModule implements NestModule {
