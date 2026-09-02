@@ -2,6 +2,21 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-09-02 — PR #50 Engagement OPENED idempotency, image publication, production deploy and smoke verification
+
+- Operator: Codex with project owner
+- Scope: Make campaign tracking-pixel `OPENED` event ingestion race-safe; add the Prisma migration and deploy the merged `main` release. No destructive volume operation.
+- Source: PR #50 merged into `main` at `943b453243900804442b3788e2fa9b97c3c3585e`.
+- Change: `EmailEvent.dedupeKey` is unique; tracking opens use `tracking-open:{campaignId}:{contactId}` and concurrent duplicate writes are treated as harmless replays. Migration: `20260902074000_add_email_event_dedupe_key`.
+- Verification: PR CI `33605173033` and post-merge main CI `33605474694` passed. Local tracking tests, API build, worker tests, and worker build passed before merge.
+- Image publication: run `33605778213` passed for API, Worker, and Web. Promoted digests:
+  - API: `ghcr.io/a-bol3/ori-os-api@sha256:6fa15ef3bf503607c52bbb60a44a82053a054e5c8e4182eaad8a1122315e6183`
+  - Worker: `ghcr.io/a-bol3/ori-os-worker@sha256:44e2426846d9d70f115ca10375b1df2b7612082adc98d28ca65bc04f964a94ac`
+  - Web: `ghcr.io/a-bol3/ori-os-web@sha256:8b562d62d48eb453a10b3f22a7a197f0ddf7533fba47c0aa4a5ca6486a8ddc37`
+- Deployment: run `33606380185` passed after production environment approval using the exact source SHA and immutable digests above. The deploy synchronized the VPS checkout, deployed the pinned release, and removed temporary SSH material.
+- External smoke: Web HTTP 200; API `/health` and `/ready` HTTP 200 with database and Redis healthy; unauthenticated `/dashboard/operations` HTTP 307 to `/login`; request ID `scope-943b453-smoke` preserved by API health.
+- Result: Tracking-pixel `OPENED` replays are deduplicated in production. Delivery/reply/bounce/unsubscribe idempotency, live wait-step progression, metric parity, and public distribution gates remain open.
+
 ## 2026-09-02 — PR #48 Engagement tenant-scope/RBAC correction, production promotion and smoke verification
 
 - Operator: Codex with project owner

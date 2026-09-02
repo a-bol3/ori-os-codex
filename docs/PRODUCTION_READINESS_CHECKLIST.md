@@ -36,7 +36,7 @@ An item is only closed when all five conditions are true:
     - SEO crawl listing, crawl details, issue loading, and crawl start
     - SEO keyword/ranking/backlink pages
     - Settings integrations: Gmail is real; other providers are explicit `Soon`/unavailable
-    - Evidence: PR #37, PR #39, and PR #48; latest main CI `33602446667`, image publication `33602731772`, production deploy `33603411924`
+    - Evidence: PR #37, PR #39, PR #48, and PR #50; latest main CI `33605474694`, image publication `33605778213`, production deploy `33606380185`
   - Still to verify/fix:
     - live Engagement progression and event edge flows
     - any optimistic success toasts without persistence
@@ -262,12 +262,13 @@ An item is only closed when all five conditions are true:
 ### 2.6 Mailbox/webhook/provider hardening
 
 - `[ ]` SMTP/auth configuration fully hardened and documented
-- `[ ]` Event ingestion idempotent for:
-  - delivery
-  - open
-  - reply
-  - bounce
-  - unsubscribe
+- `[-]` Event ingestion idempotent for:
+  - `open` tracking-pixel replays are race-safe through unique `EmailEvent.dedupeKey`
+  - delivery remains open
+  - reply remains open
+  - bounce remains open
+  - unsubscribe remains open
+  - Evidence for the partial closure: PR #50, main CI `33605474694`, image publication `33605778213`, production deploy `33606380185`
 - `[ ]` Provider health and failure visibility exposed in UI/ops
 
 ---
@@ -330,7 +331,7 @@ Public rollout is only allowed when all these are closed:
 ## Immediate next focus
 
 1. Finish live Engagement recipient progression and scheduled-step truth
-2. Add idempotent delivery/open/reply/bounce ingestion and prove metric parity
+2. Complete idempotent delivery/reply/bounce ingestion, retain the deployed open dedupe, and prove metric parity
 3. Complete RBAC, tenant-isolation, and GDPR acceptance evidence
 4. Re-run CRM + Dashboard regression after Engagement fixes
 5. Prove deploy/rollback/restore path
