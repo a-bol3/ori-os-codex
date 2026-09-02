@@ -1,5 +1,7 @@
 import { Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 import {
   AuthenticatedRequest,
   requireOrganizationId,
@@ -9,7 +11,8 @@ import { GdprService } from './gdpr.service';
 
 /** Organization-scoped data-subject operations for administrators and support tools. */
 @Controller('compliance')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('OWNER', 'ADMIN')
 export class GdprController {
   constructor(private readonly gdpr: GdprService) {}
 
