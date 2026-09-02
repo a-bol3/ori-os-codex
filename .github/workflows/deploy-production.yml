@@ -95,6 +95,41 @@ jobs:
         run: |
           set -euo pipefail
           port="${VPS_PORT:-22}"
+          echo "Docker storage before cleanup:"
+          ssh -i "$HOME/.ssh/orios_vps" \
+            -p "$port" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
+            -o StrictHostKeyChecking=yes \
+            -o IdentitiesOnly=yes \
+            "${VPS_USER}@${VPS_HOST}" \
+            sudo -n docker system df
+          echo "Removing only Docker objects unused for at least 7 days (volumes are preserved)..."
+          ssh -i "$HOME/.ssh/orios_vps" \
+            -p "$port" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
+            -o StrictHostKeyChecking=yes \
+            -o IdentitiesOnly=yes \
+            "${VPS_USER}@${VPS_HOST}" \
+            sudo -n docker system prune --all --force --filter until=168h
+          ssh -i "$HOME/.ssh/orios_vps" \
+            -p "$port" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
+            -o StrictHostKeyChecking=yes \
+            -o IdentitiesOnly=yes \
+            "${VPS_USER}@${VPS_HOST}" \
+            sudo -n docker builder prune --all --force --filter until=168h
+          echo "Docker storage after cleanup:"
+          ssh -i "$HOME/.ssh/orios_vps" \
+            -p "$port" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
+            -o StrictHostKeyChecking=yes \
+            -o IdentitiesOnly=yes \
+            "${VPS_USER}@${VPS_HOST}" \
+            sudo -n docker system df
           for attempt in 1 2 3; do
             if ssh -i "$HOME/.ssh/orios_vps" \
               -p "$port" \
