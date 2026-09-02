@@ -2,6 +2,20 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-09-01/02 — PR #31 release, production promotion and smoke verification
+
+- Operator: Codex with project owner
+- Scope: ORI-OS production rollout from the canonical `main` line; no data migration or destructive operation.
+- Source: PR #31 merged into `main` at commit `bc1b46d0323609c3e5f7713f7095461a274f2774`; main CI run `33484524381` completed successfully.
+- Image publication: GitHub Actions run `33484754442` completed successfully for API, Worker, and Web.
+- Image digests promoted:
+  - API: `ghcr.io/a-bol3/ori-os-api@sha256:82322c39a2222abf5d81906e7ff4e766506febecc02d20d0ce56b2b17c4b5264`
+  - Worker: `ghcr.io/a-bol3/ori-os-worker@sha256:5d52aac89fd8f550ee108c9adfd5c305bf008eb6a041937b399242f39f097bd8`
+  - Web: `ghcr.io/a-bol3/ori-os-web@sha256:4b3211e0699596017cce562430e918ceeaf1e48c1c723210eb56bc44e999bca5`
+- Deployment: production deploy run `33485277668` completed successfully after environment approval; pinned images were deployed without VPS-side build.
+- Verification: Web returned HTTP 200; API `/health` and `/ready` returned HTTP 200 with database and Redis healthy; unauthenticated Operations returned HTTP 307 to `/login`; request ID propagation was preserved.
+- Result: `PRIVATE_BETA_OPERATIONAL`; public distribution remains gated by the production-readiness checklist and master execution backlog.
+
 ## 2026-08-22 — release #7 promotion and browser smoke verification
 
 - Operator: Codex with project owner
