@@ -14,8 +14,8 @@ export default function CrawlDetailsPage() {
     const projectId = params.projectId as string;
     const crawlId = params.crawlId as string;
 
-    const { crawl, isLoading: loadingCrawl } = useCrawl(crawlId);
-    const { issues, summary, isLoading: loadingIssues } = useCrawlIssues(crawlId);
+    const { crawl, error: crawlError, isLoading: loadingCrawl } = useCrawl(projectId, crawlId);
+    const { issues, summary, error: issuesError, isLoading: loadingIssues } = useCrawlIssues(projectId, crawlId);
 
     if (loadingCrawl || loadingIssues) {
         return (
@@ -23,6 +23,21 @@ export default function CrawlDetailsPage() {
                 <div className="text-center">
                     <div className="animate-spin rounded-none h-12 w-12 border-b-2 border-primary mx-auto" />
                     <p className="mt-4 text-muted-foreground">Loading crawl details...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (crawlError || issuesError) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center max-w-lg px-6">
+                    <FileText className="h-12 w-12 text-destructive mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold mb-2">Unable to load crawl</h2>
+                    <p className="text-muted-foreground mb-4">{crawlError || issuesError}</p>
+                    <Link href={`/dashboard/seo/projects/${projectId}/audit`}>
+                        <Button>Back to Audits</Button>
+                    </Link>
                 </div>
             </div>
         );
