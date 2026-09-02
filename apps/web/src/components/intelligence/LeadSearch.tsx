@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { Button, Input, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Badge } from '@ori-os/ui';
 import { Search, Loader2, Sparkles, Building2, Globe, Users, Plus, Check } from 'lucide-react';
 import { useToast } from '@ori-os/ui';
+import { apiFetch, getErrorMessage } from '@/lib/api-client';
 
 export function LeadSearch() {
     const [query, setQuery] = useState('');
@@ -17,8 +18,7 @@ export function LeadSearch() {
         if (!query) return;
         setIsSearching(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/intelligence/search?q=${encodeURIComponent(query)}`);
-            if (!response.ok) throw new Error('Search failed');
+            const response = await apiFetch(`/intelligence/search?q=${encodeURIComponent(query)}`);
             const data = await response.json();
 
             // Format to match expected results and add saved state tracking locally
@@ -27,7 +27,7 @@ export function LeadSearch() {
             console.error('Lead search error:', error);
             toast({
                 title: "Search Failed",
-                description: "There was an error while searching for leads.",
+                description: getErrorMessage(error, "There was an error while searching for leads."),
                 variant: 'destructive',
             });
             setResults([]);
@@ -39,13 +39,11 @@ export function LeadSearch() {
     const handleEnrich = async (id: string, domain: string) => {
         setEnrichingId(id);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/intelligence/enrich`, {
+            await apiFetch('/intelligence/enrich', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ domain, type: 'enrich-company' }),
             });
-
-            if (!response.ok) throw new Error('Enrichment failed');
 
             toast({
                 title: "Enrichment Started",
@@ -53,8 +51,9 @@ export function LeadSearch() {
             });
         } catch (error) {
             toast({
-                title: "Enrichment Simulated",
-                description: `Job created for ${domain} (Simulation mode confirmed).`,
+                title: "Enrichment Failed",
+                description: getErrorMessage(error, `Could not start enrichment for ${domain}.`),
+                variant: 'destructive',
             });
         } finally {
             setEnrichingId(null);
@@ -64,7 +63,7 @@ export function LeadSearch() {
     const handleSaveToCRM = async (company: any) => {
         setResults(prev => prev.map(r => r.id === company.id ? { ...r, saved: true } : r));
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/crm/companies`, {
+            await apiFetch('/crm/companies', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -77,8 +76,6 @@ export function LeadSearch() {
                 })
             });
 
-            if (!res.ok) throw new Error('Failed to save');
-
             toast({
                 title: "Lead Saved",
                 description: `${company.name} has been added to your CRM companies.`,
@@ -86,7 +83,7 @@ export function LeadSearch() {
         } catch (error) {
             toast({
                 title: "Save Failed",
-                description: `Could not save ${company.name} to CRM.`,
+                description: getErrorMessage(error, `Could not save ${company.name} to CRM.`),
                 variant: 'destructive',
             });
             setResults(prev => prev.map(r => r.id === company.id ? { ...r, saved: false } : r));
