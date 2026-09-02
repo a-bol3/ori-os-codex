@@ -8,10 +8,10 @@
 - Local repository: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0`
 - Canonical remote: `https://github.com/a-bol3/ori-os-codex.git`
 - Canonical production line: `main` at the merged private-beta release line
-- Latest release line: `main` at commit `a3686d1b199c35231875696e1b18f996cdbbddde`
-- Latest CI: `33585493515` passed
-- Latest image publication: `33585736909` passed
-- Latest production deploy: `33586199945` passed
+- Latest release line: `main` at commit `e4818d228756d891a62f027fc2c037ca3f57b45e`
+- Latest CI: `33588696872` passed
+- Latest image publication: `33588721721` passed
+- Latest production deploy: `33589139919` passed
 - Public web: `https://orios.ori-craftlabs.com`
 - Public API: `https://api.orios.ori-craftlabs.com`
 
@@ -23,8 +23,8 @@
 | Web availability         | Passing                          | Login, dashboard, logout-to-marketing, and private-beta messaging verified in browser                  |
 | API health               | Passing                          | `/health` returned HTTP 200                                                                            |
 | API readiness            | Passing                          | `/ready` returned DB and Redis `ok`                                                                    |
-| GitHub Actions           | Green baseline                   | Main CI run `33585493515` passed on commit `a3686d1`; image publication and production deploy also passed |
-| Release images           | Published and promoted           | Run `33585736909` published API, Worker, and Web images at immutable digests recorded below           |
+| GitHub Actions           | Green baseline                   | Main CI run `33588696872` passed on commit `e4818d2`; image publication and production deploy also passed |
+| Release images           | Published and promoted           | Run `33588721721` published API, Worker, and Web images at immutable digests recorded below           |
 | VPS identity             | Confirmed operational            | `/opt/orios-codex`; release Compose overlay active; API, Worker, Web, PostgreSQL, and Redis running    |
 | Backups                  | Verified                         | PostgreSQL dump and Hostinger snapshot exist; isolated restore drill passed                           |
 | Production certification | Private beta operational         | Production smoke passed; public distribution remains gated by `docs/PRODUCTION_READINESS_CHECKLIST.md` |
@@ -32,11 +32,24 @@
 ## Active blockers
 
 1. Activate an actually isolated staging host, DNS/routing, secrets, and the GitHub `staging` environment.
-2. Remove remaining silent/demo fallbacks in Content and Crawls; surface explicit unavailable/error states.
+2. Complete remaining silent-fallback review in SEO keywords/backlinks, Settings integrations, and Engagement edge flows.
 3. Complete authentication, RBAC, tenant-isolation, GDPR, dependency, and credential-rotation acceptance evidence.
 4. Expand Engagement progression, event idempotency, and metric-contract tests before inviting additional beta organizations.
 5. Complete monitoring/alerting, firewall/SSH review, and full-stack rollback timing evidence.
 6. Keep production on immutable release digests; no `latest` or VPS-side builds.
+
+## Recovery update — 2026-09-02 Content/Crawls production line
+
+- PR #37 removed fabricated crawl/issue data, corrected project-scoped crawl routes, and removed simulated Content template persistence. Content and SEO crawl failures now surface explicit error states. It was merged into `main` at commit `e4818d228756d891a62f027fc2c037ca3f57b45e`.
+- PR CI run `33588443863` and post-merge main CI run `33588696872` passed.
+- Image publication run `33588721721` passed all three image jobs.
+- Immutable images published for the deployed release:
+  - API `sha256:eff45a753bcfa9418a51aad464c1cd518e2bbabf4a32dd62b6f84358c2daf0b2`
+  - Worker `sha256:0bfd374540c0accf58e330e40049f90fe7be58ca7a9e48c88756a106b3b7fba8`
+  - Web `sha256:0144e5a9b7a73950cae937b1d42464d0e84d0ba15c19998602a26418d51a17b6`
+- Production deploy run `33589139919` passed after production-environment approval. The deployment used pinned images and did not build on the VPS.
+- Final smoke evidence passed: public Web HTTP 200; API `/health` and `/ready` HTTP 200 with database and Redis healthy; unauthenticated Operations returned HTTP 307; API request ID propagation preserved `codex-e4818d2-smoke`.
+- Content/Crawls fallback removal is closed for the reviewed paths. Release state remains `PRIVATE_BETA_OPERATIONAL`; remaining blockers are staging activation, other module fallback review, security/RBAC/GDPR acceptance, observability, and rollback evidence.
 
 ## Recovery update — 2026-09-02 current production line
 

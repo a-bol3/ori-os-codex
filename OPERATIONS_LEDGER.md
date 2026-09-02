@@ -2,6 +2,21 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-09-02 — PR #37 Content/Crawls correction, production promotion and smoke verification
+
+- Operator: Codex with project owner
+- Scope: ORI-OS production rollout from the canonical `main` line; no data migration or destructive operation.
+- Source: PR #37 merged into `main` at commit `e4818d228756d891a62f027fc2c037ca3f57b45e`; PR CI run `33588443863` and post-merge main CI run `33588696872` completed successfully.
+- Change: removed fabricated crawl and issue data, corrected project-scoped crawl endpoints, and removed simulated Content template persistence and success states.
+- Image publication: GitHub Actions run `33588721721` completed successfully for API, Worker, and Web.
+- Image digests promoted:
+  - API: `ghcr.io/a-bol3/ori-os-api@sha256:eff45a753bcfa9418a51aad464c1cd518e2bbabf4a32dd62b6f84358c2daf0b2`
+  - Worker: `ghcr.io/a-bol3/ori-os-worker@sha256:0bfd374540c0accf58e330e40049f90fe7be58ca7a9e48c88756a106b3b7fba8`
+  - Web: `ghcr.io/a-bol3/ori-os-web@sha256:0144e5a9b7a73950cae937b1d42464d0e84d0ba15c19998602a26418d51a17b6`
+- Deployment: production deploy run `33589139919` completed successfully after environment approval; pinned images were deployed without VPS-side build.
+- Verification: Web returned HTTP 200; API `/health` and `/ready` returned HTTP 200 with database and Redis healthy; unauthenticated Operations returned HTTP 307 to `/login`; API request ID propagation preserved `codex-e4818d2-smoke`.
+- Result: Content/Crawls fallback removal is closed for the reviewed paths; release state remains `PRIVATE_BETA_OPERATIONAL` and public distribution remains gated by the production-readiness checklist and master execution backlog.
+
 ## 2026-09-02 — PR #35 Intelligence correction, production promotion and smoke verification
 
 - Operator: Codex with project owner
