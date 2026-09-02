@@ -8,10 +8,10 @@
 - Local repository: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0`
 - Canonical remote: `https://github.com/a-bol3/ori-os-codex.git`
 - Canonical production line: `main` at the merged private-beta release line
-- Latest release line: `main` at commit `bc1b46d0323609c3e5f7713f7095461a274f2774`
-- Latest CI: `33484524381` passed
-- Latest image publication: `33484754442` passed
-- Latest production deploy: `33485277668` passed
+- Latest release line: `main` at commit `96ce625035ddda709751025d1f21513091f43d44`
+- Latest CI: `33583589402` passed
+- Latest image publication: `33583871290` passed
+- Latest production deploy: `33584316445` passed
 - Public web: `https://orios.ori-craftlabs.com`
 - Public API: `https://api.orios.ori-craftlabs.com`
 
@@ -23,8 +23,8 @@
 | Web availability         | Passing                          | Login, dashboard, logout-to-marketing, and private-beta messaging verified in browser                  |
 | API health               | Passing                          | `/health` returned HTTP 200                                                                            |
 | API readiness            | Passing                          | `/ready` returned DB and Redis `ok`                                                                    |
-| GitHub Actions           | Green baseline                   | Main CI run `33484524381` passed on commit `bc1b46d`; image publication and production deploy also passed |
-| Release images           | Published and promoted           | Run `33484754442` published API, Worker, and Web images at immutable digests recorded below           |
+| GitHub Actions           | Green baseline                   | Main CI run `33583589402` passed on commit `96ce625`; image publication and production deploy also passed |
+| Release images           | Published and promoted           | Run `33583871290` published API, Worker, and Web images at immutable digests recorded below           |
 | VPS identity             | Confirmed operational            | `/opt/orios-codex`; release Compose overlay active; API, Worker, Web, PostgreSQL, and Redis running    |
 | Backups                  | Verified                         | PostgreSQL dump and Hostinger snapshot exist; isolated restore drill passed                           |
 | Production certification | Private beta operational         | Production smoke passed; public distribution remains gated by `docs/PRODUCTION_READINESS_CHECKLIST.md` |
@@ -37,6 +37,18 @@
 4. Expand Engagement progression, event idempotency, and metric-contract tests before inviting additional beta organizations.
 5. Complete monitoring/alerting, firewall/SSH review, and full-stack rollback timing evidence.
 6. Keep production on immutable release digests; no `latest` or VPS-side builds.
+
+## Recovery update — 2026-09-02 current production line
+
+- PR #33 removed silent Automation fallbacks, aligned workflow creation with the API contract, and switched dashboard tests to the real `/test` endpoint. It was merged into `main` at commit `96ce625035ddda709751025d1f21513091f43d44`.
+- Main CI run `33583589402` passed. The release publication run `33583871290` passed all three image jobs.
+- Immutable images published for the deployed release:
+  - API `sha256:319ad51dd270a6170028534358560554ba54fc77bbff7cdd792929e670c260ce`
+  - Worker `sha256:f366a6f7e80ee7b9d2af61be0fe443452dec70e0c9e0d14269a2ed4aada9663b`
+  - Web `sha256:5599c348bae0a53d63ac271624c72f1395643513b30cbb63ea606bf2b8845de1`
+- Production deploy run `33584316445` passed after production-environment approval. The deployment used pinned images and did not build on the VPS.
+- Final smoke evidence passed: public Web HTTP 200; API `/health` and `/ready` HTTP 200 with database and Redis healthy; unauthenticated Operations returned HTTP 307; API request ID propagation preserved `codex-96ce625-smoke`.
+- Release state remains `PRIVATE_BETA_OPERATIONAL`; remaining blockers are staging activation, other module fallbacks, security/RBAC/GDPR acceptance, observability, and rollback evidence.
 
 ## Recovery update — 2026-09-01/02 current production line
 
