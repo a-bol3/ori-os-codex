@@ -18,6 +18,7 @@ import {
     Textarea,
     useToast,
 } from '@ori-os/ui';
+import { apiFetch, getErrorMessage } from '@/lib/api-client';
 
 type WorkflowStatus = 'active' | 'paused' | 'draft';
 
@@ -49,13 +50,17 @@ export function CreateWorkflowModal({ open, onOpenChange, onSuccess }: CreateWor
         };
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/automations/workflows`, {
+            await apiFetch('/automations/workflows', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
+                body: JSON.stringify({
+                    name: payload.name,
+                    description: payload.description,
+                    status: payload.status,
+                    triggerType: payload.trigger,
+                    definitionJson: { triggers: [], nodes: [] },
+                }),
             });
-
-            if (!res.ok) throw new Error(`Failed to create workflow (${res.status})`);
 
             toast({
                 title: 'Workflow Created',
@@ -66,15 +71,11 @@ export function CreateWorkflowModal({ open, onOpenChange, onSuccess }: CreateWor
             onOpenChange(false);
         } catch (error) {
             console.error('Create workflow failed:', error);
-
-            // Simulated success for demo/dev until API is fully wired.
             toast({
-                title: 'Workflow Created (Simulated)',
-                description: `"${payload.name}" was created locally (API not ready).`,
+                title: 'Workflow Creation Failed',
+                description: getErrorMessage(error, 'The workflow could not be created.'),
+                variant: 'destructive',
             });
-
-            onSuccess();
-            onOpenChange(false);
         } finally {
             setIsSubmitting(false);
         }
