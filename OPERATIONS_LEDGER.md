@@ -2,6 +2,21 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-09-02 — PR #39 SEO/Settings correction, production promotion and smoke verification
+
+- Operator: Codex with project owner
+- Scope: ORI-OS production rollout from the canonical `main` line; no data migration or destructive operation.
+- Source: PR #39 merged into `main` at commit `3b0b49ed8ff67e4b346cb30bfd37542bad4afa05`; PR CI run `33591153799` and post-merge main CI run `33591373235` completed successfully.
+- Change: removed SEO keyword/ranking/backlink mocks and the legacy unscoped backlinks route, replaced simulated SEO project creation with authenticated persistence, and made non-Gmail integrations explicit unavailable/Soon states.
+- Image publication: GitHub Actions run `33591620754` completed successfully for API, Worker, and Web.
+- Image digests promoted:
+  - API: `ghcr.io/a-bol3/ori-os-api@sha256:4f21e07b4129ff87bbfc62fe468fa68f37834574cf724ab8634f8430233b3090`
+  - Worker: `ghcr.io/a-bol3/ori-os-worker@sha256:37e604a81290baa26e913a99e791080d189ca2337f435c0d895931ec11a44ae6`
+  - Web: `ghcr.io/a-bol3/ori-os-web@sha256:caf5db4e878247b0e968aa7050facea48bd12feb394c6a2239a0900e3f4c8095`
+- Deployment: production deploy run `33592108484` completed successfully after environment approval; pinned images were deployed without VPS-side build.
+- Verification: Web returned HTTP 200; API `/api/health` and `/api/ready` returned HTTP 200 with database and Redis healthy; unauthenticated Operations returned HTTP 307 to `/login`.
+- Result: SEO keyword/ranking/backlink and Settings fallback removal is closed for the reviewed paths; release state remains `PRIVATE_BETA_OPERATIONAL` and public distribution remains gated by the production-readiness checklist and master execution backlog.
+
 ## 2026-09-02 — PR #37 Content/Crawls correction, production promotion and smoke verification
 
 - Operator: Codex with project owner
