@@ -287,7 +287,7 @@ describe("EmailProcessor", () => {
         stepOrder: 2,
       },
       expect.objectContaining({
-        jobId: "campaign-camp-1-recipient-cont-1-step-2",
+        jobId: "campaign-camp-1-recipient-recipient-1-step-2",
         delay: 0,
       }),
     );

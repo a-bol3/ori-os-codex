@@ -31,6 +31,10 @@ export class CampaignProcessor extends WorkerHost {
         return `campaign-${campaignId}-recipient-${recipientId}-step-${stepOrder}`;
     }
 
+    private buildEmailJobId(campaignId: string, recipientId: string, stepOrder: number) {
+        return `email-${campaignId}-recipient-${recipientId}-step-${stepOrder}`;
+    }
+
     private parseWaitDays(configJson: CampaignSequenceStepConfig) {
         const raw =
             configJson?.days ??
@@ -343,26 +347,13 @@ export class CampaignProcessor extends WorkerHost {
                 stepId: step.id,
                 subject,
                 html
+            }, {
+                jobId: this.buildEmailJobId(campaignId, recipientId, stepOrder)
             });
 
-            // Schedule the NEXT step immediately (next order)
-            const nextStepAt = new Date();
-            await this.enqueueCampaignStep(
-                campaignId,
-                recipientId,
-                stepOrder + 1
-            );
-
-            await (this.prisma as any).campaignRecipient.update({
-                where: { id: recipientId },
-                    data: {
-                        status: 'SCHEDULED',
-                        lastStepOrder: stepOrder,
-                        lastEventAt: new Date(),
-                        nextStepOrder: stepOrder + 1,
-                        nextStepAt
-                    }
-                });
+            // Progression is advanced by EmailProcessor only after the provider
+            // confirms the send. This prevents a bounced email from unlocking
+            // later sequence steps.
 
         } else if (step.stepType === 'WAIT') {
             const delayDays = this.parseWaitDays(step.configJson);
