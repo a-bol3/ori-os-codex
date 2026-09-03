@@ -612,7 +612,7 @@ export class EmailProcessor extends WorkerHost {
           {
             jobId: this.buildCampaignStepJobId(
               campaignId,
-              contactId,
+              recipientId,
               nextStep.order,
             ),
             delay: 0,
@@ -637,10 +637,10 @@ export class EmailProcessor extends WorkerHost {
 
   private buildCampaignStepJobId(
     campaignId: string,
-    contactId: string,
+    recipientId: string,
     stepOrder: number,
   ) {
-    return `campaign-${campaignId}-recipient-${contactId}-step-${stepOrder}`;
+    return `campaign-${campaignId}-recipient-${recipientId}-step-${stepOrder}`;
   }
 
   private getErrorMessage(error: unknown): string {

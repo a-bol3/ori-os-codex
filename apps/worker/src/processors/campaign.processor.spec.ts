@@ -95,29 +95,12 @@ describe('CampaignProcessor', () => {
         recipientId: 'recipient-1',
         stepId: 'step-1',
       }),
-    );
-    expect(campaignQueue.add).toHaveBeenCalledWith(
-      'process-step',
-      {
-        campaignId: 'campaign-1',
-        recipientId: 'recipient-1',
-        stepOrder: 2,
-      },
       expect.objectContaining({
-        jobId: 'campaign-campaign-1-recipient-recipient-1-step-2',
-        delay: 0,
+        jobId: 'email-campaign-1-recipient-recipient-1-step-1',
       }),
     );
-    expect(prisma.campaignRecipient.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: 'recipient-1' },
-        data: expect.objectContaining({
-          status: 'SCHEDULED',
-          lastStepOrder: 1,
-          nextStepOrder: 2,
-        }),
-      }),
-    );
+    expect(campaignQueue.add).not.toHaveBeenCalled();
+    expect(prisma.campaignRecipient.update).not.toHaveBeenCalled();
   });
 
   it('prefers edited step content over template defaults when building campaign emails', async () => {
@@ -155,6 +138,9 @@ describe('CampaignProcessor', () => {
       expect.objectContaining({
         subject: 'Quick Test',
         html: '<p>This is a quick test</p>',
+      }),
+      expect.objectContaining({
+        jobId: 'email-campaign-1-recipient-recipient-1-step-1',
       }),
     );
   });
