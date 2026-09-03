@@ -138,6 +138,7 @@ model Session {
   userId         String
   organizationId String?
   refreshToken   String?
+  revokedAt      DateTime?
   ip             String?
   userAgent      String?
   expiresAt      DateTime

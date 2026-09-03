@@ -66,11 +66,6 @@ export class AuthService {
     requestedOrganizationId?: string,
   ) {
     const membership = this.resolveMembership(user, requestedOrganizationId);
-    const payload = {
-      email: user.email,
-      sub: user.id,
-      organizationId: membership.organizationId,
-    };
 
     // The database id must be the same id returned in the refresh token.  The
     // previous implementation persisted a hash of one token and returned a
@@ -89,7 +84,12 @@ export class AuthService {
     });
 
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign({
+        email: user.email,
+        sub: user.id,
+        organizationId: membership.organizationId,
+        sid: session.id,
+      }),
       refresh_token: refreshToken,
       organizationId: membership.organizationId,
       user: {
@@ -108,10 +108,39 @@ export class AuthService {
     if (!session?.refreshToken || session.expiresAt < new Date() || session.refreshToken !== this.hashRefreshToken(refreshToken)) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
-    const accessToken = this.jwtService.sign({ sub: session.userId, email: session.user.email, organizationId: session.organizationId });
+    if (session.revokedAt) {
+      throw new UnauthorizedException('Session has been revoked');
+    }
+    const accessToken = this.jwtService.sign({
+      sub: session.userId,
+      email: session.user.email,
+      organizationId: session.organizationId,
+      sid: session.id,
+    });
     const replacement = `${session.id}.${randomBytes(32).toString('hex')}`;
     await this.prisma.session.update({ where: { id: session.id }, data: { refreshToken: this.hashRefreshToken(replacement) } });
     return { access_token: accessToken, refresh_token: replacement, organizationId: session.organizationId };
+  }
+
+  async revokeSession(
+    sessionId: string,
+    userId: string,
+    organizationId: string,
+  ) {
+    await this.prisma.session.updateMany({
+      where: {
+        id: sessionId,
+        userId,
+        organizationId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+        refreshToken: null,
+      },
+    });
+
+    return { success: true };
   }
 
   private hashRefreshToken(token: string) {

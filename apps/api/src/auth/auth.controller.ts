@@ -1,5 +1,19 @@
-import {  Controller, Post, Body, UnauthorizedException, Inject } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Inject,
+  Post,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import {
+  AuthenticatedRequest,
+  requireOrganizationId,
+  requireUserId,
+} from '../common/request-context';
 
 @Controller('auth')
 export class AuthController {
@@ -21,5 +35,20 @@ export class AuthController {
   async refresh(@Body() body: { refreshToken?: string }) {
     if (!body.refreshToken) throw new UnauthorizedException();
     return this.authService.refresh(body.refreshToken);
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  async logout(@Req() req: AuthenticatedRequest) {
+    const sessionId = req.user?.sessionId;
+    if (!sessionId) {
+      throw new UnauthorizedException('Session context is required');
+    }
+
+    return this.authService.revokeSession(
+      sessionId,
+      requireUserId(req),
+      requireOrganizationId(req),
+    );
   }
 }

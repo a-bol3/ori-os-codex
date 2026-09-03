@@ -138,6 +138,29 @@ const nextAuth = NextAuth({
             return token;
         }
     },
+    events: {
+        async signOut(message) {
+            if (!("token" in message)) return;
+
+            const { token } = message;
+            const accessToken = typeof token?.accessToken === "string" ? token.accessToken : undefined;
+            if (!accessToken) return;
+
+            const apiBaseUrl =
+                process.env.API_URL ||
+                process.env.NEXT_PUBLIC_API_URL ||
+                "http://localhost:4000";
+
+            try {
+                await fetch(`${apiBaseUrl}/auth/logout`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                });
+            } catch (error) {
+                console.error("[Auth] API logout failed", error);
+            }
+        },
+    },
 })
 
 

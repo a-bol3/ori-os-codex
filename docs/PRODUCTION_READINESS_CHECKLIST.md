@@ -76,9 +76,13 @@ An item is only closed when all five conditions are true:
     - Production deploy `33596373756` and API/web smoke checks passed on `main@9765997`
   - The runtime still requires a real `AUTH_SECRET` or `NEXTAUTH_SECRET`; missing configuration throws during server startup.
 
-- `[ ]` Active organization membership and role verified on every protected operation
+- `[-]` Active organization membership and role verified on every protected operation
+  - `JwtAuthGuard` now resolves the active organization membership for every JWT-authenticated request, and reviewed sensitive routes declare explicit roles
+  - Full cross-module tenant-isolation evidence and broader sensitive-action coverage remain open
 
-- `[ ]` Session invalidation/versioning completed
+- `[-]` Session invalidation/versioning completed
+  - Session-bound access tokens now fail closed when the session is missing, expired, or revoked; `POST /auth/logout` revokes the session and refresh rotation rejects revoked sessions
+  - Migration rollout, production smoke, and re-login confirmation after deployment remain pending
 
 - `[-]` Sensitive actions fully protected by RBAC
   - GDPR list/export/delete endpoints now require `OWNER` or `ADMIN` via `JwtAuthGuard` and `RolesGuard`
