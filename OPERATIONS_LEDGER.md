@@ -2,6 +2,21 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-09-03 — PR #59 session-bound authentication, image publication, production deploy and smoke verification
+
+- Operator: Codex with project owner
+- Scope: Deploy session-bound JWT authentication and session revocation. No destructive volume operation.
+- Source: PR #59 merged into `main` at `401a1ab986c381bd0f6c02b6f6d3a544c9fa477e`.
+- Change: Access and refreshed JWTs carry a persisted session id; protected requests verify session ownership, organization, expiry, active membership, and revocation. `POST /auth/logout` revokes the session and refresh credential. Migration: `20260903090000_add_session_revocation`.
+- Verification: PR CI `33734962758` and post-merge main CI `33735393831` passed. API validation passed 53 suites / 160 tests; lint passed with existing frontend warnings; production build passed with a validation-only local `AUTH_SECRET`.
+- Image publication: run `33735735535` passed. Promoted digests:
+  - API: `ghcr.io/a-bol3/ori-os-api@sha256:d52f968b7c849a39ccd5631d397165adbeea30429c30e5a200bba126186bf107`
+  - Worker: `ghcr.io/a-bol3/ori-os-worker@sha256:1bc944c8e3e45476422e0045014e05542fa87045b141bd05ee2bde9915804931`
+  - Web: `ghcr.io/a-bol3/ori-os-web@sha256:2f1602e5885e5905afd80622fc1778a43b8cb77090cadeed332fe87ff4ef4f75`
+- Deployment: run `33736339049` initially timed out during SSH checkout synchronization; the approved rerun succeeded using source `main@401a1ab` and the exact digests above. All deployment steps passed and temporary SSH material was removed.
+- External smoke: API `/health` and `/ready` returned HTTP 200 with database and Redis healthy; Web returned HTTP 200; unauthenticated `/dashboard/operations` returned HTTP 307 to `/login`.
+- Result: Session revocation and active-session validation are live. Existing access tokens without `sid` require a fresh login. Resend provider activation, live Engagement progression, broader tenant-isolation/RBAC evidence, staging, observability, rollback timing, and public distribution gates remain open.
+
 ## 2026-09-02 — PR #56/#57 unsubscribe idempotency, deploy-script refresh, image publication, production deploy and smoke verification
 
 - Operator: Codex with project owner

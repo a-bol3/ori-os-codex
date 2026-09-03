@@ -78,11 +78,11 @@ An item is only closed when all five conditions are true:
 
 - `[-]` Active organization membership and role verified on every protected operation
   - `JwtAuthGuard` now resolves the active organization membership for every JWT-authenticated request, and reviewed sensitive routes declare explicit roles
-  - Full cross-module tenant-isolation evidence and broader sensitive-action coverage remain open
+  - Deployed and smoke-verified in production release `main@401a1ab`; full cross-module tenant-isolation evidence and broader sensitive-action coverage remain open
 
 - `[-]` Session invalidation/versioning completed
   - Session-bound access tokens now fail closed when the session is missing, expired, or revoked; `POST /auth/logout` revokes the session and refresh rotation rejects revoked sessions
-  - Migration rollout, production smoke, and re-login confirmation after deployment remain pending
+  - Migration `20260903090000_add_session_revocation` is deployed; production deploy `33736339049` and post-deploy auth smoke passed. Existing access tokens without `sid` require a fresh login.
 
 - `[-]` Sensitive actions fully protected by RBAC
   - GDPR list/export/delete endpoints now require `OWNER` or `ADMIN` via `JwtAuthGuard` and `RolesGuard`

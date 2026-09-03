@@ -4,14 +4,14 @@
 
 ## Last verified
 
-- Date: 2026-09-02
+- Date: 2026-09-03
 - Local repository: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0`
 - Canonical remote: `https://github.com/a-bol3/ori-os-codex.git`
 - Canonical production line: `main` at the merged private-beta release line
-- Latest release line: `main` at commit `9bb83f8e7ad2e7ae1e3ce35b686a0e064277e412`
-- Latest CI: `33617760335` passed
-- Latest image publication: `33618076871` passed
-- Latest production deploy: `33618720025` passed
+- Latest release line: `main` at commit `401a1ab986c381bd0f6c02b6f6d3a544c9fa477e`
+- Latest CI: `33735393831` passed
+- Latest image publication: `33735735535` passed
+- Latest production deploy: `33736339049` passed
 - Public web: `https://orios.ori-craftlabs.com`
 - Public API: `https://api.orios.ori-craftlabs.com`
 
@@ -33,16 +33,23 @@
 
 1. Activate an actually isolated staging host, DNS/routing, secrets, and the GitHub `staging` environment.
 2. Complete live Engagement progression, wait-step, and remaining event-idempotency proof; launch preflight validation is enforced, tracking-pixel OPENED, IMAP reply, provider delivery/bounce, and signed unsubscribe replays are deduplicated in the deployed release, but live provider and scheduler evidence is still pending.
-3. Complete remaining RBAC, tenant-isolation, GDPR, dependency, and credential-rotation acceptance evidence; GDPR endpoints and Engagement mutations now have explicit authorization, and the web production-secret fail-closed check is closed.
+3. Complete remaining RBAC, tenant-isolation, GDPR, dependency, and credential-rotation acceptance evidence; active membership checks and session revocation are now deployed, while broader sensitive-action coverage and end-to-end tenant isolation remain open.
 4. Configure and verify the Resend webhook secret/registration, then prove live delivery/bounce callbacks and replay, suppression behavior, wait-step progression, cross-surface metric parity, and provider failure visibility before inviting additional beta organizations.
 5. Complete monitoring/alerting, firewall/SSH review, and full-stack rollback timing evidence.
 6. Keep production on immutable release digests; no `latest` or VPS-side builds.
 
-## Recovery update — 2026-09-03 session-bound authentication hardening (pending promotion)
+## Recovery update — 2026-09-03 session-bound authentication hardening and production promotion
 
 - The next P0.2 hardening change is implemented in the clean worktree derived from `origin/main@4718539`: access and refreshed JWTs carry a session id, `JwtStrategy` verifies the session, active organization membership, expiry, and revocation on every protected request, and `POST /auth/logout` revokes the session and refresh credential.
 - Prisma schema parity and migration `20260903090000_add_session_revocation` add `sessions.revokedAt`. Auth regression coverage passes 2 suites / 13 tests; the full API suite passes 52 suites / 157 tests. Lint passes with existing frontend warnings, and the production build passes with an ephemeral local `AUTH_SECRET` used only for validation.
-- This change is not yet deployed. CI, immutable image publication, production approval/deploy, and post-deploy auth smoke remain pending. Because JWTs without `sid` now fail closed, existing access tokens will require a fresh login after promotion.
+- PR #59 merged into `main` at `401a1ab986c381bd0f6c02b6f6d3a544c9fa477e`; PR CI `33734962758` and post-merge main CI `33735393831` passed.
+- Image publication run `33735735535` passed for API, Worker, and Web. Immutable image digests:
+  - API `sha256:d52f968b7c849a39ccd5631d397165adbeea30429c30e5a200bba126186bf107`
+  - Worker `sha256:1bc944c8e3e45476422e0045014e05542fa87045b141bd05ee2bde9915804931`
+  - Web `sha256:2f1602e5885e5905afd80622fc1778a43b8cb77090cadeed332fe87ff4ef4f75`
+- Production deploy run `33736339049` initially hit an SSH timeout during checkout synchronization, then succeeded on the approved rerun. All deploy steps passed, including VPS synchronization, pinned image activation, smoke checks, and SSH material cleanup.
+- External smoke passed after promotion: Web HTTP 200; API `/health` and `/ready` HTTP 200 with database and Redis `ok`; unauthenticated `/dashboard/operations` returned HTTP 307 to `/login`.
+- Because JWTs without `sid` now fail closed, existing access tokens require a fresh login after this promotion. Resend domain ownership/support remains a separate pending external item.
 - Resend domain ownership/support remains a separate pending external item and does not block this code phase.
 
 ## Recovery update — 2026-09-02 unsubscribe idempotency, deploy-script refresh, and production promotion
