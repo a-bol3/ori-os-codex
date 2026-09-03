@@ -2,6 +2,7 @@ import { UnauthorizedException } from '@nestjs/common';
 
 export interface AuthenticatedUser {
   userId: string;
+  sessionId?: string;
   email?: string;
   organizationId: string;
   role: 'OWNER' | 'ADMIN' | 'MANAGER' | 'OPERATOR' | 'VIEWER';

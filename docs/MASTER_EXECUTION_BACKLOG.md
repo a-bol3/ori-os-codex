@@ -82,7 +82,7 @@ Acceptance:
 - Sensitive routes reject unauthorized members.
 - Development bypass cannot be activated in production.
 
-Progress: PR #45 added `JwtAuthGuard` plus `RolesGuard` with `OWNER`/`ADMIN` authorization to the organization-scoped GDPR list/export/delete endpoints. PR #48 scoped manual running-campaign processing to the authenticated organization and added explicit roles to reviewed Engagement mutations, launch, and Inbox reply routes. Broader sensitive-action RBAC, active membership checks on every protected operation, session invalidation, and end-to-end tenant isolation remain open.
+Progress: PR #45 added `JwtAuthGuard` plus `RolesGuard` with `OWNER`/`ADMIN` authorization to the organization-scoped GDPR list/export/delete endpoints. PR #48 scoped manual running-campaign processing to the authenticated organization and added explicit roles to reviewed Engagement mutations, launch, and Inbox reply routes. The current auth-hardening change adds session-bound access tokens, active session checks on every JWT-authenticated request, revoked-session logout, and revoked refresh-token rejection; it still requires CI, migration rollout, and production evidence before this block can close. Broader sensitive-action RBAC and end-to-end tenant isolation remain open.
 
 ### P0.3 Deliverability and engagement correctness
 

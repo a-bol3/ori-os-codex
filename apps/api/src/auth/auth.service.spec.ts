@@ -24,6 +24,9 @@ describe('AuthService', () => {
     } satisfies PrismaUserFindUnique,
     session: {
       create: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
     },
   };
   const service = new AuthService(
@@ -94,6 +97,7 @@ describe('AuthService', () => {
       email: 'user@example.com',
       sub: 'user-1',
       organizationId: 'org-1',
+      sid: result.refresh_token.split('.')[0],
     });
 
     const createdSession = prisma.session.create.mock.calls[0][0].data;
@@ -119,5 +123,65 @@ describe('AuthService', () => {
     await expect(service.login(user, 'org-999')).rejects.toThrow(
       UnauthorizedException,
     );
+  });
+
+  it('reissues an access token bound to the refresh session', async () => {
+    const session = {
+      id: 'session-1',
+      userId: 'user-1',
+      organizationId: 'org-1',
+      refreshToken: createHash('sha256').update('session-1.secret').digest('hex'),
+      expiresAt: new Date(Date.now() + 60_000),
+      revokedAt: null,
+      user: { email: 'user@example.com' },
+    };
+    prisma.session.findUnique.mockResolvedValue(session);
+
+    await service.refresh('session-1.secret');
+
+    expect(jwtService.sign).toHaveBeenCalledWith({
+      sub: 'user-1',
+      email: 'user@example.com',
+      organizationId: 'org-1',
+      sid: 'session-1',
+    });
+    expect(prisma.session.update).toHaveBeenCalledWith({
+      where: { id: 'session-1' },
+      data: { refreshToken: expect.any(String) },
+    });
+  });
+
+  it('rejects refresh after the session has been revoked', async () => {
+    prisma.session.findUnique.mockResolvedValue({
+      id: 'session-1',
+      userId: 'user-1',
+      organizationId: 'org-1',
+      refreshToken: createHash('sha256').update('session-1.secret').digest('hex'),
+      expiresAt: new Date(Date.now() + 60_000),
+      revokedAt: new Date(),
+      user: { email: 'user@example.com' },
+    });
+
+    await expect(service.refresh('session-1.secret')).rejects.toThrow(
+      'Session has been revoked',
+    );
+  });
+
+  it('revokes only the authenticated session and organization', async () => {
+    prisma.session.updateMany.mockResolvedValue({ count: 1 });
+
+    await expect(
+      service.revokeSession('session-1', 'user-1', 'org-1'),
+    ).resolves.toEqual({ success: true });
+
+    expect(prisma.session.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'session-1',
+        userId: 'user-1',
+        organizationId: 'org-1',
+        revokedAt: null,
+      },
+      data: { revokedAt: expect.any(Date), refreshToken: null },
+    });
   });
 });

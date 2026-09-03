@@ -38,6 +38,13 @@
 5. Complete monitoring/alerting, firewall/SSH review, and full-stack rollback timing evidence.
 6. Keep production on immutable release digests; no `latest` or VPS-side builds.
 
+## Recovery update — 2026-09-03 session-bound authentication hardening (pending promotion)
+
+- The next P0.2 hardening change is implemented in the clean worktree derived from `origin/main@4718539`: access and refreshed JWTs carry a session id, `JwtStrategy` verifies the session, active organization membership, expiry, and revocation on every protected request, and `POST /auth/logout` revokes the session and refresh credential.
+- Prisma schema parity and migration `20260903090000_add_session_revocation` add `sessions.revokedAt`. Auth regression coverage passes 2 suites / 13 tests; the full API suite passes 52 suites / 157 tests. Lint passes with existing frontend warnings, and the production build passes with an ephemeral local `AUTH_SECRET` used only for validation.
+- This change is not yet deployed. CI, immutable image publication, production approval/deploy, and post-deploy auth smoke remain pending. Because JWTs without `sid` now fail closed, existing access tokens will require a fresh login after promotion.
+- Resend domain ownership/support remains a separate pending external item and does not block this code phase.
+
 ## Recovery update — 2026-09-02 unsubscribe idempotency, deploy-script refresh, and production promotion
 
 - PR #56 added the `UNSUBSCRIBED` email-event type and race-safe signed unsubscribe ingestion using the canonical dedupe key `unsubscribe:{organizationId}:{contactId}`. The route remains fail-closed for invalid or expired tokens and the implementation tests passed 4/4.

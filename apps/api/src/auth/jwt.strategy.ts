@@ -8,6 +8,7 @@ type JwtPayload = {
   sub?: unknown;
   email?: unknown;
   organizationId?: unknown;
+  sid?: unknown;
 };
 
 function requireJwtSecret(): string {
@@ -48,6 +49,30 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       );
     }
 
+    if (typeof payload.sid !== 'string' || payload.sid.length === 0) {
+      throw new UnauthorizedException('JWT payload is missing session context');
+    }
+
+    const session = await this.prisma.session.findUnique({
+      where: { id: payload.sid },
+      select: {
+        userId: true,
+        organizationId: true,
+        expiresAt: true,
+        revokedAt: true,
+      },
+    });
+
+    if (
+      !session ||
+      session.userId !== payload.sub ||
+      session.organizationId !== payload.organizationId ||
+      session.revokedAt !== null ||
+      session.expiresAt <= new Date()
+    ) {
+      throw new UnauthorizedException('Session is invalid or expired');
+    }
+
     const membership = await this.prisma.organizationMembership.findUnique({
       where: {
         organizationId_userId: {
@@ -66,6 +91,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     return {
       userId: payload.sub,
+      sessionId: payload.sid,
       email: typeof payload.email === 'string' ? payload.email : undefined,
       organizationId: payload.organizationId,
       role: membership.role as OrganizationRole,
