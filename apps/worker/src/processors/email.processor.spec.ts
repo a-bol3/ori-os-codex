@@ -169,6 +169,7 @@ describe("EmailProcessor", () => {
         },
       },
     });
+    expect(campaignQueue.add).not.toHaveBeenCalled();
   });
 
   it("updates recipient status to SENT and records an event on success", async () => {
