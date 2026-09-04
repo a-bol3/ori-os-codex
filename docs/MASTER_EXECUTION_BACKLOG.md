@@ -1,6 +1,6 @@
 # ORI-OS Master Execution Backlog
 
-Last updated: 2026-09-02
+Last updated: 2026-09-04
 Status: Active orchestration backlog
 Scope: ORI-OS production hardening, beta readiness, and future distribution
 
@@ -105,7 +105,7 @@ Acceptance:
 - A reply and an open update metrics consistently.
 - Recipient-level progression is visible in the campaign UI.
 
-Progress recorded in PR #41 and production deploy `33596373756`: launch preflight now enforces pending audience, active organization-owned mailbox, sender, first sequence step, and complete email content; campaign list responses now include `opened`. PR #48 additionally prevents manual processing from crossing organization boundaries. PR #50 adds a unique `EmailEvent.dedupeKey` and race-safe tracking-pixel `OPENED` ingestion; PR #52 adds idempotent IMAP reply ingestion; PR #54 adds verified, idempotent Resend delivery/bounce ingestion; PR #56 adds idempotent signed unsubscribe ingestion. PR #56 is deployed in the current production line at `main@9bb83f8`, and PR #57 refreshes the active VPS deploy helper from the synchronized checkout before deployment. Remaining acceptance requires production webhook secret/registration, live callbacks and replay proof, suppression-policy behavior, live wait-step progression, recipient-state proof, and cross-surface metric parity.
+Progress recorded in PR #41 and production deploy `33596373756`: launch preflight now enforces pending audience, active organization-owned mailbox, sender, first sequence step, and complete email content; campaign list responses now include `opened`. PR #48 additionally prevents manual processing from crossing organization boundaries. PR #50 adds a unique `EmailEvent.dedupeKey` and race-safe tracking-pixel `OPENED` ingestion; PR #52 adds idempotent IMAP reply ingestion; PR #54 adds verified, idempotent Resend delivery/bounce ingestion; PR #56 adds idempotent signed unsubscribe ingestion. PR #61 now gates campaign progression on confirmed provider success and aligns recipient-scoped queue IDs across launch, recovery, and email processing; it is deployed at `main@45198901` with CI `33763776115`, image publication `33764119684`, and production deploy `33764871294` passing. Remaining acceptance requires production webhook secret/registration, live callbacks and replay proof, suppression-policy behavior, live wait-step progression, recipient-state proof, and cross-surface metric parity.
 
 ### P0.4 Release pipeline and production safety
 
@@ -139,7 +139,7 @@ Acceptance:
 - Backup restore has been executed successfully in a controlled environment.
 - CI is deterministic and blocks unsafe releases.
 
-Current production evidence: PR #57 merged at `main@9bb83f8`; main CI `33617760335`, immutable image publication `33618076871`, and production deploy `33618720025` passed. The deploy helper is installed from the synchronized checkout before execution; external Web/API/Operations smoke is green. Rollback rehearsal, staging restore rehearsal, and broader distribution gates remain separate open acceptance items.
+Current production evidence: PR #61 merged at `main@45198901`; main CI `33763776115`, immutable image publication `33764119684`, and production deploy `33764871294` passed. The deploy helper is installed from the synchronized checkout before execution; external API readiness and protected Operations redirect smoke are green. Rollback rehearsal, staging restore rehearsal, and broader distribution gates remain separate open acceptance items.
 
 ## Phase 1 - Shared ORI Core
 
