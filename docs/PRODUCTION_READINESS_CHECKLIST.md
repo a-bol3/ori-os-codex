@@ -258,6 +258,11 @@ An item is only closed when all five conditions are true:
     - proof that later scheduled emails continue correctly
     - proof that queued progression survives restart/redeploy without duplicating or skipping work
 
+- `[x]` Campaign progression is gated on confirmed provider send
+  - Evidence: PR #61; production release `main@45198901`; main CI `33763776115`; image publication `33764119684`; production deploy `33764871294`
+  - The campaign processor no longer schedules/unlocks a later step merely after enqueueing an email. The email processor advances the recipient only after provider success, and launch/recovery/email queue IDs share a deterministic recipient-scoped contract.
+  - Live multi-step, wait-step, and restart/redeploy acceptance remains open below.
+
 - `[ ]` Wait step of 1 day validated through real scheduler progression
 - `[ ]` Second scheduled email validated after wait
 - `[ ]` Third scheduled email validated after wait

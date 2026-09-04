@@ -4,14 +4,14 @@
 
 ## Last verified
 
-- Date: 2026-09-03
+- Date: 2026-09-04
 - Local repository: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0`
 - Canonical remote: `https://github.com/a-bol3/ori-os-codex.git`
 - Canonical production line: `main` at the merged private-beta release line
-- Latest release line: `main` at commit `401a1ab986c381bd0f6c02b6f6d3a544c9fa477e`
-- Latest CI: `33735393831` passed
-- Latest image publication: `33735735535` passed
-- Latest production deploy: `33736339049` passed
+- Latest release line: `main` at commit `45198901b5cc6e131d1bc72b4bf55fb66ed02eb0`
+- Latest CI: `33763776115` passed
+- Latest image publication: `33764119684` passed
+- Latest production deploy: `33764871294` passed on the approved rerun
 - Public web: `https://orios.ori-craftlabs.com`
 - Public API: `https://api.orios.ori-craftlabs.com`
 
@@ -23,11 +23,24 @@
 | Web availability         | Passing                          | Login, dashboard, logout-to-marketing, and private-beta messaging verified in browser                  |
 | API health               | Passing                          | `/health` returned HTTP 200                                                                            |
 | API readiness            | Passing                          | `/ready` returned DB and Redis `ok`                                                                    |
-| GitHub Actions           | Green baseline                   | Main CI run `33617760335` passed on commit `9bb83f8`; image publication and production deploy also passed |
-| Release images           | Published and promoted           | Run `33618076871` published API, Worker, and Web images at immutable digests recorded in the latest recovery entry |
+| GitHub Actions           | Green baseline                   | Main CI run `33763776115` passed on commit `45198901`; image publication and production deploy also passed |
+| Release images           | Published and promoted           | Run `33764119684` published API, Worker, and Web images at immutable digests recorded in the latest recovery entry |
 | VPS identity             | Confirmed operational            | `/opt/orios-codex`; release Compose overlay active; API, Worker, Web, PostgreSQL, and Redis running    |
 | Backups                  | Verified                         | PostgreSQL dump and Hostinger snapshot exist; isolated restore drill passed                           |
 | Production certification | Private beta operational         | Production smoke passed; public distribution remains gated by `docs/PRODUCTION_READINESS_CHECKLIST.md` |
+
+## Recovery update — 2026-09-04 campaign progression gate and production promotion
+
+- PR #61 gates campaign progression on a confirmed provider send. The campaign processor now uses deterministic recipient/step email job IDs and does not unlock the next step merely because an email job was enqueued; the email processor advances the recipient only after a successful provider response. Recovery and launch queue IDs now use the same recipient-scoped contract.
+- Worker regression coverage passed 7 suites / 27 tests; the worker production build passed. Repository lint completed with the existing warning baseline and no errors.
+- PR #61 merged into `main` at `45198901b5cc6e131d1bc72b4bf55fb66ed02eb0`; PR CI `33763402484` and post-merge main CI `33763776115` passed.
+- Image publication run `33764119684` passed for API, Worker, and Web. Immutable image digests:
+  - API `sha256:4f932530f8273f51ea052e244277aeade3ab2d94716cef5096110d4d45d32895`
+  - Worker `sha256:35384b281647531ad9722ed451f52e2de39b535da137eab7ee0d1d4ac78c333e`
+  - Web `sha256:1d4c3205f45b93675340f26e1f585cdcec2cd7546608938a19c5359a45a162c5`
+- Production deploy run `33764871294` initially timed out during SSH synchronization; no release replacement occurred. The approved rerun completed successfully using `main@45198901` and the pinned images.
+- External smoke after promotion: API `/health` and `/ready` returned HTTP 200 with database and Redis `ok`; unauthenticated `/dashboard/operations` returned HTTP 307 to `/login`.
+- Remaining P0.3 proof is live: a real multi-step campaign, wait-step progression, provider callback/replay, recipient-state UI, and cross-surface metric parity. Resend domain ownership/provider activation remains pending and separate from this deployed code gate.
 
 ## Active blockers
 

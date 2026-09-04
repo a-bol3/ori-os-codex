@@ -2,6 +2,21 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-09-04 — PR #61 campaign progression gate, image publication, production deploy and smoke verification
+
+- Operator: Codex with project owner
+- Scope: Deploy recipient-scoped campaign progression gating. No destructive volume operation.
+- Source: PR #61 merged into `main` at `45198901b5cc6e131d1bc72b4bf55fb66ed02eb0`.
+- Change: Campaign email jobs now use deterministic recipient/step IDs and later steps are not unlocked when an email is merely queued. The email processor advances progression only after the provider confirms send; launch, recovery, and email processing use aligned recipient-scoped queue IDs.
+- Verification: PR CI `33763402484` and post-merge main CI `33763776115` passed. Worker tests passed 7 suites / 27 tests; worker build passed; repository lint completed with existing warnings and no errors.
+- Image publication: run `33764119684` passed. Promoted digests:
+  - API: `ghcr.io/a-bol3/ori-os-api@sha256:4f932530f8273f51ea052e244277aeade3ab2d94716cef5096110d4d45d32895`
+  - Worker: `ghcr.io/a-bol3/ori-os-worker@sha256:35384b281647531ad9722ed451f52e2de39b535da137eab7ee0d1d4ac78c333e`
+  - Web: `ghcr.io/a-bol3/ori-os-web@sha256:1d4c3205f45b93675340f26e1f585cdcec2cd7546608938a19c5359a45a162c5`
+- Deployment: run `33764871294` initially timed out during SSH synchronization; no running release replacement occurred. The approved rerun succeeded using `main@45198901` and the exact digests above.
+- External smoke: API `/health` and `/ready` returned HTTP 200 with database and Redis healthy; unauthenticated `/dashboard/operations` returned HTTP 307 to `/login`.
+- Result: Confirmed-send progression gating is live. Live wait-step progression, provider callback/replay, recipient-state UI, metric parity, Resend domain activation, staging, rollback timing, and public distribution gates remain open.
+
 ## 2026-09-03 — PR #59 session-bound authentication, image publication, production deploy and smoke verification
 
 - Operator: Codex with project owner
