@@ -2,6 +2,15 @@
 
 Append one entry for every VPS, deployment, backup, rollback, or production configuration action.
 
+## 2026-09-05 — Resend domain ownership located and post-merge CI verified
+
+- Operator: Codex with project owner
+- Scope: Non-destructive provider/account verification; no DNS or VPS mutation performed.
+- Finding: `ori-craftlabs.com` is present in the Resend team `oricraftlabs` under `oricraftlabs@gmail.com`, with dashboard status `Not Started`.
+- Decision: Keep the domain in that existing team. Do not claim or transfer it to `abad1982`; complete DNS verification in the owning team and use an API key issued by that team for production sends.
+- Verification: PR #64 merged as `7d0449ba5149246fda46f35e297ffae02c62d3c4`; PR CI and post-merge main CI `33847694988` passed. No image publication or production deploy was triggered because the change is test-only.
+- Next proof: Verify the exact Resend DNS records at Hostinger, confirm the production API key team, send one controlled message, and capture the delivered/bounced webhook and replay evidence.
+
 ## 2026-09-04 — PR #61 campaign progression gate, image publication, production deploy and smoke verification
 
 - Operator: Codex with project owner
