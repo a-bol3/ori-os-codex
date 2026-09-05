@@ -1,6 +1,6 @@
 # ORI-OS Production Readiness Checklist
 
-Last updated: 2026-09-02
+Last updated: 2026-09-05
 Status legend:
 
 - `[x]` Closed and validated
@@ -272,7 +272,8 @@ An item is only closed when all five conditions are true:
 
 - `[ ]` SMTP/auth configuration fully hardened and documented
 - `[x]` Resend webhook endpoint verifies the raw Svix-signed body and handles `email.delivered`/`email.bounced` idempotently in code
-- `[ ]` Configure `RESEND_WEBHOOK_SECRET` in the production runtime and register `https://api.orios.ori-craftlabs.com/webhooks/resend` in Resend
+- `[-]` Configure `RESEND_WEBHOOK_SECRET` in the production runtime and register `https://api.orios.ori-craftlabs.com/webhooks/resend`
+  - Owner reports the secret was configured, the webhook was created, and the API was restarted; live delivery/bounce callback evidence remains open.
   - Code deployed in production at `main@9bb83f8`; CI `33617760335`, image publication `33618076871`, deploy `33618720025`
   - Runtime activation remains open because no `RESEND_WEBHOOK_SECRET` is currently visible in the repository secret inventory
 - `[ ]` Prove live Resend delivery/bounce callbacks, replay behavior, and provider failure visibility in production
@@ -344,7 +345,7 @@ Public rollout is only allowed when all these are closed:
 
 ## Immediate next focus
 
-1. Configure the Resend production secret and webhook registration, then capture one delivered callback, one bounced callback, and replay evidence
+1. Verify `ori-craftlabs.com` in the existing Resend `oricraftlabs` team, confirm the production API key belongs to that team, then capture one delivered callback, one bounced callback, and replay evidence
 2. Finish live Engagement recipient progression and scheduled-step truth, including restart/redeploy safety
 3. Prove suppression/unsubscribe behavior and cross-surface metric parity
 4. Complete RBAC, tenant-isolation, GDPR, staging, monitoring, and rollback acceptance evidence

@@ -4,12 +4,12 @@
 
 ## Last verified
 
-- Date: 2026-09-04
+- Date: 2026-09-05
 - Local repository: `C:\dev\ORI-OS-PROJECTS\ORI-OS2.0`
 - Canonical remote: `https://github.com/a-bol3/ori-os-codex.git`
 - Canonical production line: `main` at the merged private-beta release line
-- Latest release line: `main` at commit `45198901b5cc6e131d1bc72b4bf55fb66ed02eb0`
-- Latest CI: `33763776115` passed
+- Latest release line: `main` at commit `7d0449ba5149246fda46f35e297ffae02c62d3c4`
+- Latest CI: `33847694988` passed after PR #64 merge
 - Latest image publication: `33764119684` passed
 - Latest production deploy: `33764871294` passed on the approved rerun
 - Public web: `https://orios.ori-craftlabs.com`
@@ -23,7 +23,7 @@
 | Web availability         | Passing                          | Login, dashboard, logout-to-marketing, and private-beta messaging verified in browser                  |
 | API health               | Passing                          | `/health` returned HTTP 200                                                                            |
 | API readiness            | Passing                          | `/ready` returned DB and Redis `ok`                                                                    |
-| GitHub Actions           | Green baseline                   | Main CI run `33763776115` passed on commit `45198901`; image publication and production deploy also passed |
+| GitHub Actions           | Green baseline                   | Main CI run `33847694988` passed on commit `7d0449b`; PR #64 and post-merge CI passed |
 | Release images           | Published and promoted           | Run `33764119684` published API, Worker, and Web images at immutable digests recorded in the latest recovery entry |
 | VPS identity             | Confirmed operational            | `/opt/orios-codex`; release Compose overlay active; API, Worker, Web, PostgreSQL, and Redis running    |
 | Backups                  | Verified                         | PostgreSQL dump and Hostinger snapshot exist; isolated restore drill passed                           |
@@ -42,12 +42,20 @@
 - External smoke after promotion: API `/health` and `/ready` returned HTTP 200 with database and Redis `ok`; unauthenticated `/dashboard/operations` returned HTTP 307 to `/login`.
 - Remaining P0.3 proof is live: a real multi-step campaign, wait-step progression, provider callback/replay, recipient-state UI, and cross-surface metric parity. Resend domain ownership/provider activation remains pending and separate from this deployed code gate.
 
+## Recovery update — 2026-09-05 Resend domain ownership located
+
+- The `ori-craftlabs.com` domain was located in the existing Resend team `oricraftlabs`, authenticated through `oricraftlabs@gmail.com`.
+- Resend shows the domain as `Not Started`, so the domain is owned by the correct team but its DNS verification has not been completed in that team.
+- Do not start a claim or transfer the domain to `abad1982`. The correct next action is to open the existing domain in the `oricraftlabs` team, review the generated DNS records, and verify them at Hostinger without changing the existing root MX/mailbox records.
+- The production runtime must use an API key issued by the `oricraftlabs` team for sends from `business@ori-craftlabs.com`; the current key ownership must be confirmed before the first live send. No API key value is recorded here.
+- PR #64 (`7d0449ba`) is merged; PR CI and post-merge main CI `33847694988` passed. This change is test-only and has not been deployed because it does not alter runtime images.
+
 ## Active blockers
 
 1. Activate an actually isolated staging host, DNS/routing, secrets, and the GitHub `staging` environment.
 2. Complete live Engagement progression, wait-step, and remaining event-idempotency proof; launch preflight validation is enforced, tracking-pixel OPENED, IMAP reply, provider delivery/bounce, and signed unsubscribe replays are deduplicated in the deployed release, but live provider and scheduler evidence is still pending.
 3. Complete remaining RBAC, tenant-isolation, GDPR, dependency, and credential-rotation acceptance evidence; active membership checks and session revocation are now deployed, while broader sensitive-action coverage and end-to-end tenant isolation remain open.
-4. Configure and verify the Resend webhook secret/registration, then prove live delivery/bounce callbacks and replay, suppression behavior, wait-step progression, cross-surface metric parity, and provider failure visibility before inviting additional beta organizations.
+4. Complete Resend activation in the existing `oricraftlabs` team, confirm the production API key belongs to that team, then prove live delivery/bounce callbacks and replay, suppression behavior, wait-step progression, cross-surface metric parity, and provider failure visibility before inviting additional beta organizations.
 5. Complete monitoring/alerting, firewall/SSH review, and full-stack rollback timing evidence.
 6. Keep production on immutable release digests; no `latest` or VPS-side builds.
 
